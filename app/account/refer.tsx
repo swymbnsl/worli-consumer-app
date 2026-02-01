@@ -1,38 +1,52 @@
-import * as Clipboard from 'expo-clipboard';
-import { useRouter } from 'expo-router';
-import { ChevronLeft, Copy, Gift, Share2, Users } from 'lucide-react-native';
-import React from 'react';
-import { Alert, ScrollView, Share, StatusBar, Text, TouchableOpacity, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from "@/hooks/useAuth"
+import * as Clipboard from "expo-clipboard"
+import { useRouter } from "expo-router"
+import { ChevronLeft, Copy, Gift, Share2, Users } from "lucide-react-native"
+import React from "react"
+import {
+  Alert,
+  ScrollView,
+  Share,
+  StatusBar,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native"
+import { SafeAreaView } from "react-native-safe-area-context"
 
 export default function ReferScreen() {
-  const router = useRouter();
-  const { user } = useAuth();
-  const referralCode = user?.id.slice(0, 8).toUpperCase() || 'FRESH123';
+  const router = useRouter()
+  const { user } = useAuth()
+  const referralCode = user?.id.slice(0, 8).toUpperCase() || "FRESH123"
 
   const handleCopyCode = async () => {
-    await Clipboard.setStringAsync(referralCode);
-    Alert.alert('Copied!', 'Referral code copied to clipboard');
-  };
+    await Clipboard.setStringAsync(referralCode)
+    Alert.alert("Copied!", "Referral code copied to clipboard")
+  }
 
   const handleShare = async () => {
     try {
       await Share.share({
         message: `Join FreshMilk using my referral code ${referralCode} and get ₹100 off on your first order! Download the app now.`,
-      });
+      })
     } catch (error) {
-      console.error('Share error:', error);
+      console.error("Share error:", error)
     }
-  };
+  }
 
   return (
-    <SafeAreaView className="flex-1 bg-neutral-lightCream" edges={['top', 'bottom']}>
+    <SafeAreaView
+      className="flex-1 bg-neutral-lightCream"
+      edges={["top", "bottom"]}
+    >
       <StatusBar barStyle="dark-content" backgroundColor="#F5F5F0" />
 
       {/* Header */}
       <View className="bg-primary-navy px-6 pt-10 pb-6 flex-row items-center">
-        <TouchableOpacity onPress={() => router.back()} className="mr-4 active:opacity-70">
+        <TouchableOpacity
+          onPress={() => router.back()}
+          className="mr-4 active:opacity-70"
+        >
           <ChevronLeft size={24} color="#FFFFFF" />
         </TouchableOpacity>
         <View>
@@ -45,7 +59,10 @@ export default function ReferScreen() {
         </View>
       </View>
 
-      <ScrollView className="flex-1 px-6 pt-6" showsVerticalScrollIndicator={false}>
+      <ScrollView
+        className="flex-1 px-6 pt-6"
+        showsVerticalScrollIndicator={false}
+      >
         {/* Referral Code Card */}
         <View className="bg-primary-navy rounded-2xl p-7 mb-6 relative overflow-hidden">
           {/* Background decorations */}
@@ -92,11 +109,17 @@ export default function ReferScreen() {
           </Text>
 
           {[
-            { step: '1', text: 'Share your unique referral code with friends and family' },
-            { step: '2', text: 'They sign up and place their first order using your code' },
-            { step: '3', text: 'You both get ₹100 credited to your wallets!' },
+            {
+              step: "1",
+              text: "Share your unique referral code with friends and family",
+            },
+            {
+              step: "2",
+              text: "They sign up and place their first order using your code",
+            },
+            { step: "3", text: "You both get ₹100 credited to your wallets!" },
           ].map((item, index) => (
-            <View key={index} className={`flex-row ${index < 2 ? 'mb-5' : ''}`}>
+            <View key={index} className={`flex-row ${index < 2 ? "mb-5" : ""}`}>
               <View className="w-8 h-8 rounded-full bg-primary-orange items-center justify-center mr-4">
                 <Text className="font-sofia-bold text-base text-white">
                   {item.step}
@@ -124,18 +147,22 @@ export default function ReferScreen() {
               <Text className="font-sofia-bold text-3xl text-primary-orange mb-1">
                 0
               </Text>
-              <Text className="font-comfortaa text-xs text-neutral-gray">Total Referrals</Text>
+              <Text className="font-comfortaa text-xs text-neutral-gray">
+                Total Referrals
+              </Text>
             </View>
             <View className="w-px bg-neutral-lightGray" />
             <View className="items-center">
               <Text className="font-sofia-bold text-3xl text-secondary-sage mb-1">
                 ₹0
               </Text>
-              <Text className="font-comfortaa text-xs text-neutral-gray">Total Earned</Text>
+              <Text className="font-comfortaa text-xs text-neutral-gray">
+                Total Earned
+              </Text>
             </View>
           </View>
         </View>
       </ScrollView>
     </SafeAreaView>
-  );
+  )
 }

@@ -1,20 +1,7 @@
+import { ButtonProps } from "@/types/ui-components.types"
 import React from "react"
-import {
-  ActivityIndicator,
-  Text,
-  TouchableOpacity,
-  TouchableOpacityProps,
-} from "react-native"
+import { ActivityIndicator, Text, TouchableOpacity } from "react-native"
 import Animated, { FadeInUp } from "react-native-reanimated"
-
-interface ButtonProps extends TouchableOpacityProps {
-  title: string
-  variant?: "primary" | "secondary" | "danger" | "outline"
-  size?: "small" | "medium" | "large"
-  isLoading?: boolean
-  animationDelay?: number
-  fullWidth?: boolean
-}
 
 export default function Button({
   title,

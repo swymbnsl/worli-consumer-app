@@ -1,61 +1,58 @@
-import { useRouter } from 'expo-router';
-import React, { useEffect, useState } from 'react';
-import {
-    FlatList,
-    RefreshControl,
-    StatusBar,
-    Text,
-    View
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import OrderCard from '@/components/orders/OrderCard';
-import Header from '@/components/ui/Header';
-import { useAuth } from '@/hooks/useAuth';
-import { supabase } from '@/lib/supabase';
-import { Order } from '@/types/database.types';
+import OrderCard from "@/components/orders/OrderCard"
+import Header from "@/components/ui/Header"
+import { useAuth } from "@/hooks/useAuth"
+import { supabase } from "@/lib/supabase"
+import { Order } from "@/types/database.types"
+import { useRouter } from "expo-router"
+import React, { useEffect, useState } from "react"
+import { FlatList, RefreshControl, StatusBar, Text, View } from "react-native"
+import { SafeAreaView } from "react-native-safe-area-context"
 
 export default function OrdersScreen() {
-  const router = useRouter();
-  const { user } = useAuth();
-  const [orders, setOrders] = useState<Order[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
+  const router = useRouter()
+  const { user } = useAuth()
+  const [orders, setOrders] = useState<Order[]>([])
+  const [loading, setLoading] = useState(true)
+  const [refreshing, setRefreshing] = useState(false)
 
   useEffect(() => {
-    fetchOrders();
-  }, [user]);
+    fetchOrders()
+  }, [user])
 
   const fetchOrders = async () => {
-    if (!user) return;
+    if (!user) return
 
     try {
       const { data, error } = await supabase
-        .from('orders')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('date', { ascending: false });
+        .from("orders")
+        .select("*")
+        .eq("user_id", user.id)
+        .order("date", { ascending: false })
 
-      if (error) throw error;
-      setOrders(data || []);
+      if (error) throw error
+      setOrders(data || [])
     } catch (error) {
-      console.error('Error fetching orders:', error);
+      console.error("Error fetching orders:", error)
     } finally {
-      setLoading(false);
-      setRefreshing(false);
+      setLoading(false)
+      setRefreshing(false)
     }
-  };
+  }
 
   const onRefresh = () => {
-    setRefreshing(true);
-    fetchOrders();
-  };
+    setRefreshing(true)
+    fetchOrders()
+  }
 
   const handleOrderPress = (orderId: string) => {
-    router.push(`/order-detail?id=${orderId}`);
-  };
+    router.push(`/order-detail?id=${orderId}`)
+  }
 
   return (
-    <SafeAreaView className="flex-1 bg-neutral-lightCream" edges={['top', 'bottom']}>
+    <SafeAreaView
+      className="flex-1 bg-neutral-lightCream"
+      edges={["top", "bottom"]}
+    >
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
 
       <Header />
@@ -81,11 +78,15 @@ export default function OrdersScreen() {
             <OrderCard order={item} onPress={() => handleOrderPress(item.id)} />
           )}
           refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#101B53" />
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              tintColor="#101B53"
+            />
           }
           contentContainerStyle={{ paddingBottom: 100 }}
         />
       )}
     </SafeAreaView>
-  );
+  )
 }

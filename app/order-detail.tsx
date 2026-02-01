@@ -1,111 +1,108 @@
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import { ChevronLeft } from 'lucide-react-native';
-import React, { useEffect, useState } from 'react';
-import {
-    Alert,
-    ScrollView,
-    Text,
-    TouchableOpacity,
-    View,
-} from 'react-native';
-import { PRODUCT } from '@/constants/product';
-import { BORDER_RADIUS, COLORS, SHADOWS, SPACING } from '@/constants/theme';
-import { useAuth } from '@/hooks/useAuth';
-import { supabase } from '@/lib/supabase';
-import { Order } from '@/types/database.types';
-import { formatFullDate } from '@/utils/dateUtils';
-import { formatCurrency } from '@/utils/formatters';
+import { PRODUCT } from "@/constants/product"
+import { BORDER_RADIUS, COLORS, SHADOWS, SPACING } from "@/constants/theme"
+import { useAuth } from "@/hooks/useAuth"
+import { supabase } from "@/lib/supabase"
+import { Order } from "@/types/database.types"
+import { formatFullDate } from "@/utils/dateUtils"
+import { formatCurrency } from "@/utils/formatters"
+import { useLocalSearchParams, useRouter } from "expo-router"
+import { ChevronLeft } from "lucide-react-native"
+import React, { useEffect, useState } from "react"
+import { Alert, ScrollView, Text, TouchableOpacity, View } from "react-native"
 
 export default function OrderDetailScreen() {
-  const router = useRouter();
-  const { id } = useLocalSearchParams();
-  const { user } = useAuth();
-  const [order, setOrder] = useState<Order | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [markingReturned, setMarkingReturned] = useState(false);
+  const router = useRouter()
+  const { id } = useLocalSearchParams()
+  const { user } = useAuth()
+  const [order, setOrder] = useState<Order | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [markingReturned, setMarkingReturned] = useState(false)
 
   useEffect(() => {
-    fetchOrder();
-  }, [id]);
+    fetchOrder()
+  }, [id])
 
   const fetchOrder = async () => {
-    if (!user || !id) return;
+    if (!user || !id) return
 
     try {
       const { data, error } = await supabase
-        .from('orders')
-        .select('*')
-        .eq('id', id)
-        .eq('user_id', user.id)
-        .single();
+        .from("orders")
+        .select("*")
+        .eq("id", id)
+        .eq("user_id", user.id)
+        .single()
 
-      if (error) throw error;
-      setOrder(data);
+      if (error) throw error
+      setOrder(data)
     } catch (error) {
-      console.error('Error fetching order:', error);
-      Alert.alert('Error', 'Failed to load order details');
-      router.back();
+      console.error("Error fetching order:", error)
+      Alert.alert("Error", "Failed to load order details")
+      router.back()
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
   const handleMarkReturned = async () => {
-    if (!order) return;
+    if (!order) return
 
-    Alert.alert(
-      'Confirm Return',
-      'Have you returned the empty bottles?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Yes, Mark as Returned',
-          onPress: async () => {
-            setMarkingReturned(true);
-            try {
-              const { error } = await supabase
-                .from('orders')
-                .update({ bottle_returned: true })
-                .eq('id', order.id);
+    Alert.alert("Confirm Return", "Have you returned the empty bottles?", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Yes, Mark as Returned",
+        onPress: async () => {
+          setMarkingReturned(true)
+          try {
+            const { error } = await supabase
+              .from("orders")
+              .update({ bottle_returned: true })
+              .eq("id", order.id)
 
-              if (error) throw error;
+            if (error) throw error
 
-              setOrder({ ...order, bottle_returned: true });
-              Alert.alert('Success', 'Bottles marked as returned');
-            } catch (error) {
-              console.error('Error marking returned:', error);
-              Alert.alert('Error', 'Failed to update bottle status');
-            } finally {
-              setMarkingReturned(false);
-            }
-          },
+            setOrder({ ...order, bottle_returned: true })
+            Alert.alert("Success", "Bottles marked as returned")
+          } catch (error) {
+            console.error("Error marking returned:", error)
+            Alert.alert("Error", "Failed to update bottle status")
+          } finally {
+            setMarkingReturned(false)
+          }
         },
-      ]
-    );
-  };
+      },
+    ])
+  }
 
   if (loading || !order) {
     return (
-      <View style={{ flex: 1, backgroundColor: COLORS.background, justifyContent: 'center', alignItems: 'center' }}>
+      <View
+        style={{
+          flex: 1,
+          backgroundColor: COLORS.background,
+          justifyContent: "center",
+          alignItems: "center",
+        }}
+      >
         <Text style={{ color: COLORS.text.secondary }}>Loading...</Text>
       </View>
-    );
+    )
   }
 
   const getStatusColor = () => {
     switch (order.status) {
-      case 'delivered':
-        return { bg: '#E8F5E9', text: COLORS.accent };
-      case 'pending':
-        return { bg: '#FFF0D2', text: COLORS.primary };
-      case 'cancelled':
-        return { bg: '#FFE0E0', text: COLORS.error };
+      case "delivered":
+        return { bg: "#E8F5E9", text: COLORS.accent }
+      case "pending":
+        return { bg: "#FFF0D2", text: COLORS.primary }
+      case "cancelled":
+        return { bg: "#FFE0E0", text: COLORS.error }
       default:
-        return { bg: COLORS.border, text: COLORS.text.secondary };
+        return { bg: COLORS.border, text: COLORS.text.secondary }
     }
-  };
+  }
 
-  const statusColors = getStatusColor();
+  const statusColors = getStatusColor()
 
   return (
     <View style={{ flex: 1, backgroundColor: COLORS.background }}>
@@ -116,8 +113,8 @@ export default function OrderDetailScreen() {
           paddingHorizontal: SPACING.xxl,
           paddingTop: 56,
           paddingBottom: SPACING.xxxl,
-          flexDirection: 'row',
-          alignItems: 'center',
+          flexDirection: "row",
+          alignItems: "center",
         }}
       >
         <TouchableOpacity
@@ -137,14 +134,20 @@ export default function OrderDetailScreen() {
           >
             ORDER DETAILS
           </Text>
-          <Text style={{ color: COLORS.white, fontSize: 24, fontWeight: '700' }}>
+          <Text
+            style={{ color: COLORS.white, fontSize: 24, fontWeight: "700" }}
+          >
             #{order.id}
           </Text>
         </View>
       </View>
 
       <ScrollView
-        style={{ flex: 1, paddingHorizontal: SPACING.xxl, paddingTop: SPACING.xxl }}
+        style={{
+          flex: 1,
+          paddingHorizontal: SPACING.xxl,
+          paddingTop: SPACING.xxl,
+        }}
         showsVerticalScrollIndicator={false}
       >
         {/* Order Summary Card */}
@@ -159,14 +162,18 @@ export default function OrderDetailScreen() {
         >
           <View
             style={{
-              flexDirection: 'row',
-              justifyContent: 'space-between',
-              alignItems: 'center',
+              flexDirection: "row",
+              justifyContent: "space-between",
+              alignItems: "center",
               marginBottom: SPACING.xxl,
             }}
           >
             <Text
-              style={{ fontSize: 20, fontWeight: '700', color: COLORS.secondary }}
+              style={{
+                fontSize: 20,
+                fontWeight: "700",
+                color: COLORS.secondary,
+              }}
             >
               Order Summary
             </Text>
@@ -182,9 +189,9 @@ export default function OrderDetailScreen() {
                 style={{
                   color: statusColors.text,
                   fontSize: 12,
-                  fontWeight: '700',
+                  fontWeight: "700",
                   letterSpacing: 0.5,
-                  textTransform: 'uppercase',
+                  textTransform: "uppercase",
                 }}
               >
                 {order.status}
@@ -202,35 +209,42 @@ export default function OrderDetailScreen() {
           >
             <DetailRow label="Order Date" value={formatFullDate(order.date)} />
             <Divider />
-            <DetailRow label="Delivery Time" value={order.delivery_time || '06:30 AM'} />
+            <DetailRow
+              label="Delivery Time"
+              value={order.delivery_time || "06:30 AM"}
+            />
             <Divider />
             <DetailRow label="Product" value={PRODUCT.name} />
             <Divider />
             <DetailRow label="Quantity" value={`${order.quantity} Bottles`} />
             <Divider />
-            <DetailRow 
-              label="Amount Paid" 
+            <DetailRow
+              label="Amount Paid"
               value={formatCurrency(order.amount)}
               valueColor={COLORS.primary}
               valueWeight="700"
               valueFontSize={16}
             />
             <Divider />
-            <DetailRow 
-              label="Bottle Status" 
-              value={order.bottle_returned ? 'Returned' : 'Pending'}
-              valueColor={order.bottle_returned ? COLORS.accent : COLORS.primary}
+            <DetailRow
+              label="Bottle Status"
+              value={order.bottle_returned ? "Returned" : "Pending"}
+              valueColor={
+                order.bottle_returned ? COLORS.accent : COLORS.primary
+              }
             />
           </View>
 
           {/* Mark as Returned Button */}
-          {!order.bottle_returned && order.status === 'delivered' && (
+          {!order.bottle_returned && order.status === "delivered" && (
             <TouchableOpacity
               style={{
-                backgroundColor: markingReturned ? COLORS.text.secondary : COLORS.primary,
+                backgroundColor: markingReturned
+                  ? COLORS.text.secondary
+                  : COLORS.primary,
                 paddingVertical: 18,
                 borderRadius: BORDER_RADIUS.sm,
-                alignItems: 'center',
+                alignItems: "center",
                 marginTop: SPACING.xxl,
                 ...SHADOWS.primary,
               }}
@@ -240,11 +254,11 @@ export default function OrderDetailScreen() {
               <Text
                 style={{
                   color: COLORS.white,
-                  fontWeight: '700',
+                  fontWeight: "700",
                   fontSize: 16,
                 }}
               >
-                {markingReturned ? 'Updating...' : 'Mark as Returned'}
+                {markingReturned ? "Updating..." : "Mark as Returned"}
               </Text>
             </TouchableOpacity>
           )}
@@ -263,22 +277,22 @@ export default function OrderDetailScreen() {
           <Text
             style={{
               fontSize: 18,
-              fontWeight: '700',
+              fontWeight: "700",
               color: COLORS.secondary,
               marginBottom: 16,
             }}
           >
             Product Information
           </Text>
-          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <View style={{ flexDirection: "row", alignItems: "center" }}>
             <View
               style={{
                 width: 64,
                 height: 64,
                 borderRadius: BORDER_RADIUS.md,
-                backgroundColor: '#FFF0D2',
-                alignItems: 'center',
-                justifyContent: 'center',
+                backgroundColor: "#FFF0D2",
+                alignItems: "center",
+                justifyContent: "center",
                 marginRight: 16,
               }}
             >
@@ -288,7 +302,7 @@ export default function OrderDetailScreen() {
               <Text
                 style={{
                   fontSize: 16,
-                  fontWeight: '700',
+                  fontWeight: "700",
                   color: COLORS.secondary,
                   marginBottom: 4,
                 }}
@@ -303,28 +317,28 @@ export default function OrderDetailScreen() {
         </View>
       </ScrollView>
     </View>
-  );
+  )
 }
 
 // Helper Components
-function DetailRow({ 
-  label, 
-  value, 
+function DetailRow({
+  label,
+  value,
   valueColor = COLORS.secondary,
-  valueWeight = '600',
+  valueWeight = "600",
   valueFontSize = 14,
-}: { 
-  label: string; 
-  value: string;
-  valueColor?: string;
-  valueWeight?: string;
-  valueFontSize?: number;
+}: {
+  label: string
+  value: string
+  valueColor?: string
+  valueWeight?: string
+  valueFontSize?: number
 }) {
   return (
     <View
       style={{
-        flexDirection: 'row',
-        justifyContent: 'space-between',
+        flexDirection: "row",
+        justifyContent: "space-between",
         paddingVertical: 12,
       }}
     >
@@ -341,7 +355,7 @@ function DetailRow({
         {value}
       </Text>
     </View>
-  );
+  )
 }
 
 function Divider() {
@@ -349,9 +363,9 @@ function Divider() {
     <View
       style={{
         height: 1,
-        backgroundColor: '#E0E0E0',
+        backgroundColor: "#E0E0E0",
         marginVertical: 4,
       }}
     />
-  );
+  )
 }

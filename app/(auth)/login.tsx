@@ -1,3 +1,6 @@
+import Button from "@/components/ui/Button"
+import TextInput from "@/components/ui/TextInput"
+import { useAuth } from "@/hooks/useAuth"
 import React, { useEffect, useRef, useState } from "react"
 import {
   Alert,
@@ -11,9 +14,6 @@ import {
   View,
 } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
-import Button from "@/components/ui/Button"
-import TextInput from "@/components/ui/TextInput"
-import { useAuth } from "@/hooks/useAuth"
 
 export default function LoginScreen() {
   const [phoneNumber, setPhoneNumber] = useState("")

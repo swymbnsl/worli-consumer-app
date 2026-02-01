@@ -1,13 +1,13 @@
-import { Tabs } from "expo-router";
-import { Home, Package, ShoppingCart, User, Wallet } from "lucide-react-native";
-import { ActivityIndicator, Platform, View } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { COLORS } from "@/constants/theme";
-import { useAuth } from "@/hooks/useAuth";
+import { COLORS } from "@/constants/theme"
+import { useAuth } from "@/hooks/useAuth"
+import { Tabs } from "expo-router"
+import { Home, Package, ShoppingCart, User, Wallet } from "lucide-react-native"
+import { ActivityIndicator, Platform, View } from "react-native"
+import { useSafeAreaInsets } from "react-native-safe-area-context"
 
 export default function TabsLayout() {
-  const { isLoggedIn, loading } = useAuth();
-  const insets = useSafeAreaInsets();
+  const { isLoggedIn, loading } = useAuth()
+  const insets = useSafeAreaInsets()
 
   // Show loading state while checking auth
   if (loading) {
@@ -22,7 +22,7 @@ export default function TabsLayout() {
       >
         <ActivityIndicator size="large" color={COLORS.primary} />
       </View>
-    );
+    )
   }
 
   // Redirect to login if not authenticated
@@ -38,7 +38,8 @@ export default function TabsLayout() {
           backgroundColor: "#FFFFFF",
           borderTopWidth: 1,
           borderTopColor: "#F1F1F1",
-          paddingBottom: Platform.OS === "ios" ? 28 : Math.max(insets.bottom, 12),
+          paddingBottom:
+            Platform.OS === "ios" ? 28 : Math.max(insets.bottom, 12),
           paddingTop: 12,
           height: Platform.OS === "ios" ? 90 : 70 + Math.max(insets.bottom, 12),
           shadowColor: "#000",
@@ -162,5 +163,5 @@ export default function TabsLayout() {
         }}
       />
     </Tabs>
-  );
+  )
 }

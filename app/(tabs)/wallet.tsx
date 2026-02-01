@@ -1,32 +1,31 @@
-import React, { useState } from 'react';
-import {
-    RefreshControl,
-    ScrollView,
-    StatusBar
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import Header from '@/components/ui/Header';
-import RechargeModal from '@/components/wallet/RechargeModal';
-import SettingsModal from '@/components/wallet/SettingsModal';
-import TransactionList from '@/components/wallet/TransactionList';
-import WalletBalanceCard from '@/components/wallet/WalletBalanceCard';
-import WalletSettingsCard from '@/components/wallet/WalletSettingsCard';
-import { useWallet } from '@/hooks/useWallet';
+import Header from "@/components/ui/Header"
+import RechargeModal from "@/components/wallet/RechargeModal"
+import SettingsModal from "@/components/wallet/SettingsModal"
+import TransactionList from "@/components/wallet/TransactionList"
+import WalletBalanceCard from "@/components/wallet/WalletBalanceCard"
+import WalletSettingsCard from "@/components/wallet/WalletSettingsCard"
+import { useWallet } from "@/hooks/useWallet"
+import React, { useState } from "react"
+import { RefreshControl, ScrollView, StatusBar } from "react-native"
+import { SafeAreaView } from "react-native-safe-area-context"
 
 export default function WalletScreen() {
-  const { wallet, transactions, loading, refreshWallet } = useWallet();
-  const [rechargeModalVisible, setRechargeModalVisible] = useState(false);
-  const [settingsModalVisible, setSettingsModalVisible] = useState(false);
-  const [refreshing, setRefreshing] = useState(false);
+  const { wallet, transactions, loading, refreshWallet } = useWallet()
+  const [rechargeModalVisible, setRechargeModalVisible] = useState(false)
+  const [settingsModalVisible, setSettingsModalVisible] = useState(false)
+  const [refreshing, setRefreshing] = useState(false)
 
   const onRefresh = async () => {
-    setRefreshing(true);
-    await refreshWallet();
-    setRefreshing(false);
-  };
+    setRefreshing(true)
+    await refreshWallet()
+    setRefreshing(false)
+  }
 
   return (
-    <SafeAreaView className="flex-1 bg-neutral-lightCream" edges={['top', 'bottom']}>
+    <SafeAreaView
+      className="flex-1 bg-neutral-lightCream"
+      edges={["top", "bottom"]}
+    >
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
 
       <Header />
@@ -36,7 +35,11 @@ export default function WalletScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 100 }}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#101B53" />
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor="#101B53"
+          />
         }
       >
         {/* Wallet Balance Card */}
@@ -68,5 +71,5 @@ export default function WalletScreen() {
         wallet={wallet}
       />
     </SafeAreaView>
-  );
+  )
 }

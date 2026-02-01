@@ -1,5 +1,5 @@
+import { AnimatedViewProps } from "@/types/ui-components.types"
 import React from "react"
-import { ViewProps } from "react-native"
 import Animated, {
   FadeInDown,
   FadeInLeft,
@@ -10,23 +10,6 @@ import Animated, {
   SlideInRight,
   SlideInUp,
 } from "react-native-reanimated"
-
-type AnimationType =
-  | "fadeInUp"
-  | "fadeInDown"
-  | "fadeInLeft"
-  | "fadeInRight"
-  | "slideInUp"
-  | "slideInDown"
-  | "slideInLeft"
-  | "slideInRight"
-
-interface AnimatedViewProps extends ViewProps {
-  animation?: AnimationType
-  delay?: number
-  duration?: number
-  children: React.ReactNode
-}
 
 export default function AnimatedView({
   animation = "fadeInUp",

@@ -1,18 +1,13 @@
-import { useRouter } from 'expo-router';
-import { CheckCircle, ChevronLeft } from 'lucide-react-native';
-import React from 'react';
-import {
-    ScrollView,
-    Text,
-    TouchableOpacity,
-    View,
-} from 'react-native';
-import { PRODUCT } from '@/constants/product';
-import { BORDER_RADIUS, COLORS, SHADOWS, SPACING } from '@/constants/theme';
-import { formatCurrency } from '@/utils/formatters';
+import { PRODUCT } from "@/constants/product"
+import { BORDER_RADIUS, COLORS, SHADOWS, SPACING } from "@/constants/theme"
+import { formatCurrency } from "@/utils/formatters"
+import { useRouter } from "expo-router"
+import { CheckCircle, ChevronLeft } from "lucide-react-native"
+import React from "react"
+import { ScrollView, Text, TouchableOpacity, View } from "react-native"
 
 export default function ProductScreen() {
-  const router = useRouter();
+  const router = useRouter()
 
   return (
     <View style={{ flex: 1, backgroundColor: COLORS.background }}>
@@ -23,8 +18,8 @@ export default function ProductScreen() {
           paddingHorizontal: SPACING.xxl,
           paddingTop: 56,
           paddingBottom: SPACING.xxxl,
-          flexDirection: 'row',
-          alignItems: 'center',
+          flexDirection: "row",
+          alignItems: "center",
         }}
       >
         <TouchableOpacity
@@ -44,7 +39,9 @@ export default function ProductScreen() {
           >
             PRODUCT
           </Text>
-          <Text style={{ color: COLORS.white, fontSize: 24, fontWeight: '700' }}>
+          <Text
+            style={{ color: COLORS.white, fontSize: 24, fontWeight: "700" }}
+          >
             Details
           </Text>
         </View>
@@ -55,7 +52,7 @@ export default function ProductScreen() {
         <View
           style={{
             backgroundColor: COLORS.white,
-            alignItems: 'center',
+            alignItems: "center",
             paddingVertical: 60,
           }}
         >
@@ -64,9 +61,9 @@ export default function ProductScreen() {
               width: 200,
               height: 200,
               borderRadius: 60,
-              backgroundColor: '#FFF0D2',
-              alignItems: 'center',
-              justifyContent: 'center',
+              backgroundColor: "#FFF0D2",
+              alignItems: "center",
+              justifyContent: "center",
               ...SHADOWS.lg,
             }}
           >
@@ -86,20 +83,26 @@ export default function ProductScreen() {
           <Text
             style={{
               fontSize: 28,
-              fontWeight: '700',
+              fontWeight: "700",
               color: COLORS.secondary,
               marginBottom: 8,
             }}
           >
             {PRODUCT.name}
           </Text>
-          <Text style={{ fontSize: 16, color: COLORS.text.secondary, marginBottom: 20 }}>
+          <Text
+            style={{
+              fontSize: 16,
+              color: COLORS.text.secondary,
+              marginBottom: 20,
+            }}
+          >
             {PRODUCT.size}
           </Text>
           <Text
             style={{
               fontSize: 36,
-              fontWeight: '700',
+              fontWeight: "700",
               color: COLORS.primary,
               marginBottom: 28,
             }}
@@ -122,7 +125,7 @@ export default function ProductScreen() {
           <Text
             style={{
               fontSize: 18,
-              fontWeight: '700',
+              fontWeight: "700",
               color: COLORS.secondary,
               marginBottom: 20,
             }}
@@ -133,8 +136,8 @@ export default function ProductScreen() {
             <View
               key={idx}
               style={{
-                flexDirection: 'row',
-                alignItems: 'center',
+                flexDirection: "row",
+                alignItems: "center",
                 marginBottom: 16,
               }}
             >
@@ -143,16 +146,20 @@ export default function ProductScreen() {
                   width: 32,
                   height: 32,
                   borderRadius: BORDER_RADIUS.sm,
-                  backgroundColor: '#E8F5E9',
-                  alignItems: 'center',
-                  justifyContent: 'center',
+                  backgroundColor: "#E8F5E9",
+                  alignItems: "center",
+                  justifyContent: "center",
                   marginRight: 12,
                 }}
               >
                 <CheckCircle size={18} color={COLORS.accent} />
               </View>
               <Text
-                style={{ fontSize: 15, color: COLORS.secondary, fontWeight: '500' }}
+                style={{
+                  fontSize: 15,
+                  color: COLORS.secondary,
+                  fontWeight: "500",
+                }}
               >
                 {feature}
               </Text>
@@ -175,7 +182,7 @@ export default function ProductScreen() {
           <Text
             style={{
               fontSize: 18,
-              fontWeight: '700',
+              fontWeight: "700",
               color: COLORS.secondary,
               marginBottom: 16,
             }}
@@ -193,18 +200,18 @@ export default function ProductScreen() {
           </Text>
 
           {[
-            { label: 'Energy', value: '66 kcal' },
-            { label: 'Protein', value: '3.2g' },
-            { label: 'Fat', value: '3.5g' },
-            { label: 'Carbohydrates', value: '4.8g' },
-            { label: 'Calcium', value: '120mg' },
-            { label: 'Vitamin D', value: '0.1µg' },
+            { label: "Energy", value: "66 kcal" },
+            { label: "Protein", value: "3.2g" },
+            { label: "Fat", value: "3.5g" },
+            { label: "Carbohydrates", value: "4.8g" },
+            { label: "Calcium", value: "120mg" },
+            { label: "Vitamin D", value: "0.1µg" },
           ].map((nutrient, idx, arr) => (
             <View key={idx}>
               <View
                 style={{
-                  flexDirection: 'row',
-                  justifyContent: 'space-between',
+                  flexDirection: "row",
+                  justifyContent: "space-between",
                   paddingVertical: 12,
                 }}
               >
@@ -213,7 +220,7 @@ export default function ProductScreen() {
                 </Text>
                 <Text
                   style={{
-                    fontWeight: '600',
+                    fontWeight: "600",
                     color: COLORS.secondary,
                     fontSize: 14,
                   }}
@@ -249,7 +256,7 @@ export default function ProductScreen() {
           <Text
             style={{
               fontSize: 18,
-              fontWeight: '700',
+              fontWeight: "700",
               color: COLORS.secondary,
               marginBottom: 16,
             }}
@@ -259,20 +266,22 @@ export default function ProductScreen() {
 
           {[
             {
-              title: 'Fresh Daily Delivery',
-              description: 'Delivered fresh every morning between 6:00 AM - 8:00 AM',
+              title: "Fresh Daily Delivery",
+              description:
+                "Delivered fresh every morning between 6:00 AM - 8:00 AM",
             },
             {
-              title: 'Glass Bottle Packaging',
-              description: 'Eco-friendly glass bottles that preserve freshness and taste',
+              title: "Glass Bottle Packaging",
+              description:
+                "Eco-friendly glass bottles that preserve freshness and taste",
             },
             {
-              title: 'Easy Returns',
-              description: 'Return empty bottles during your next delivery',
+              title: "Easy Returns",
+              description: "Return empty bottles during your next delivery",
             },
             {
-              title: 'Quality Guaranteed',
-              description: '100% satisfaction guarantee or full refund',
+              title: "Quality Guaranteed",
+              description: "100% satisfaction guarantee or full refund",
             },
           ].map((info, idx) => (
             <View
@@ -284,7 +293,7 @@ export default function ProductScreen() {
               <Text
                 style={{
                   fontSize: 15,
-                  fontWeight: '600',
+                  fontWeight: "600",
                   color: COLORS.secondary,
                   marginBottom: 4,
                 }}
@@ -305,19 +314,24 @@ export default function ProductScreen() {
         </View>
 
         {/* Add to Cart Button */}
-        <View style={{ paddingHorizontal: SPACING.xxl, paddingVertical: SPACING.xxxl }}>
+        <View
+          style={{
+            paddingHorizontal: SPACING.xxl,
+            paddingVertical: SPACING.xxxl,
+          }}
+        >
           <TouchableOpacity
             style={{
               backgroundColor: COLORS.primary,
               borderRadius: BORDER_RADIUS.sm,
               paddingVertical: 20,
-              alignItems: 'center',
+              alignItems: "center",
               ...SHADOWS.primary,
             }}
-            onPress={() => router.push('/cart')}
+            onPress={() => router.push("/cart")}
           >
             <Text
-              style={{ color: COLORS.white, fontWeight: '700', fontSize: 18 }}
+              style={{ color: COLORS.white, fontWeight: "700", fontSize: 18 }}
             >
               Add to Cart
             </Text>
@@ -325,5 +339,5 @@ export default function ProductScreen() {
         </View>
       </ScrollView>
     </View>
-  );
+  )
 }

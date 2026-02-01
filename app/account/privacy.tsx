@@ -1,8 +1,8 @@
+import PageHeader from "@/components/ui/PageHeader"
 import { useRouter } from "expo-router"
 import React from "react"
 import { ScrollView, StatusBar, Text, View } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
-import PageHeader from "@/components/ui/PageHeader"
 
 export default function PrivacyScreen() {
   const router = useRouter()

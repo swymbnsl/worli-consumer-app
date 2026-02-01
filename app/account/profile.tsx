@@ -1,11 +1,11 @@
-import { useRouter } from "expo-router"
-import React, { useState } from "react"
-import { Alert, ScrollView, StatusBar, View } from "react-native"
-import { SafeAreaView } from "react-native-safe-area-context"
 import Button from "@/components/ui/Button"
 import PageHeader from "@/components/ui/PageHeader"
 import TextInput from "@/components/ui/TextInput"
 import { useAuth } from "@/hooks/useAuth"
+import { useRouter } from "expo-router"
+import React, { useState } from "react"
+import { Alert, ScrollView, StatusBar, View } from "react-native"
+import { SafeAreaView } from "react-native-safe-area-context"
 
 export default function ProfileScreen() {
   const router = useRouter()

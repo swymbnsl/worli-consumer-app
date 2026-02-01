@@ -1,96 +1,105 @@
-import React, { useEffect, useState } from 'react';
+import EditModal from "@/components/subscription/EditModal"
+import PausedDatesList from "@/components/subscription/PausedDatesList"
+import PauseModal from "@/components/subscription/PauseModal"
+import SubscriptionCard from "@/components/subscription/SubscriptionCard"
+import Header from "@/components/ui/Header"
+import { useAuth } from "@/hooks/useAuth"
+import { supabase } from "@/lib/supabase"
+import { Subscription } from "@/types/database.types"
+import React, { useEffect, useState } from "react"
 import {
-    Alert,
-    RefreshControl,
-    ScrollView,
-    StatusBar,
-    Text,
-    TouchableOpacity,
-    View,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import EditModal from '@/components/subscription/EditModal';
-import PausedDatesList from '@/components/subscription/PausedDatesList';
-import PauseModal from '@/components/subscription/PauseModal';
-import SubscriptionCard from '@/components/subscription/SubscriptionCard';
-import Header from '@/components/ui/Header';
-import { useAuth } from '@/hooks/useAuth';
-import { supabase } from '@/lib/supabase';
-import { Subscription } from '@/types/database.types';
+  Alert,
+  RefreshControl,
+  ScrollView,
+  StatusBar,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native"
+import { SafeAreaView } from "react-native-safe-area-context"
 
 export default function SubscriptionScreen() {
-  const { user } = useAuth();
-  const [subscription, setSubscription] = useState<Subscription | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [pauseModalVisible, setPauseModalVisible] = useState(false);
-  const [editModalVisible, setEditModalVisible] = useState(false);
+  const { user } = useAuth()
+  const [subscription, setSubscription] = useState<Subscription | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [refreshing, setRefreshing] = useState(false)
+  const [pauseModalVisible, setPauseModalVisible] = useState(false)
+  const [editModalVisible, setEditModalVisible] = useState(false)
 
   useEffect(() => {
-    fetchSubscription();
-  }, [user]);
+    fetchSubscription()
+  }, [user])
 
   const fetchSubscription = async () => {
-    if (!user) return;
+    if (!user) return
 
     try {
       const { data, error } = await supabase
-        .from('subscriptions')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('status', 'active')
-        .single();
+        .from("subscriptions")
+        .select("*")
+        .eq("user_id", user.id)
+        .eq("status", "active")
+        .single()
 
-      if (error && error.code !== 'PGRST116') throw error;
-      setSubscription(data);
+      if (error && error.code !== "PGRST116") throw error
+      setSubscription(data)
     } catch (error) {
-      console.error('Error fetching subscription:', error);
+      console.error("Error fetching subscription:", error)
     } finally {
-      setLoading(false);
-      setRefreshing(false);
+      setLoading(false)
+      setRefreshing(false)
     }
-  };
+  }
 
   const onRefresh = () => {
-    setRefreshing(true);
-    fetchSubscription();
-  };
+    setRefreshing(true)
+    fetchSubscription()
+  }
 
   const handleCancelSubscription = () => {
     Alert.alert(
-      'Cancel Subscription',
-      'Are you sure you want to cancel your subscription? This action cannot be undone.',
+      "Cancel Subscription",
+      "Are you sure you want to cancel your subscription? This action cannot be undone.",
       [
-        { text: 'Keep Subscription', style: 'cancel' },
+        { text: "Keep Subscription", style: "cancel" },
         {
-          text: 'Cancel Subscription',
-          style: 'destructive',
+          text: "Cancel Subscription",
+          style: "destructive",
           onPress: async () => {
-            if (!subscription) return;
-            
+            if (!subscription) return
+
             try {
               const { error } = await supabase
-                .from('subscriptions')
-                .update({ status: 'cancelled' })
-                .eq('id', subscription.id);
+                .from("subscriptions")
+                .update({ status: "cancelled" })
+                .eq("id", subscription.id)
 
-              if (error) throw error;
+              if (error) throw error
 
-              Alert.alert('Subscription Cancelled', 'Your subscription has been cancelled successfully.');
-              fetchSubscription();
+              Alert.alert(
+                "Subscription Cancelled",
+                "Your subscription has been cancelled successfully.",
+              )
+              fetchSubscription()
             } catch (error) {
-              console.error('Error cancelling subscription:', error);
-              Alert.alert('Error', 'Failed to cancel subscription. Please try again.');
+              console.error("Error cancelling subscription:", error)
+              Alert.alert(
+                "Error",
+                "Failed to cancel subscription. Please try again.",
+              )
             }
           },
         },
-      ]
-    );
-  };
+      ],
+    )
+  }
 
   if (!subscription && !loading) {
     return (
-      <SafeAreaView className="flex-1 bg-neutral-lightCream" edges={['top', 'bottom']}>
+      <SafeAreaView
+        className="flex-1 bg-neutral-lightCream"
+        edges={["top", "bottom"]}
+      >
         <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
 
         <Header />
@@ -106,11 +115,14 @@ export default function SubscriptionScreen() {
           </Text>
         </View>
       </SafeAreaView>
-    );
+    )
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-neutral-lightCream" edges={['top', 'bottom']}>
+    <SafeAreaView
+      className="flex-1 bg-neutral-lightCream"
+      edges={["top", "bottom"]}
+    >
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
 
       <Header />
@@ -120,7 +132,11 @@ export default function SubscriptionScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 100 }}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#101B53" />
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor="#101B53"
+          />
         }
       >
         {/* Active Subscription Card */}
@@ -133,13 +149,15 @@ export default function SubscriptionScreen() {
         )}
 
         {/* Paused Dates List */}
-        {subscription && subscription.paused_dates && subscription.paused_dates.length > 0 && (
-          <PausedDatesList
-            pausedDates={subscription.paused_dates}
-            subscriptionId={subscription.id}
-            onUpdate={fetchSubscription}
-          />
-        )}
+        {subscription &&
+          subscription.paused_dates &&
+          subscription.paused_dates.length > 0 && (
+            <PausedDatesList
+              pausedDates={subscription.paused_dates}
+              subscriptionId={subscription.id}
+              onUpdate={fetchSubscription}
+            />
+          )}
 
         {/* Cancel Subscription Button */}
         <TouchableOpacity
@@ -173,5 +191,5 @@ export default function SubscriptionScreen() {
         />
       )}
     </SafeAreaView>
-  );
+  )
 }
