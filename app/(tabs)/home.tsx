@@ -11,13 +11,13 @@ import {
   View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import BottleReturnAlert from '../../components/home/BottleReturnAlert';
-import DeliveryCalendar from '../../components/home/DeliveryCalendar';
-import PremiumCard from '../../components/home/PremiumCard';
-import Header from '../../components/ui/Header';
-import { useAuth } from '../../hooks/useAuth';
-import { supabase } from '../../lib/supabase';
-import { Order, Subscription } from '../../types/database.types';
+import BottleReturnAlert from '@/components/home/BottleReturnAlert';
+import DeliveryCalendar from '@/components/home/DeliveryCalendar';
+import PremiumCard from '@/components/home/PremiumCard';
+import Header from '@/components/ui/Header';
+import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/lib/supabase';
+import { Order, Subscription } from '@/types/database.types';
 
 // Mock Categories Data
 const CATEGORIES = [

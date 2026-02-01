@@ -1,8 +1,8 @@
 
 import React from 'react';
 import { ScrollView, Text, View } from 'react-native';
-import { Order, Subscription } from '../../types/database.types';
-import { getDaysArray } from '../../utils/dateUtils';
+import { Order, Subscription } from '@/types/database.types';
+import { getDaysArray } from '@/utils/dateUtils';
 
 interface DeliveryCalendarProps {
   orders: Order[];

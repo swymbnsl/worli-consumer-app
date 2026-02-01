@@ -5,13 +5,13 @@ import {
     StatusBar
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import Header from '../../components/ui/Header';
-import RechargeModal from '../../components/wallet/RechargeModal';
-import SettingsModal from '../../components/wallet/SettingsModal';
-import TransactionList from '../../components/wallet/TransactionList';
-import WalletBalanceCard from '../../components/wallet/WalletBalanceCard';
-import WalletSettingsCard from '../../components/wallet/WalletSettingsCard';
-import { useWallet } from '../../hooks/useWallet';
+import Header from '@/components/ui/Header';
+import RechargeModal from '@/components/wallet/RechargeModal';
+import SettingsModal from '@/components/wallet/SettingsModal';
+import TransactionList from '@/components/wallet/TransactionList';
+import WalletBalanceCard from '@/components/wallet/WalletBalanceCard';
+import WalletSettingsCard from '@/components/wallet/WalletSettingsCard';
+import { useWallet } from '@/hooks/useWallet';
 
 export default function WalletScreen() {
   const { wallet, transactions, loading, refreshWallet } = useWallet();

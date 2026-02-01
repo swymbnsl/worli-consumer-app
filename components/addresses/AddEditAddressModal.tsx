@@ -10,11 +10,11 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
-import { BORDER_RADIUS, COLORS, SPACING } from '../../constants/theme';
-import { useAuth } from '../../hooks/useAuth';
-import { supabase } from '../../lib/supabase';
-import { Address } from '../../types/database.types';
-import { validatePincode } from '../../utils/validators';
+import { BORDER_RADIUS, COLORS, SPACING } from '@/constants/theme';
+import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/lib/supabase';
+import { Address } from '@/types/database.types';
+import { validatePincode } from '@/utils/validators';
 
 interface AddEditAddressModalProps {
   visible: boolean;

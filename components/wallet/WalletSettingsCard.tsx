@@ -1,8 +1,8 @@
 import { Settings } from 'lucide-react-native';
 import React from 'react';
 import { Text, TouchableOpacity, View } from 'react-native';
-import { Wallet } from '../../types/database.types';
-import { formatCurrency } from '../../utils/formatters';
+import { Wallet } from '@/types/database.types';
+import { formatCurrency } from '@/utils/formatters';
 
 interface WalletSettingsCardProps {
   wallet: Wallet | null;

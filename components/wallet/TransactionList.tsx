@@ -1,9 +1,9 @@
 import { ArrowDownLeft, ArrowUpRight } from 'lucide-react-native';
 import React from 'react';
 import { Text, View } from 'react-native';
-import { Transaction } from '../../types/database.types';
-import { formatFullDate } from '../../utils/dateUtils';
-import { formatCurrency } from '../../utils/formatters';
+import { Transaction } from '@/types/database.types';
+import { formatFullDate } from '@/utils/dateUtils';
+import { formatCurrency } from '@/utils/formatters';
 
 interface TransactionListProps {
   transactions: Transaction[];

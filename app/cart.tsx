@@ -8,16 +8,16 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import DatePickerModal from '../components/cart/DatePickerModal';
-import { PRODUCT } from '../constants/product';
-import { BORDER_RADIUS, COLORS, SHADOWS, SPACING } from '../constants/theme';
-import { useAuth } from '../hooks/useAuth';
-import { useCart } from '../hooks/useCart';
-import { useWallet } from '../hooks/useWallet';
-import { supabase } from '../lib/supabase';
-import { Address } from '../types/database.types';
-import { formatFullDate } from '../utils/dateUtils';
-import { formatCurrency } from '../utils/formatters';
+import DatePickerModal from '@/components/cart/DatePickerModal';
+import { PRODUCT } from '@/constants/product';
+import { BORDER_RADIUS, COLORS, SHADOWS, SPACING } from '@/constants/theme';
+import { useAuth } from '@/hooks/useAuth';
+import { useCart } from '@/hooks/useCart';
+import { useWallet } from '@/hooks/useWallet';
+import { supabase } from '@/lib/supabase';
+import { Address } from '@/types/database.types';
+import { formatFullDate } from '@/utils/dateUtils';
+import { formatCurrency } from '@/utils/formatters';
 
 export default function CartScreen() {
   const router = useRouter();

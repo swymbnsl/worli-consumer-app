@@ -9,14 +9,14 @@ import {
     View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import EditModal from '../../components/subscription/EditModal';
-import PausedDatesList from '../../components/subscription/PausedDatesList';
-import PauseModal from '../../components/subscription/PauseModal';
-import SubscriptionCard from '../../components/subscription/SubscriptionCard';
-import Header from '../../components/ui/Header';
-import { useAuth } from '../../hooks/useAuth';
-import { supabase } from '../../lib/supabase';
-import { Subscription } from '../../types/database.types';
+import EditModal from '@/components/subscription/EditModal';
+import PausedDatesList from '@/components/subscription/PausedDatesList';
+import PauseModal from '@/components/subscription/PauseModal';
+import SubscriptionCard from '@/components/subscription/SubscriptionCard';
+import Header from '@/components/ui/Header';
+import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/lib/supabase';
+import { Subscription } from '@/types/database.types';
 
 export default function SubscriptionScreen() {
   const { user } = useAuth();

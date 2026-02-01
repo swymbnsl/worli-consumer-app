@@ -3,7 +3,7 @@ import { CheckCircle, ChevronLeft } from 'lucide-react-native';
 import React from 'react';
 import { StatusBar, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useAuth } from '../../hooks/useAuth';
+import { useAuth } from '@/hooks/useAuth';
 
 export default function LanguageScreen() {
   const router = useRouter();

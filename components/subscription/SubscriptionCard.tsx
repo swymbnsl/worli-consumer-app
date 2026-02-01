@@ -1,10 +1,10 @@
 import React from 'react';
 import { Text, TouchableOpacity, View } from 'react-native';
-import { PRODUCT } from '../../constants/product';
-import { BORDER_RADIUS, COLORS, SHADOWS, SPACING } from '../../constants/theme';
-import { Subscription } from '../../types/database.types';
-import { formatDate } from '../../utils/dateUtils';
-import { formatCurrency } from '../../utils/formatters';
+import { PRODUCT } from '@/constants/product';
+import { BORDER_RADIUS, COLORS, SHADOWS, SPACING } from '@/constants/theme';
+import { Subscription } from '@/types/database.types';
+import { formatDate } from '@/utils/dateUtils';
+import { formatCurrency } from '@/utils/formatters';
 
 interface SubscriptionCardProps {
   subscription: Subscription;

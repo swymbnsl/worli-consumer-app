@@ -1,7 +1,7 @@
 import { Session } from '@supabase/supabase-js';
 import React, { createContext, useEffect, useState } from 'react';
-import { supabase } from '../lib/supabase';
-import { User } from '../types/database.types';
+import { supabase } from '@/lib/supabase';
+import { User } from '@/types/database.types';
 
 const DEV_MODE = process.env.EXPO_PUBLIC_DEV_MODE === 'true';
 

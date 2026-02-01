@@ -7,8 +7,8 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
-import { BORDER_RADIUS, COLORS, SPACING } from '../../constants/theme';
-import { formatDate, getDaysArray } from '../../utils/dateUtils';
+import { BORDER_RADIUS, COLORS, SPACING } from '@/constants/theme';
+import { formatDate, getDaysArray } from '@/utils/dateUtils';
 
 interface DatePickerModalProps {
   visible: boolean;

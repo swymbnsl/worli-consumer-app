@@ -2,8 +2,8 @@ import { Tabs } from "expo-router";
 import { Home, Package, ShoppingCart, User, Wallet } from "lucide-react-native";
 import { ActivityIndicator, Platform, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { COLORS } from "../../constants/theme";
-import { useAuth } from "../../hooks/useAuth";
+import { COLORS } from "@/constants/theme";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function TabsLayout() {
   const { isLoggedIn, loading } = useAuth();

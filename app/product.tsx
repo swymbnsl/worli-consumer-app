@@ -7,9 +7,9 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
-import { PRODUCT } from '../constants/product';
-import { BORDER_RADIUS, COLORS, SHADOWS, SPACING } from '../constants/theme';
-import { formatCurrency } from '../utils/formatters';
+import { PRODUCT } from '@/constants/product';
+import { BORDER_RADIUS, COLORS, SHADOWS, SPACING } from '@/constants/theme';
+import { formatCurrency } from '@/utils/formatters';
 
 export default function ProductScreen() {
   const router = useRouter();

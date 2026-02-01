@@ -1,8 +1,8 @@
 
 import React from 'react';
 import { Text, TouchableOpacity, View } from 'react-native';
-import { BORDER_RADIUS, COLORS, SHADOWS, SPACING } from '../../constants/theme';
-import { Address } from '../../types/database.types';
+import { BORDER_RADIUS, COLORS, SHADOWS, SPACING } from '@/constants/theme';
+import { Address } from '@/types/database.types';
 
 interface AddressCardProps {
   address: Address;

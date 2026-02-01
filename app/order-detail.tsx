@@ -8,13 +8,13 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
-import { PRODUCT } from '../constants/product';
-import { BORDER_RADIUS, COLORS, SHADOWS, SPACING } from '../constants/theme';
-import { useAuth } from '../hooks/useAuth';
-import { supabase } from '../lib/supabase';
-import { Order } from '../types/database.types';
-import { formatFullDate } from '../utils/dateUtils';
-import { formatCurrency } from '../utils/formatters';
+import { PRODUCT } from '@/constants/product';
+import { BORDER_RADIUS, COLORS, SHADOWS, SPACING } from '@/constants/theme';
+import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/lib/supabase';
+import { Order } from '@/types/database.types';
+import { formatFullDate } from '@/utils/dateUtils';
+import { formatCurrency } from '@/utils/formatters';
 
 export default function OrderDetailScreen() {
   const router = useRouter();

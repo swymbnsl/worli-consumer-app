@@ -4,7 +4,7 @@ import { ChevronLeft, Copy, Gift, Share2, Users } from 'lucide-react-native';
 import React from 'react';
 import { Alert, ScrollView, Share, StatusBar, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useAuth } from '../../hooks/useAuth';
+import { useAuth } from '@/hooks/useAuth';
 
 export default function ReferScreen() {
   const router = useRouter();

@@ -7,9 +7,9 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
-import { BORDER_RADIUS, COLORS, SPACING } from '../../constants/theme';
-import { useWallet } from '../../hooks/useWallet';
-import { formatCurrency } from '../../utils/formatters';
+import { BORDER_RADIUS, COLORS, SPACING } from '@/constants/theme';
+import { useWallet } from '@/hooks/useWallet';
+import { formatCurrency } from '@/utils/formatters';
 
 interface RechargeModalProps {
   visible: boolean;

@@ -8,9 +8,9 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { BORDER_RADIUS, COLORS, SPACING } from '../../constants/theme';
-import { useWallet } from '../../hooks/useWallet';
-import { Wallet } from '../../types/database.types';
+import { BORDER_RADIUS, COLORS, SPACING } from '@/constants/theme';
+import { useWallet } from '@/hooks/useWallet';
+import { Wallet } from '@/types/database.types';
 
 interface SettingsModalProps {
   visible: boolean;

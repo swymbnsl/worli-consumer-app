@@ -1,65 +1,68 @@
-import { useRouter } from 'expo-router';
-import { ChevronLeft } from 'lucide-react-native';
-import React from 'react';
-import { ScrollView, StatusBar, Text, TouchableOpacity, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useRouter } from "expo-router"
+import React from "react"
+import { ScrollView, StatusBar, Text, View } from "react-native"
+import { SafeAreaView } from "react-native-safe-area-context"
+import PageHeader from "@/components/ui/PageHeader"
 
 export default function PrivacyScreen() {
-  const router = useRouter();
+  const router = useRouter()
 
   const sections = [
     {
-      title: 'Information We Collect',
-      content: 'We collect information you provide directly to us, including your name, phone number, email address, delivery addresses, and payment information.',
+      title: "Information We Collect",
+      content:
+        "We collect information you provide directly to us, including your name, phone number, email address, delivery addresses, and payment information.",
     },
     {
-      title: 'How We Use Your Information',
-      content: 'We use the information we collect to provide, maintain, and improve our services, process transactions, send notifications about your orders, and respond to your comments and questions.',
+      title: "How We Use Your Information",
+      content:
+        "We use the information we collect to provide, maintain, and improve our services, process transactions, send notifications about your orders, and respond to your comments and questions.",
     },
     {
-      title: 'Information Sharing',
-      content: 'We do not share your personal information with third parties except as necessary to provide our services (e.g., delivery partners) or as required by law.',
+      title: "Information Sharing",
+      content:
+        "We do not share your personal information with third parties except as necessary to provide our services (e.g., delivery partners) or as required by law.",
     },
     {
-      title: 'Data Security',
-      content: 'We implement appropriate technical and organizational measures to protect your personal information against unauthorized access, alteration, disclosure, or destruction.',
+      title: "Data Security",
+      content:
+        "We implement appropriate technical and organizational measures to protect your personal information against unauthorized access, alteration, disclosure, or destruction.",
     },
     {
-      title: 'Your Rights',
-      content: 'You have the right to access, update, or delete your personal information at any time through the app settings. You can also request a copy of your data.',
+      title: "Your Rights",
+      content:
+        "You have the right to access, update, or delete your personal information at any time through the app settings. You can also request a copy of your data.",
     },
     {
-      title: 'Cookies and Tracking',
-      content: 'We use cookies and similar tracking technologies to track activity on our service and store certain information to improve user experience.',
+      title: "Cookies and Tracking",
+      content:
+        "We use cookies and similar tracking technologies to track activity on our service and store certain information to improve user experience.",
     },
     {
-      title: 'Children\'s Privacy',
-      content: 'Our service is not intended for children under 18. We do not knowingly collect personal information from children under 18.',
+      title: "Children's Privacy",
+      content:
+        "Our service is not intended for children under 18. We do not knowingly collect personal information from children under 18.",
     },
     {
-      title: 'Changes to Privacy Policy',
-      content: 'We may update our Privacy Policy from time to time. We will notify you of any changes by posting the new Privacy Policy on this page.',
+      title: "Changes to Privacy Policy",
+      content:
+        "We may update our Privacy Policy from time to time. We will notify you of any changes by posting the new Privacy Policy on this page.",
     },
-  ];
+  ]
 
   return (
-    <SafeAreaView className="flex-1 bg-neutral-lightCream" edges={['top', 'bottom']}>
-      <StatusBar barStyle="dark-content" backgroundColor="#F5F5F0" />
+    <SafeAreaView
+      className="flex-1 bg-neutral-lightCream"
+      edges={["top", "bottom"]}
+    >
+      <StatusBar barStyle="light-content" backgroundColor="#101B53" />
 
       {/* Header */}
-      <View className="bg-primary-navy px-6 pt-10 pb-6 flex-row items-center">
-        <TouchableOpacity onPress={() => router.back()} className="mr-4 active:opacity-70">
-          <ChevronLeft size={24} color="#FFFFFF" />
-        </TouchableOpacity>
-        <View>
-          <Text className="font-comfortaa text-xs text-primary-cream uppercase tracking-widest mb-1">
-            Legal
-          </Text>
-          <Text className="font-sofia-bold text-2xl text-white">
-            Privacy Policy
-          </Text>
-        </View>
-      </View>
+      <PageHeader
+        title="Privacy Policy"
+        subtitle="Legal"
+        showBackButton={true}
+      />
 
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
         <View className="px-6 py-6">
@@ -85,6 +88,5 @@ export default function PrivacyScreen() {
         </View>
       </ScrollView>
     </SafeAreaView>
-  );
+  )
 }
-

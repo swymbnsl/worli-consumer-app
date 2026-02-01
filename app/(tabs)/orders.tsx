@@ -8,11 +8,11 @@ import {
     View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import OrderCard from '../../components/orders/OrderCard';
-import Header from '../../components/ui/Header';
-import { useAuth } from '../../hooks/useAuth';
-import { supabase } from '../../lib/supabase';
-import { Order } from '../../types/database.types';
+import OrderCard from '@/components/orders/OrderCard';
+import Header from '@/components/ui/Header';
+import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/lib/supabase';
+import { Order } from '@/types/database.types';
 
 export default function OrdersScreen() {
   const router = useRouter();

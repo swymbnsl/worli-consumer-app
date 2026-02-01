@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { supabase } from '../lib/supabase';
-import { Transaction, Wallet } from '../types/database.types';
+import { supabase } from '@/lib/supabase';
+import { Transaction, Wallet } from '@/types/database.types';
 import { AuthContext } from './AuthContext';
 
 interface WalletContextType {

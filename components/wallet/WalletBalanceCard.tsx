@@ -1,7 +1,7 @@
 import { Plus } from 'lucide-react-native';
 import React from 'react';
 import { Text, TouchableOpacity, View } from 'react-native';
-import { formatCurrency } from '../../utils/formatters';
+import { formatCurrency } from '@/utils/formatters';
 
 interface WalletBalanceCardProps {
   balance: number;

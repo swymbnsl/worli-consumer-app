@@ -7,11 +7,11 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { PRODUCT } from '../../constants/product';
-import { BORDER_RADIUS, COLORS, SHADOWS, SPACING } from '../../constants/theme';
-import { supabase } from '../../lib/supabase';
-import { Subscription } from '../../types/database.types';
-import { formatCurrency } from '../../utils/formatters';
+import { PRODUCT } from '@/constants/product';
+import { BORDER_RADIUS, COLORS, SHADOWS, SPACING } from '@/constants/theme';
+import { supabase } from '@/lib/supabase';
+import { Subscription } from '@/types/database.types';
+import { formatCurrency } from '@/utils/formatters';
 
 interface EditModalProps {
   visible: boolean;

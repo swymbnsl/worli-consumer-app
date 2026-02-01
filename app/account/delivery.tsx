@@ -2,8 +2,8 @@ import { useRouter } from 'expo-router';
 import { CheckCircle, ChevronLeft } from 'lucide-react-native';
 import React from 'react';
 import { Text, TouchableOpacity, View } from 'react-native';
-import { BORDER_RADIUS, COLORS, SHADOWS, SPACING } from '../../constants/theme';
-import { useAuth } from '../../hooks/useAuth';
+import { BORDER_RADIUS, COLORS, SHADOWS, SPACING } from '@/constants/theme';
+import { useAuth } from '@/hooks/useAuth';
 
 export default function DeliveryPreferencesScreen() {
   const router = useRouter();

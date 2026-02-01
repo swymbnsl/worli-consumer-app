@@ -1,117 +1,126 @@
-
-import { Phone } from 'lucide-react-native';
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react"
 import {
-    Alert,
-    KeyboardAvoidingView,
-    Platform,
-    ScrollView,
-    StatusBar,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
-} from "react-native";
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { useAuth } from "../../hooks/useAuth";
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  TextInput as RNTextInput,
+  ScrollView,
+  StatusBar,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native"
+import { SafeAreaView } from "react-native-safe-area-context"
+import Button from "@/components/ui/Button"
+import TextInput from "@/components/ui/TextInput"
+import { useAuth } from "@/hooks/useAuth"
 
 export default function LoginScreen() {
-  const [phoneNumber, setPhoneNumber] = useState("");
-  const [otp, setOtp] = useState("");
-  const [otpSent, setOtpSent] = useState(false);
-  const [loading, setLoading] = useState(false);
-  
-  const { login, sendOTP } = useAuth();
+  const [phoneNumber, setPhoneNumber] = useState("")
+  const [otp, setOtp] = useState("")
+  const [otpSent, setOtpSent] = useState(false)
+  const [loading, setLoading] = useState(false)
+
+  const { login, sendOTP } = useAuth()
 
   // Create refs for OTP inputs
-  const otpRefs = useRef<Array<TextInput | null>>([]);
+  const otpRefs = useRef<Array<RNTextInput | null>>([])
 
   // Focus first OTP input when OTP screen is shown
   useEffect(() => {
     if (otpSent && otpRefs.current[0]) {
-      setTimeout(() => otpRefs.current[0]?.focus(), 100);
+      setTimeout(() => otpRefs.current[0]?.focus(), 100)
     }
-  }, [otpSent]);
+  }, [otpSent])
 
   const handleSendOTP = async () => {
     if (phoneNumber.length !== 10) {
-      Alert.alert("Invalid Phone", "Please enter a valid 10-digit phone number");
-      return;
+      Alert.alert("Invalid Phone", "Please enter a valid 10-digit phone number")
+      return
     }
 
-    setLoading(true);
+    setLoading(true)
     try {
-      const fullPhone = `+91${phoneNumber}`;
-      const success = await sendOTP(fullPhone);
-      
+      const fullPhone = `+91${phoneNumber}`
+      const success = await sendOTP(fullPhone)
+
       if (success) {
-        setOtpSent(true);
-        setOtp(""); // Clear OTP when sending new one
-        Alert.alert("OTP Sent", "Please check your phone for the verification code");
+        setOtpSent(true)
+        setOtp("") // Clear OTP when sending new one
+        Alert.alert(
+          "OTP Sent",
+          "Please check your phone for the verification code",
+        )
       } else {
-        Alert.alert("Error", "Failed to send OTP. Please try again.");
+        Alert.alert("Error", "Failed to send OTP. Please try again.")
       }
     } catch (error) {
-      console.error("OTP Error:", error);
-      Alert.alert("Error", "An error occurred. Please try again.");
+      console.error("OTP Error:", error)
+      Alert.alert("Error", "An error occurred. Please try again.")
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
   const handleVerifyOTP = async () => {
     if (otp.length !== 6) {
-      Alert.alert("Invalid OTP", "Please enter the 6-digit OTP");
-      return;
+      Alert.alert("Invalid OTP", "Please enter the 6-digit OTP")
+      return
     }
 
-    setLoading(true);
+    setLoading(true)
     try {
-      const fullPhone = `+91${phoneNumber}`;
+      const fullPhone = `+91${phoneNumber}`
       console.log(otp)
-      const success = await login(fullPhone, otp);
-      
+      const success = await login(fullPhone, otp)
+
       if (!success) {
-        Alert.alert("Invalid OTP", "The OTP you entered is incorrect. Please try again.");
+        Alert.alert(
+          "Invalid OTP",
+          "The OTP you entered is incorrect. Please try again.",
+        )
       }
       // If successful, the AuthContext will handle the redirect
     } catch (error) {
-      console.error("Verification Error:", error);
-      Alert.alert("Error", "Failed to verify OTP. Please try again.");
+      console.error("Verification Error:", error)
+      Alert.alert("Error", "Failed to verify OTP. Please try again.")
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
   const handleResendOTP = async () => {
-    setOtp("");
-    await handleSendOTP();
-  };
+    setOtp("")
+    await handleSendOTP()
+  }
 
   // Handle OTP input with auto-focus
   const handleOTPChange = (value: string, index: number) => {
-    if (value.length > 1) return; // Prevent multiple digits
-    
-    const newOtp = otp.split("");
-    newOtp[index] = value;
-    const updatedOtp = newOtp.join("");
-    setOtp(updatedOtp);
+    if (value.length > 1) return // Prevent multiple digits
+
+    const newOtp = otp.split("")
+    newOtp[index] = value
+    const updatedOtp = newOtp.join("")
+    setOtp(updatedOtp)
 
     // Auto-focus next input
     if (value && index < 5) {
-      otpRefs.current[index + 1]?.focus();
+      otpRefs.current[index + 1]?.focus()
     }
-  };
+  }
 
   // Handle backspace for better UX
   const handleOTPKeyPress = (key: string, index: number) => {
-    if (key === 'Backspace' && !otp[index] && index > 0) {
-      otpRefs.current[index - 1]?.focus();
+    if (key === "Backspace" && !otp[index] && index > 0) {
+      otpRefs.current[index - 1]?.focus()
     }
-  };
+  }
 
   return (
-    <SafeAreaView className="flex-1 bg-neutral-lightCream" edges={['top', 'bottom']}>
+    <SafeAreaView
+      className="flex-1 bg-neutral-lightCream"
+      edges={["top", "bottom"]}
+    >
       <StatusBar barStyle="dark-content" backgroundColor="#F5F5F0" />
 
       <KeyboardAvoidingView
@@ -160,98 +169,82 @@ export default function LoginScreen() {
                 </TouchableOpacity>
               )}
 
-            {!otpSent ? (
-              <>
-                {/* Phone Number Input */}
-                <Text className="font-comfortaa text-xs font-semibold text-primary-navy mb-3 uppercase tracking-wide">
-                  Phone Number
-                </Text>
-                <View className="flex-row items-center bg-white border-2 border-neutral-lightGray rounded-xl px-4 py-4 mb-6">
-                  <View className="mr-3">
-                    <Phone size={20} color="#101B53" />
-                  </View>
-                  <Text className="font-comfortaa text-base text-neutral-darkGray font-medium mr-2">
-                    +91
-                  </Text>
+              {!otpSent ? (
+                <>
+                  {/* Phone Number Input */}
                   <TextInput
-                    className="flex-1 font-comfortaa text-base text-neutral-nearBlack"
+                    label="Phone Number"
+                    prefix="+91"
                     placeholder="98765 43210"
-                    placeholderTextColor="#B3B3B3"
                     keyboardType="phone-pad"
                     maxLength={10}
                     value={phoneNumber}
                     onChangeText={setPhoneNumber}
                     editable={!loading}
+                    containerClassName="mb-6"
                   />
-                </View>
 
-                {/* Send OTP Button */}
-                <TouchableOpacity
-                  className={`rounded-xl py-4 items-center shadow-md ${
-                    loading || phoneNumber.length !== 10
-                      ? 'bg-neutral-gray opacity-50'
-                      : 'bg-primary-orange active:opacity-90'
-                  }`}
-                  onPress={handleSendOTP}
-                  disabled={loading || phoneNumber.length !== 10}
-                >
-                  <Text className="font-sofia-bold text-base text-white">
-                    {loading ? "Sending..." : "Send OTP"}
+                  {/* Send OTP Button */}
+                  <Button
+                    title={loading ? "Sending..." : "Send OTP"}
+                    onPress={handleSendOTP}
+                    disabled={loading || phoneNumber.length !== 10}
+                    isLoading={loading}
+                    variant="primary"
+                  />
+                </>
+              ) : (
+                <>
+                  {/* OTP Input */}
+                  <Text className="font-comfortaa text-xs font-semibold text-primary-navy mb-4 uppercase tracking-wide">
+                    Enter OTP
                   </Text>
-                </TouchableOpacity>
-              </>
-            ) : (
-              <>
-                {/* OTP Input */}
-                <Text className="font-comfortaa text-xs font-semibold text-primary-navy mb-4 uppercase tracking-wide">
-                  Enter OTP
-                </Text>
-                <View className="flex-row justify-between mb-6">
-                  {[0, 1, 2, 3, 4, 5].map((index) => (
-                    <TextInput
-                      key={index}
-                      ref={(ref) => (otpRefs.current[index] = ref)}
-                      className="w-12 h-14 bg-neutral-lightCream border-2 border-neutral-lightGray rounded-xl text-center font-sofia-bold text-xl text-primary-navy"
-                      keyboardType="number-pad"
-                      maxLength={1}
-                      value={otp[index] || ""}
-                      onChangeText={(value) => handleOTPChange(value, index)}
-                      onKeyPress={({ nativeEvent }) =>
-                        handleOTPKeyPress(nativeEvent.key, index)
-                      }
-                      editable={!loading}
-                    />
-                  ))}
-                </View>
+                  <View className="flex-row justify-between mb-6">
+                    {[0, 1, 2, 3, 4, 5].map((index) => (
+                      <RNTextInput
+                        key={index}
+                        ref={(ref) => {
+                          otpRefs.current[index] = ref
+                        }}
+                        className="w-12 h-14 bg-neutral-lightCream border-2 border-neutral-lightGray rounded-xl text-center font-sofia-bold text-xl text-primary-navy"
+                        keyboardType="number-pad"
+                        maxLength={1}
+                        value={otp[index] || ""}
+                        onChangeText={(value) => handleOTPChange(value, index)}
+                        onKeyPress={({ nativeEvent }) =>
+                          handleOTPKeyPress(nativeEvent.key, index)
+                        }
+                        editable={!loading}
+                      />
+                    ))}
+                  </View>
 
-                {/* Verify Button */}
-                <TouchableOpacity
-                  className={`rounded-xl py-4 items-center shadow-md mb-4 ${
-                    loading || otp.length !== 6
-                      ? 'bg-neutral-gray opacity-50'
-                      : 'bg-primary-orange active:opacity-90'
-                  }`}
-                  onPress={handleVerifyOTP}
-                  disabled={loading || otp.length !== 6}
-                >
-                  <Text className="font-sofia-bold text-base text-white">
-                    {loading ? "Verifying..." : "Verify OTP"}
-                  </Text>
-                </TouchableOpacity>
+                  {/* Verify Button */}
+                  <Button
+                    title={loading ? "Verifying..." : "Verify OTP"}
+                    onPress={handleVerifyOTP}
+                    disabled={loading || otp.length !== 6}
+                    isLoading={loading}
+                    variant="primary"
+                    className="mb-4"
+                  />
 
-                {/* Resend OTP */}
-                <TouchableOpacity
-                  onPress={handleResendOTP}
-                  disabled={loading}
-                  className="py-2 active:opacity-70"
-                >
-                  <Text className="font-comfortaa text-sm text-primary-navy text-center font-medium">
-                    Didn't receive code? <Text className="text-primary-orange font-semibold">Resend</Text>
-                  </Text>
-                </TouchableOpacity>
-              </>
-            )}
-          </View>
+                  {/* Resend OTP */}
+                  <TouchableOpacity
+                    onPress={handleResendOTP}
+                    disabled={loading}
+                    className="py-2 active:opacity-70"
+                  >
+                    <Text className="font-comfortaa text-sm text-primary-navy text-center font-medium">
+                      Didn't receive code?{" "}
+                      <Text className="text-primary-orange font-semibold">
+                        Resend
+                      </Text>
+                    </Text>
+                  </TouchableOpacity>
+                </>
+              )}
+            </View>
 
             {/* Demo Info */}
             <View className="bg-secondary-gold bg-opacity-10 border border-secondary-gold rounded-xl p-4">
@@ -266,5 +259,5 @@ export default function LoginScreen() {
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
-  );
+  )
 }

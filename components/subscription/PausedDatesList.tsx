@@ -1,9 +1,9 @@
 import { X } from 'lucide-react-native';
 import React from 'react';
 import { Alert, Text, TouchableOpacity, View } from 'react-native';
-import { BORDER_RADIUS, COLORS, SHADOWS, SPACING } from '../../constants/theme';
-import { supabase } from '../../lib/supabase';
-import { formatFullDate } from '../../utils/dateUtils';
+import { BORDER_RADIUS, COLORS, SHADOWS, SPACING } from '@/constants/theme';
+import { supabase } from '@/lib/supabase';
+import { formatFullDate } from '@/utils/dateUtils';
 
 interface PausedDatesListProps {
   pausedDates: string[];

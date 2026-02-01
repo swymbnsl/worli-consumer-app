@@ -1,10 +1,10 @@
 import { AlertCircle } from 'lucide-react-native';
 import React from 'react';
 import { Text, TouchableOpacity, View } from 'react-native';
-import { BORDER_RADIUS, COLORS, SHADOWS } from '../../constants/theme';
-import { Order } from '../../types/database.types';
-import { formatFullDate } from '../../utils/dateUtils';
-import { formatCurrency } from '../../utils/formatters';
+import { BORDER_RADIUS, COLORS, SHADOWS } from '@/constants/theme';
+import { Order } from '@/types/database.types';
+import { formatFullDate } from '@/utils/dateUtils';
+import { formatCurrency } from '@/utils/formatters';
 
 interface OrderCardProps {
   order: Order;

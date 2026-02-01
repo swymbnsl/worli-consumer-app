@@ -8,10 +8,10 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
-import { BORDER_RADIUS, COLORS, SPACING } from '../../constants/theme';
-import { supabase } from '../../lib/supabase';
-import { Subscription } from '../../types/database.types';
-import { formatDate, getDaysArray } from '../../utils/dateUtils';
+import { BORDER_RADIUS, COLORS, SPACING } from '@/constants/theme';
+import { supabase } from '@/lib/supabase';
+import { Subscription } from '@/types/database.types';
+import { formatDate, getDaysArray } from '@/utils/dateUtils';
 
 interface PauseModalProps {
   visible: boolean;

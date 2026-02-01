@@ -1,8 +1,8 @@
 import { Edit2 } from 'lucide-react-native';
 import React from 'react';
 import { Text, TouchableOpacity, View } from 'react-native';
-import { User } from '../../types/database.types';
-import { formatPhone } from '../../utils/formatters';
+import { User } from '@/types/database.types';
+import { formatPhone } from '@/utils/formatters';
 
 interface ProfileHeaderProps {
   user: User | null;

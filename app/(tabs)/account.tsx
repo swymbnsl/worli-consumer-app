@@ -22,10 +22,10 @@ import {
   View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import MenuList from '../../components/account/MenuList';
-import ProfileHeader from '../../components/account/ProfileHeader';
-import Header from '../../components/ui/Header';
-import { useAuth } from '../../hooks/useAuth';
+import MenuList from '@/components/account/MenuList';
+import ProfileHeader from '@/components/account/ProfileHeader';
+import Header from '@/components/ui/Header';
+import { useAuth } from '@/hooks/useAuth';
 
 
 export default function AccountScreen() {

@@ -11,11 +11,11 @@ import {
     View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import AddEditAddressModal from '../../components/addresses/AddEditAddressModal';
-import AddressCard from '../../components/addresses/AddressCard';
-import { useAuth } from '../../hooks/useAuth';
-import { supabase } from '../../lib/supabase';
-import { Address } from '../../types/database.types';
+import AddEditAddressModal from '@/components/addresses/AddEditAddressModal';
+import AddressCard from '@/components/addresses/AddressCard';
+import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/lib/supabase';
+import { Address } from '@/types/database.types';
 
 export default function AddressesScreen() {
   const router = useRouter();
