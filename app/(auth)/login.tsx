@@ -245,16 +245,6 @@ export default function LoginScreen() {
                 </>
               )}
             </View>
-
-            {/* Demo Info */}
-            <View className="bg-secondary-gold bg-opacity-10 border border-secondary-gold rounded-xl p-4">
-              <Text className="font-comfortaa text-xs text-neutral-darkGray text-center mb-2 font-semibold uppercase tracking-wide">
-                Demo Mode
-              </Text>
-              <Text className="font-comfortaa text-xs text-neutral-gray text-center leading-5">
-                Use any 10-digit number{"\n"}OTP will be sent to your phone
-              </Text>
-            </View>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
