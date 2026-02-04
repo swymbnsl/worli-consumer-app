@@ -4,8 +4,7 @@ import TextInput from "@/components/ui/TextInput"
 import { useAuth } from "@/hooks/useAuth"
 import { useRouter } from "expo-router"
 import React, { useState } from "react"
-import { Alert, ScrollView, StatusBar, View } from "react-native"
-import { SafeAreaView } from "react-native-safe-area-context"
+import { Alert, ScrollView, View } from "react-native"
 
 export default function ProfileScreen() {
   const router = useRouter()
@@ -37,12 +36,7 @@ export default function ProfileScreen() {
   }
 
   return (
-    <SafeAreaView
-      className="flex-1 bg-neutral-lightCream"
-      edges={["top", "bottom"]}
-    >
-      <StatusBar barStyle="light-content" backgroundColor="#101B53" />
-
+    <View className="flex-1 bg-neutral-lightCream">
       {/* Header */}
       <PageHeader
         title="Edit Profile"
@@ -90,6 +84,6 @@ export default function ProfileScreen() {
           />
         </View>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   )
 }

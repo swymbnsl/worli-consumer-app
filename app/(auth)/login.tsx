@@ -9,12 +9,10 @@ import {
   Platform,
   TextInput as RNTextInput,
   ScrollView,
-  StatusBar,
   Text,
   TouchableOpacity,
   View,
 } from "react-native"
-import { SafeAreaView } from "react-native-safe-area-context"
 
 export default function LoginScreen() {
   const [phoneNumber, setPhoneNumber] = useState("")
@@ -127,137 +125,131 @@ export default function LoginScreen() {
   }
 
   return (
-    <SafeAreaView
+    <KeyboardAvoidingView
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
       className="flex-1 bg-neutral-lightCream"
-      edges={["top", "bottom"]}
+      keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
     >
-      <StatusBar barStyle="dark-content" backgroundColor="#F5F5F0" />
-
-      <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-        className="flex-1"
+      <ScrollView
+        contentContainerStyle={{ flexGrow: 1, paddingBottom: 20 }}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
       >
-        <ScrollView
-          contentContainerStyle={{ flexGrow: 1 }}
-          keyboardShouldPersistTaps="handled"
-          className="flex-1"
-          showsVerticalScrollIndicator={false}
-        >
-          <View className="flex-1 justify-center px-6 py-8">
-            {/* Logo Section */}
-            <View className="items-center mb-12">
-              <View className="w-20 h-20 rounded-2xl bg-primary-orange items-center justify-center mb-6 shadow-md">
-                <Text className="text-5xl">🥛</Text>
-              </View>
-              <Text className="font-sofia-bold text-4xl text-primary-navy mb-2 tracking-wider">
-                Worli Dairy
-              </Text>
-              <Text className="font-comfortaa text-sm text-neutral-gray tracking-widest uppercase">
-                Premium Fresh Milk
-              </Text>
+        <View className="flex-1 justify-center px-6 py-8">
+          {/* Logo Section */}
+          <View className="items-center mb-12">
+            <View className="w-20 h-20 rounded-2xl bg-primary-orange items-center justify-center mb-6 shadow-md">
+              <Text className="text-5xl">🥛</Text>
             </View>
+            <Text className="font-sofia-bold text-4xl text-primary-navy mb-2 tracking-wider">
+              Worli Dairy
+            </Text>
+            <Text className="font-comfortaa text-sm text-neutral-gray tracking-widest uppercase">
+              Premium Fresh Milk
+            </Text>
+          </View>
 
-            {/* Login Form Card */}
-            <View className="bg-white rounded-2xl p-8 shadow-lg mb-6">
-              <Text className="font-sofia-bold text-2xl text-primary-navy mb-2">
-                {otpSent ? "Verify OTP" : "Welcome Back"}
-              </Text>
-              <Text className="font-comfortaa text-sm text-neutral-gray mb-8">
-                {otpSent
-                  ? `Enter the code sent to +91${phoneNumber}`
-                  : "Sign in to continue your subscription"}
-              </Text>
+          {/* Login Form Card */}
+          <View className="bg-white rounded-2xl p-8 shadow-lg mb-6">
+            <Text className="font-sofia-bold text-2xl text-primary-navy mb-2">
+              {otpSent ? "Verify OTP" : "Welcome Back"}
+            </Text>
+            <Text className="font-comfortaa text-sm text-neutral-gray mb-8">
+              {otpSent
+                ? `Enter the code sent to +91${phoneNumber}`
+                : "Sign in to continue your subscription"}
+            </Text>
 
-              {otpSent && (
+            {otpSent && (
+              <TouchableOpacity
+                onPress={() => setOtpSent(false)}
+                className="self-start mb-6 active:opacity-70"
+              >
+                <Text className="font-comfortaa text-sm text-primary-orange font-semibold">
+                  ← Change Phone Number
+                </Text>
+              </TouchableOpacity>
+            )}
+
+            {!otpSent ? (
+              <>
+                {/* Phone Number Input */}
+                <TextInput
+                  label="Phone Number"
+                  prefix="+91"
+                  placeholder="98765 43210"
+                  keyboardType="phone-pad"
+                  maxLength={10}
+                  value={phoneNumber}
+                  onChangeText={setPhoneNumber}
+                  editable={!loading}
+                  containerClassName="mb-6"
+                />
+
+                {/* Send OTP Button */}
+                <Button
+                  title={loading ? "Sending..." : "Send OTP"}
+                  onPress={handleSendOTP}
+                  disabled={loading || phoneNumber.length !== 10}
+                  isLoading={loading}
+                  variant="primary"
+                />
+              </>
+            ) : (
+              <>
+                {/* OTP Input */}
+                <Text className="font-comfortaa text-xs font-semibold text-primary-navy mb-4 uppercase tracking-wide">
+                  Enter OTP
+                </Text>
+                <View className="flex-row justify-between mb-6 gap-2">
+                  {[0, 1, 2, 3, 4, 5].map((index) => (
+                    <RNTextInput
+                      key={index}
+                      ref={(ref) => {
+                        otpRefs.current[index] = ref
+                      }}
+                      className="flex-1 h-14 bg-neutral-lightCream border-2 border-neutral-lightGray rounded-xl text-center font-sofia-bold text-xl text-primary-navy"
+                      style={{ maxWidth: 56 }}
+                      keyboardType="number-pad"
+                      maxLength={1}
+                      value={otp[index] || ""}
+                      onChangeText={(value) => handleOTPChange(value, index)}
+                      onKeyPress={({ nativeEvent }) =>
+                        handleOTPKeyPress(nativeEvent.key, index)
+                      }
+                      editable={!loading}
+                    />
+                  ))}
+                </View>
+
+                {/* Verify Button */}
+                <Button
+                  title={loading ? "Verifying..." : "Verify OTP"}
+                  onPress={handleVerifyOTP}
+                  disabled={loading || otp.length !== 6}
+                  isLoading={loading}
+                  variant="primary"
+                  className="mb-4"
+                />
+
+                {/* Resend OTP */}
                 <TouchableOpacity
-                  onPress={() => setOtpSent(false)}
-                  className="self-start mb-6 active:opacity-70"
+                  onPress={handleResendOTP}
+                  disabled={loading}
+                  className="py-2 active:opacity-70"
                 >
-                  <Text className="font-comfortaa text-sm text-primary-orange font-semibold">
-                    ← Change Phone Number
+                  <Text className="font-comfortaa text-sm text-primary-navy text-center font-medium">
+                    Didn't receive code?{" "}
+                    <Text className="text-primary-orange font-semibold">
+                      Resend
+                    </Text>
                   </Text>
                 </TouchableOpacity>
-              )}
-
-              {!otpSent ? (
-                <>
-                  {/* Phone Number Input */}
-                  <TextInput
-                    label="Phone Number"
-                    prefix="+91"
-                    placeholder="98765 43210"
-                    keyboardType="phone-pad"
-                    maxLength={10}
-                    value={phoneNumber}
-                    onChangeText={setPhoneNumber}
-                    editable={!loading}
-                    containerClassName="mb-6"
-                  />
-
-                  {/* Send OTP Button */}
-                  <Button
-                    title={loading ? "Sending..." : "Send OTP"}
-                    onPress={handleSendOTP}
-                    disabled={loading || phoneNumber.length !== 10}
-                    isLoading={loading}
-                    variant="primary"
-                  />
-                </>
-              ) : (
-                <>
-                  {/* OTP Input */}
-                  <Text className="font-comfortaa text-xs font-semibold text-primary-navy mb-4 uppercase tracking-wide">
-                    Enter OTP
-                  </Text>
-                  <View className="flex-row justify-between mb-6">
-                    {[0, 1, 2, 3, 4, 5].map((index) => (
-                      <RNTextInput
-                        key={index}
-                        ref={(ref) => {
-                          otpRefs.current[index] = ref
-                        }}
-                        className="w-12 h-14 bg-neutral-lightCream border-2 border-neutral-lightGray rounded-xl text-center font-sofia-bold text-xl text-primary-navy"
-                        keyboardType="number-pad"
-                        maxLength={1}
-                        value={otp[index] || ""}
-                        onChangeText={(value) => handleOTPChange(value, index)}
-                        onKeyPress={({ nativeEvent }) =>
-                          handleOTPKeyPress(nativeEvent.key, index)
-                        }
-                        editable={!loading}
-                      />
-                    ))}
-                  </View>
-
-                  {/* Verify Button */}
-                  <Button
-                    title={loading ? "Verifying..." : "Verify OTP"}
-                    onPress={handleVerifyOTP}
-                    disabled={loading || otp.length !== 6}
-                    isLoading={loading}
-                    variant="primary"
-                    className="mb-4"
-                  />
-
-                  {/* Resend OTP */}
-                  <TouchableOpacity
-                    onPress={handleResendOTP}
-                    disabled={loading}
-                    className="py-2 active:opacity-70"
-                  >
-                    <Text className="font-comfortaa text-sm text-primary-navy text-center font-medium">
-                      Didn't receive code?{" "}
-                      <Text className="text-primary-orange font-semibold">
-                        Resend
-                      </Text>
-                    </Text>
-                  </TouchableOpacity>
-                </>
-              )}
-            </View>
+              </>
+            )}
           </View>
-        </ScrollView>
-      </KeyboardAvoidingView>
-    </SafeAreaView>
+        </View>
+      </ScrollView>
+    </KeyboardAvoidingView>
   )
 }

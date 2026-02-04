@@ -5,8 +5,7 @@ import { supabase } from "@/lib/supabase"
 import { Order } from "@/types/database.types"
 import { useRouter } from "expo-router"
 import React, { useEffect, useState } from "react"
-import { FlatList, RefreshControl, StatusBar, Text, View } from "react-native"
-import { SafeAreaView } from "react-native-safe-area-context"
+import { FlatList, RefreshControl, Text, View } from "react-native"
 
 export default function OrdersScreen() {
   const router = useRouter()
@@ -49,12 +48,7 @@ export default function OrdersScreen() {
   }
 
   return (
-    <SafeAreaView
-      className="flex-1 bg-neutral-lightCream"
-      edges={["top", "bottom"]}
-    >
-      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
-
+    <View className="flex-1 bg-neutral-lightCream">
       <Header />
 
       {/* Orders List */}
@@ -87,6 +81,6 @@ export default function OrdersScreen() {
           contentContainerStyle={{ paddingBottom: 100 }}
         />
       )}
-    </SafeAreaView>
+    </View>
   )
 }

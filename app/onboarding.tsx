@@ -1,9 +1,8 @@
 import Button from "@/components/ui/Button"
 import { router } from "expo-router"
 import React from "react"
-import { StatusBar, Text, View } from "react-native"
+import { Text, View } from "react-native"
 import Animated, { FadeInDown, FadeInUp } from "react-native-reanimated"
-import { SafeAreaView } from "react-native-safe-area-context"
 
 export default function Onboarding() {
   const handleGetStarted = () => {
@@ -11,12 +10,7 @@ export default function Onboarding() {
   }
 
   return (
-    <SafeAreaView
-      className="flex-1 bg-neutral-lightCream"
-      edges={["top", "bottom"]}
-    >
-      <StatusBar barStyle="dark-content" backgroundColor="#F5F5F0" />
-
+    <View className="flex-1 bg-neutral-lightCream">
       <View className="flex-1 justify-between px-6 py-8">
         {/* Top Section - Logo and Illustration */}
         <View className="flex-1 items-center justify-center">
@@ -102,6 +96,6 @@ export default function Onboarding() {
           </Text>
         </Animated.View>
       </View>
-    </SafeAreaView>
+    </View>
   )
 }

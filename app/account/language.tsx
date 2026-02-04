@@ -2,8 +2,7 @@ import { useAuth } from "@/hooks/useAuth"
 import { useRouter } from "expo-router"
 import { CheckCircle, ChevronLeft } from "lucide-react-native"
 import React from "react"
-import { StatusBar, Text, TouchableOpacity, View } from "react-native"
-import { SafeAreaView } from "react-native-safe-area-context"
+import { Text, TouchableOpacity, View } from "react-native"
 
 export default function LanguageScreen() {
   const router = useRouter()
@@ -20,12 +19,7 @@ export default function LanguageScreen() {
   }
 
   return (
-    <SafeAreaView
-      className="flex-1 bg-neutral-lightCream"
-      edges={["top", "bottom"]}
-    >
-      <StatusBar barStyle="dark-content" backgroundColor="#F5F5F0" />
-
+    <View className="flex-1 bg-neutral-lightCream">
       {/* Header */}
       <View className="bg-primary-navy px-6 pt-10 pb-6 flex-row items-center">
         <TouchableOpacity
@@ -67,6 +61,6 @@ export default function LanguageScreen() {
           </TouchableOpacity>
         ))}
       </View>
-    </SafeAreaView>
+    </View>
   )
 }

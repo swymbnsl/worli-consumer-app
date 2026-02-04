@@ -1,19 +1,19 @@
-import { useRouter } from 'expo-router';
-import { ChevronLeft } from 'lucide-react-native';
-import React from 'react';
-import { StatusBar, Text, TouchableOpacity, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useRouter } from "expo-router"
+import { ChevronLeft } from "lucide-react-native"
+import React from "react"
+import { Text, TouchableOpacity, View } from "react-native"
 
 export default function TransactionsScreen() {
-  const router = useRouter();
+  const router = useRouter()
 
   return (
-    <SafeAreaView className="flex-1 bg-neutral-lightCream" edges={['top', 'bottom']}>
-      <StatusBar barStyle="dark-content" backgroundColor="#F5F5F0" />
-
+    <View className="flex-1 bg-neutral-lightCream">
       {/* Header */}
       <View className="bg-primary-navy px-6 pt-10 pb-6 flex-row items-center">
-        <TouchableOpacity onPress={() => router.back()} className="mr-4 active:opacity-70">
+        <TouchableOpacity
+          onPress={() => router.back()}
+          className="mr-4 active:opacity-70"
+        >
           <ChevronLeft size={24} color="#FFFFFF" />
         </TouchableOpacity>
         <View>
@@ -32,13 +32,13 @@ export default function TransactionsScreen() {
         </Text>
         <TouchableOpacity
           className="bg-primary-orange py-3.5 px-6 rounded-xl mt-5 active:opacity-90 shadow-md"
-          onPress={() => router.push('/(tabs)/wallet')}
+          onPress={() => router.push("/(tabs)/wallet")}
         >
           <Text className="font-sofia-bold text-sm text-white">
             Go to Wallet
           </Text>
         </TouchableOpacity>
       </View>
-    </SafeAreaView>
-  );
+    </View>
+  )
 }

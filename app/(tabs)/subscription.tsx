@@ -10,12 +10,10 @@ import {
   Alert,
   RefreshControl,
   ScrollView,
-  StatusBar,
   Text,
   TouchableOpacity,
   View,
 } from "react-native"
-import { SafeAreaView } from "react-native-safe-area-context"
 
 export default function SubscriptionScreen() {
   const { user } = useAuth()
@@ -95,12 +93,7 @@ export default function SubscriptionScreen() {
 
   if (!subscription && !loading) {
     return (
-      <SafeAreaView
-        className="flex-1 bg-neutral-lightCream"
-        edges={["top", "bottom"]}
-      >
-        <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
-
+      <View className="flex-1 bg-neutral-lightCream">
         <Header />
 
         {/* No Subscription State */}
@@ -113,17 +106,12 @@ export default function SubscriptionScreen() {
             Start a subscription for daily fresh milk delivery
           </Text>
         </View>
-      </SafeAreaView>
+      </View>
     )
   }
 
   return (
-    <SafeAreaView
-      className="flex-1 bg-neutral-lightCream"
-      edges={["top", "bottom"]}
-    >
-      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
-
+    <View className="flex-1 bg-neutral-lightCream">
       <Header />
 
       <ScrollView
@@ -180,6 +168,6 @@ export default function SubscriptionScreen() {
           onUpdate={fetchSubscription}
         />
       )}
-    </SafeAreaView>
+    </View>
   )
 }

@@ -10,12 +10,10 @@ import {
   Alert,
   RefreshControl,
   ScrollView,
-  StatusBar,
   Text,
   TouchableOpacity,
   View,
 } from "react-native"
-import { SafeAreaView } from "react-native-safe-area-context"
 
 export default function AddressesScreen() {
   const router = useRouter()
@@ -121,12 +119,7 @@ export default function AddressesScreen() {
   }
 
   return (
-    <SafeAreaView
-      className="flex-1 bg-neutral-lightCream"
-      edges={["top", "bottom"]}
-    >
-      <StatusBar barStyle="dark-content" backgroundColor="#F5F5F0" />
-
+    <View className="flex-1 bg-neutral-lightCream">
       {/* Header */}
       <View className="bg-primary-navy px-6 pt-10 pb-6 flex-row items-center">
         <TouchableOpacity
@@ -198,6 +191,6 @@ export default function AddressesScreen() {
         address={editingAddress}
         onSuccess={fetchAddresses}
       />
-    </SafeAreaView>
+    </View>
   )
 }

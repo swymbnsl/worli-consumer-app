@@ -5,8 +5,9 @@ import { useFonts } from "expo-font"
 import { Stack } from "expo-router"
 import * as SplashScreen from "expo-splash-screen"
 import { useEffect } from "react"
+import { StatusBar } from "react-native"
 import { GestureHandlerRootView } from "react-native-gesture-handler"
-import { SafeAreaProvider } from "react-native-safe-area-context"
+import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context"
 import "../global.css"
 
 SplashScreen.preventAutoHideAsync()
@@ -35,27 +36,42 @@ export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
-        <AuthProvider>
-          <WalletProvider>
-            <CartProvider>
-              <Stack screenOptions={{ headerShown: false }}>
-                <Stack.Screen name="index" options={{ headerShown: false }} />
-                <Stack.Screen
-                  name="onboarding"
-                  options={{ headerShown: false }}
-                />
-                <Stack.Screen name="(auth)" options={{ headerShown: false }} />
-                <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-                <Stack.Screen name="cart" options={{ headerShown: false }} />
-                <Stack.Screen name="product" options={{ headerShown: false }} />
-                <Stack.Screen
-                  name="order-detail"
-                  options={{ headerShown: false }}
-                />
-              </Stack>
-            </CartProvider>
-          </WalletProvider>
-        </AuthProvider>
+        <SafeAreaView
+          style={{ flex: 1, backgroundColor: "white" }}
+          edges={["top", "bottom"]}
+        >
+          <StatusBar barStyle="dark-content" backgroundColor="white" />
+          <AuthProvider>
+            <WalletProvider>
+              <CartProvider>
+                <Stack screenOptions={{ headerShown: false }}>
+                  <Stack.Screen name="index" options={{ headerShown: false }} />
+                  <Stack.Screen
+                    name="onboarding"
+                    options={{ headerShown: false }}
+                  />
+                  <Stack.Screen
+                    name="(auth)"
+                    options={{ headerShown: false }}
+                  />
+                  <Stack.Screen
+                    name="(tabs)"
+                    options={{ headerShown: false }}
+                  />
+                  <Stack.Screen name="cart" options={{ headerShown: false }} />
+                  <Stack.Screen
+                    name="product"
+                    options={{ headerShown: false }}
+                  />
+                  <Stack.Screen
+                    name="order-detail"
+                    options={{ headerShown: false }}
+                  />
+                </Stack>
+              </CartProvider>
+            </WalletProvider>
+          </AuthProvider>
+        </SafeAreaView>
       </SafeAreaProvider>
     </GestureHandlerRootView>
   )

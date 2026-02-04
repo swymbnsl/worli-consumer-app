@@ -12,13 +12,11 @@ import React, { useEffect, useState } from "react"
 import {
   RefreshControl,
   ScrollView,
-  StatusBar,
   Text,
   TextInput,
   TouchableOpacity,
   View,
 } from "react-native"
-import { SafeAreaView } from "react-native-safe-area-context"
 
 export default function HomeScreen() {
   const { user } = useAuth()
@@ -70,12 +68,7 @@ export default function HomeScreen() {
   const unreturnedBottles = 0
 
   return (
-    <SafeAreaView
-      className="flex-1 bg-neutral-lightCream"
-      edges={["top", "bottom"]}
-    >
-      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
-
+    <View className="flex-1 bg-neutral-lightCream">
       {/* 9.1 Header with Logo and Location */}
       <Header />
 
@@ -152,6 +145,6 @@ export default function HomeScreen() {
           </View>
         </View>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   )
 }

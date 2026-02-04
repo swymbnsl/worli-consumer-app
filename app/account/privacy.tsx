@@ -1,8 +1,7 @@
 import PageHeader from "@/components/ui/PageHeader"
 import { useRouter } from "expo-router"
 import React from "react"
-import { ScrollView, StatusBar, Text, View } from "react-native"
-import { SafeAreaView } from "react-native-safe-area-context"
+import { ScrollView, Text, View } from "react-native"
 
 export default function PrivacyScreen() {
   const router = useRouter()
@@ -51,12 +50,7 @@ export default function PrivacyScreen() {
   ]
 
   return (
-    <SafeAreaView
-      className="flex-1 bg-neutral-lightCream"
-      edges={["top", "bottom"]}
-    >
-      <StatusBar barStyle="light-content" backgroundColor="#101B53" />
-
+    <View className="flex-1 bg-neutral-lightCream">
       {/* Header */}
       <PageHeader
         title="Privacy Policy"
@@ -87,6 +81,6 @@ export default function PrivacyScreen() {
           <View className="h-8" />
         </View>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   )
 }

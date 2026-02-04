@@ -18,14 +18,7 @@ import {
   User,
 } from "lucide-react-native"
 import React from "react"
-import {
-  ScrollView,
-  StatusBar,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native"
-import { SafeAreaView } from "react-native-safe-area-context"
+import { ScrollView, Text, TouchableOpacity, View } from "react-native"
 
 export default function AccountScreen() {
   const { user, logout } = useAuth()
@@ -133,12 +126,7 @@ export default function AccountScreen() {
   ]
 
   return (
-    <SafeAreaView
-      className="flex-1 bg-neutral-lightCream"
-      edges={["top", "bottom"]}
-    >
-      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
-
+    <View className="flex-1 bg-neutral-lightCream">
       {/* Header */}
       <Header />
 
@@ -182,6 +170,6 @@ export default function AccountScreen() {
 
         <MenuList items={menuItems} />
       </ScrollView>
-    </SafeAreaView>
+    </View>
   )
 }

@@ -1,50 +1,57 @@
-import { useRouter } from 'expo-router';
-import { ChevronLeft, Clock, Mail, MapPin, MessageCircle, Phone } from 'lucide-react-native';
-import React from 'react';
-import { Linking, ScrollView, StatusBar, Text, TouchableOpacity, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useRouter } from "expo-router"
+import {
+  ChevronLeft,
+  Clock,
+  Mail,
+  MapPin,
+  MessageCircle,
+  Phone,
+} from "lucide-react-native"
+import React from "react"
+import { Linking, ScrollView, Text, TouchableOpacity, View } from "react-native"
 
 export default function ContactScreen() {
-  const router = useRouter();
+  const router = useRouter()
 
   const contactMethods = [
     {
       icon: Phone,
-      title: 'Phone Support',
-      description: '+91 1800-123-4567',
-      action: () => Linking.openURL('tel:+918001234567'),
-      color: '#EF6600',
+      title: "Phone Support",
+      description: "+91 1800-123-4567",
+      action: () => Linking.openURL("tel:+918001234567"),
+      color: "#EF6600",
     },
     {
       icon: Mail,
-      title: 'Email Us',
-      description: 'support@freshmilk.com',
-      action: () => Linking.openURL('mailto:support@freshmilk.com'),
-      color: '#638C5F',
+      title: "Email Us",
+      description: "support@freshmilk.com",
+      action: () => Linking.openURL("mailto:support@freshmilk.com"),
+      color: "#638C5F",
     },
     {
       icon: MessageCircle,
-      title: 'WhatsApp',
-      description: 'Chat with us on WhatsApp',
-      action: () => Linking.openURL('https://wa.me/918001234567'),
-      color: '#25D366',
+      title: "WhatsApp",
+      description: "Chat with us on WhatsApp",
+      action: () => Linking.openURL("https://wa.me/918001234567"),
+      color: "#25D366",
     },
     {
       icon: MapPin,
-      title: 'Visit Us',
-      description: '123 Dairy Road, Bengaluru, Karnataka 560001',
+      title: "Visit Us",
+      description: "123 Dairy Road, Bengaluru, Karnataka 560001",
       action: null,
-      color: '#DC2626',
+      color: "#DC2626",
     },
-  ];
+  ]
 
   return (
-    <SafeAreaView className="flex-1 bg-neutral-lightCream" edges={['top', 'bottom']}>
-      <StatusBar barStyle="dark-content" backgroundColor="#F5F5F0" />
-
+    <View className="flex-1 bg-neutral-lightCream">
       {/* Header */}
       <View className="bg-primary-navy px-6 pt-10 pb-6 flex-row items-center">
-        <TouchableOpacity onPress={() => router.back()} className="mr-4 active:opacity-70">
+        <TouchableOpacity
+          onPress={() => router.back()}
+          className="mr-4 active:opacity-70"
+        >
           <ChevronLeft size={24} color="#FFFFFF" />
         </TouchableOpacity>
         <View>
@@ -57,13 +64,16 @@ export default function ContactScreen() {
         </View>
       </View>
 
-      <ScrollView className="flex-1 px-6 pt-6" showsVerticalScrollIndicator={false}>
+      <ScrollView
+        className="flex-1 px-6 pt-6"
+        showsVerticalScrollIndicator={false}
+      >
         <Text className="font-comfortaa text-base text-neutral-gray mb-6 leading-6">
           We're here to help! Reach out to us through any of these channels
         </Text>
 
         {contactMethods.map((method, index) => {
-          const IconComponent = method.icon;
+          const IconComponent = method.icon
           return (
             <TouchableOpacity
               key={index}
@@ -86,7 +96,7 @@ export default function ContactScreen() {
                 </Text>
               </View>
             </TouchableOpacity>
-          );
+          )
         })}
 
         {/* Business Hours */}
@@ -109,6 +119,6 @@ export default function ContactScreen() {
           </View>
         </View>
       </ScrollView>
-    </SafeAreaView>
-  );
+    </View>
+  )
 }

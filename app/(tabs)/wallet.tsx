@@ -6,8 +6,7 @@ import WalletBalanceCard from "@/components/wallet/WalletBalanceCard"
 import WalletSettingsCard from "@/components/wallet/WalletSettingsCard"
 import { useWallet } from "@/hooks/useWallet"
 import React, { useState } from "react"
-import { RefreshControl, ScrollView, StatusBar } from "react-native"
-import { SafeAreaView } from "react-native-safe-area-context"
+import { RefreshControl, ScrollView, View } from "react-native"
 
 export default function WalletScreen() {
   const { wallet, transactions, loading, refreshWallet } = useWallet()
@@ -22,12 +21,7 @@ export default function WalletScreen() {
   }
 
   return (
-    <SafeAreaView
-      className="flex-1 bg-neutral-lightCream"
-      edges={["top", "bottom"]}
-    >
-      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
-
+    <View className="flex-1 bg-neutral-lightCream">
       <Header />
 
       <ScrollView
@@ -70,6 +64,6 @@ export default function WalletScreen() {
         onClose={() => setSettingsModalVisible(false)}
         wallet={wallet}
       />
-    </SafeAreaView>
+    </View>
   )
 }

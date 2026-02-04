@@ -7,12 +7,10 @@ import {
   Alert,
   ScrollView,
   Share,
-  StatusBar,
   Text,
   TouchableOpacity,
   View,
 } from "react-native"
-import { SafeAreaView } from "react-native-safe-area-context"
 
 export default function ReferScreen() {
   const router = useRouter()
@@ -35,12 +33,7 @@ export default function ReferScreen() {
   }
 
   return (
-    <SafeAreaView
-      className="flex-1 bg-neutral-lightCream"
-      edges={["top", "bottom"]}
-    >
-      <StatusBar barStyle="dark-content" backgroundColor="#F5F5F0" />
-
+    <View className="flex-1 bg-neutral-lightCream">
       {/* Header */}
       <View className="bg-primary-navy px-6 pt-10 pb-6 flex-row items-center">
         <TouchableOpacity
@@ -163,6 +156,6 @@ export default function ReferScreen() {
           </View>
         </View>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   )
 }
