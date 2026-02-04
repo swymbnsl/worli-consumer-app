@@ -7,16 +7,16 @@ import { SafeAreaView } from "react-native-safe-area-context"
 
 export default function LanguageScreen() {
   const router = useRouter()
-  const { user, updateUser } = useAuth()
+  const { userPreference, updateUserPreference } = useAuth()
 
   const languages = [
-    { id: "english", label: "English", nativeLabel: "English" },
-    { id: "hindi", label: "Hindi", nativeLabel: "हिंदी" },
-    { id: "kannada", label: "Kannada", nativeLabel: "ಕನ್ನಡ" },
+    { id: "en", label: "English", nativeLabel: "English" },
+    { id: "hi", label: "Hindi", nativeLabel: "हिंदी" },
+    { id: "kn", label: "Kannada", nativeLabel: "ಕನ್ನಡ" },
   ]
 
   const handleSelect = async (langId: string) => {
-    await updateUser({ language: langId as any })
+    await updateUserPreference({ language: langId as any })
   }
 
   return (
@@ -47,7 +47,9 @@ export default function LanguageScreen() {
           <TouchableOpacity
             key={lang.id}
             className={`bg-white rounded-2xl p-6 mb-4 shadow-md flex-row justify-between items-center active:opacity-80 ${
-              user?.language === lang.id ? "border-2 border-primary-orange" : ""
+              userPreference?.language === lang.id
+                ? "border-2 border-primary-orange"
+                : ""
             }`}
             onPress={() => handleSelect(lang.id)}
           >
@@ -59,7 +61,7 @@ export default function LanguageScreen() {
                 {lang.nativeLabel}
               </Text>
             </View>
-            {user?.language === lang.id && (
+            {userPreference?.language === lang.id && (
               <CheckCircle size={28} color="#EF6600" />
             )}
           </TouchableOpacity>

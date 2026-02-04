@@ -10,7 +10,7 @@ import { SafeAreaView } from "react-native-safe-area-context"
 export default function ProfileScreen() {
   const router = useRouter()
   const { user, updateUser } = useAuth()
-  const [name, setName] = useState(user?.name || "")
+  const [name, setName] = useState(user?.full_name || "")
   const [email, setEmail] = useState(user?.email || "")
   const [loading, setLoading] = useState(false)
 
@@ -22,7 +22,7 @@ export default function ProfileScreen() {
 
     setLoading(true)
     try {
-      const success = await updateUser({ name, email })
+      const success = await updateUser({ full_name: name, email })
       if (success) {
         Alert.alert("Success", "Profile updated successfully")
         router.back()
@@ -66,7 +66,7 @@ export default function ProfileScreen() {
 
           <TextInput
             label="Phone Number"
-            value={user?.phone}
+            value={user?.phone_number}
             editable={false}
             className="bg-neutral-lightGray text-neutral-gray"
             containerClassName="mb-2"

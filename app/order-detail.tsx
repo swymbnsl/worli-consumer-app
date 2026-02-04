@@ -16,7 +16,6 @@ export default function OrderDetailScreen() {
   const { user } = useAuth()
   const [order, setOrder] = useState<Order | null>(null)
   const [loading, setLoading] = useState(true)
-  const [markingReturned, setMarkingReturned] = useState(false)
 
   useEffect(() => {
     fetchOrder()
@@ -42,36 +41,6 @@ export default function OrderDetailScreen() {
     } finally {
       setLoading(false)
     }
-  }
-
-  const handleMarkReturned = async () => {
-    if (!order) return
-
-    Alert.alert("Confirm Return", "Have you returned the empty bottles?", [
-      { text: "Cancel", style: "cancel" },
-      {
-        text: "Yes, Mark as Returned",
-        onPress: async () => {
-          setMarkingReturned(true)
-          try {
-            const { error } = await supabase
-              .from("orders")
-              .update({ bottle_returned: true })
-              .eq("id", order.id)
-
-            if (error) throw error
-
-            setOrder({ ...order, bottle_returned: true })
-            Alert.alert("Success", "Bottles marked as returned")
-          } catch (error) {
-            console.error("Error marking returned:", error)
-            Alert.alert("Error", "Failed to update bottle status")
-          } finally {
-            setMarkingReturned(false)
-          }
-        },
-      },
-    ])
   }
 
   if (loading || !order) {
@@ -207,61 +176,26 @@ export default function OrderDetailScreen() {
               padding: 20,
             }}
           >
-            <DetailRow label="Order Date" value={formatFullDate(order.date)} />
-            <Divider />
             <DetailRow
-              label="Delivery Time"
-              value={order.delivery_time || "06:30 AM"}
+              label="Delivery Date"
+              value={formatFullDate(order.delivery_date)}
             />
             <Divider />
             <DetailRow label="Product" value={PRODUCT.name} />
             <Divider />
-            <DetailRow label="Quantity" value={`${order.quantity} Bottles`} />
+            <DetailRow
+              label="Quantity"
+              value={`${order.quantity || 0} Bottles`}
+            />
             <Divider />
             <DetailRow
               label="Amount Paid"
-              value={formatCurrency(order.amount)}
+              value={formatCurrency(order.amount || 0)}
               valueColor={COLORS.primary}
               valueWeight="700"
               valueFontSize={16}
             />
-            <Divider />
-            <DetailRow
-              label="Bottle Status"
-              value={order.bottle_returned ? "Returned" : "Pending"}
-              valueColor={
-                order.bottle_returned ? COLORS.accent : COLORS.primary
-              }
-            />
           </View>
-
-          {/* Mark as Returned Button */}
-          {!order.bottle_returned && order.status === "delivered" && (
-            <TouchableOpacity
-              style={{
-                backgroundColor: markingReturned
-                  ? COLORS.text.secondary
-                  : COLORS.primary,
-                paddingVertical: 18,
-                borderRadius: BORDER_RADIUS.sm,
-                alignItems: "center",
-                marginTop: SPACING.xxl,
-                ...SHADOWS.primary,
-              }}
-              onPress={handleMarkReturned}
-              disabled={markingReturned}
-            >
-              <Text
-                style={{
-                  color: COLORS.white,
-                  fontWeight: "700",
-                  fontSize: 16,
-                }}
-              >
-                {markingReturned ? "Updating..." : "Mark as Returned"}
-              </Text>
-            </TouchableOpacity>
-          )}
         </View>
 
         {/* Product Info Card */}

@@ -55,7 +55,8 @@ export default function CartScreen() {
 
   const defaultAddress = addresses.find((a) => a.is_default) || addresses[0]
   const totalCost = PRODUCT.price * cart.quantity
-  const canDeliver = wallet && wallet.balance >= totalCost
+  const walletBalance = wallet?.balance ?? 0
+  const canDeliver = wallet && walletBalance >= totalCost
 
   const handlePlaceOrder = async () => {
     console.log("hie")
@@ -65,7 +66,7 @@ export default function CartScreen() {
     if (!canDeliver) {
       Alert.alert(
         "Insufficient Balance",
-        `You need ${formatCurrency(totalCost - wallet.balance)} more in your wallet.`,
+        `You need ${formatCurrency(totalCost - walletBalance)} more in your wallet.`,
         [
           { text: "Cancel", style: "cancel" },
           { text: "Add Money", onPress: () => router.push("/(tabs)/wallet") },
@@ -84,22 +85,20 @@ export default function CartScreen() {
           onPress: async () => {
             setLoading(true)
             try {
-              // Create order ID
-              const orderId = `ORD${Date.now()}`
+              // Create order number
+              const orderNumber = `ORD${Date.now()}`
 
               // Create order
               const { error: orderError } = await supabase
                 .from("orders")
                 .insert([
                   {
-                    id: orderId,
+                    order_number: orderNumber,
                     user_id: user.id,
-                    date: cart.date,
+                    delivery_date: cart.date,
                     quantity: cart.quantity,
                     amount: totalCost,
                     status: "pending",
-                    bottle_returned: false,
-                    delivery_time: "06:30 AM",
                   },
                 ])
 
@@ -108,13 +107,13 @@ export default function CartScreen() {
               // Deduct from wallet
               const success = await deductFromWallet(
                 totalCost,
-                `Order #${orderId}`,
+                `Order #${orderNumber}`,
               )
               if (!success) throw new Error("Failed to deduct from wallet")
 
               Alert.alert(
                 "Order Placed!",
-                `Your order has been placed successfully. Order ID: ${orderId}`,
+                `Your order has been placed successfully. Order ID: ${orderNumber}`,
                 [
                   {
                     text: "View Orders",
@@ -420,7 +419,7 @@ export default function CartScreen() {
                     letterSpacing: 0.3,
                   }}
                 >
-                  {defaultAddress.type}
+                  {defaultAddress.is_default ? "Default" : "Address"}
                 </Text>
               </View>
               <Text
@@ -430,9 +429,9 @@ export default function CartScreen() {
                   marginBottom: 4,
                 }}
               >
-                {defaultAddress.line1}
+                {defaultAddress.address_line1}
               </Text>
-              {defaultAddress.line2 && (
+              {defaultAddress.address_line2 && (
                 <Text
                   style={{
                     color: COLORS.secondary,
@@ -440,7 +439,7 @@ export default function CartScreen() {
                     marginBottom: 4,
                   }}
                 >
-                  {defaultAddress.line2}
+                  {defaultAddress.address_line2}
                 </Text>
               )}
               <Text style={{ color: COLORS.text.secondary, fontSize: 14 }}>
@@ -619,8 +618,8 @@ export default function CartScreen() {
                     lineHeight: 18,
                   }}
                 >
-                  Please add {formatCurrency(totalCost - wallet.balance)} to
-                  your wallet to complete this order.
+                  Please add {formatCurrency(totalCost - walletBalance)} to your
+                  wallet to complete this order.
                 </Text>
               </View>
             </View>

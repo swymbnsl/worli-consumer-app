@@ -1,5 +1,4 @@
 import EditModal from "@/components/subscription/EditModal"
-import PausedDatesList from "@/components/subscription/PausedDatesList"
 import PauseModal from "@/components/subscription/PauseModal"
 import SubscriptionCard from "@/components/subscription/SubscriptionCard"
 import Header from "@/components/ui/Header"
@@ -148,16 +147,7 @@ export default function SubscriptionScreen() {
           />
         )}
 
-        {/* Paused Dates List */}
-        {subscription &&
-          subscription.paused_dates &&
-          subscription.paused_dates.length > 0 && (
-            <PausedDatesList
-              pausedDates={subscription.paused_dates}
-              subscriptionId={subscription.id}
-              onUpdate={fetchSubscription}
-            />
-          )}
+        {/* TODO: Paused Dates feature - requires paused_dates column in subscriptions table */}
 
         {/* Cancel Subscription Button */}
         <TouchableOpacity

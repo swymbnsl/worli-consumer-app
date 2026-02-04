@@ -1,15 +1,17 @@
-import { ArrowDownLeft, ArrowUpRight } from 'lucide-react-native';
-import React from 'react';
-import { Text, View } from 'react-native';
-import { Transaction } from '@/types/database.types';
-import { formatFullDate } from '@/utils/dateUtils';
-import { formatCurrency } from '@/utils/formatters';
+import { Transaction } from "@/types/database.types"
+import { formatFullDate } from "@/utils/dateUtils"
+import { formatCurrency } from "@/utils/formatters"
+import { ArrowDownLeft, ArrowUpRight } from "lucide-react-native"
+import React from "react"
+import { Text, View } from "react-native"
 
 interface TransactionListProps {
-  transactions: Transaction[];
+  transactions: Transaction[]
 }
 
-export default function TransactionList({ transactions }: TransactionListProps) {
+export default function TransactionList({
+  transactions,
+}: TransactionListProps) {
   if (transactions.length === 0) {
     return (
       <View className="bg-white mx-4 rounded-2xl p-6 mb-8 shadow-md">
@@ -20,7 +22,7 @@ export default function TransactionList({ transactions }: TransactionListProps) 
           No transactions yet
         </Text>
       </View>
-    );
+    )
   }
 
   return (
@@ -29,18 +31,24 @@ export default function TransactionList({ transactions }: TransactionListProps) 
         Recent Transactions
       </Text>
       {transactions.slice(0, 10).map((txn, idx) => {
-        const isCredit = txn.type === 'credit';
+        const isCredit = txn.type === "credit"
         return (
           <View
             key={txn.id}
             className={`flex-row justify-between items-center py-4 ${
-              idx < Math.min(9, transactions.length - 1) ? 'border-b border-neutral-lightGray' : ''
+              idx < Math.min(9, transactions.length - 1)
+                ? "border-b border-neutral-lightGray"
+                : ""
             }`}
           >
             <View className="flex-row items-center gap-3 flex-1">
-              <View className={`w-10 h-10 rounded-full items-center justify-center ${
-                isCredit ? 'bg-functional-success/10' : 'bg-functional-error/10'
-              }`}>
+              <View
+                className={`w-10 h-10 rounded-full items-center justify-center ${
+                  isCredit
+                    ? "bg-functional-success/10"
+                    : "bg-functional-error/10"
+                }`}
+              >
                 {isCredit ? (
                   <ArrowDownLeft size={18} color="#638C5F" strokeWidth={2.5} />
                 ) : (
@@ -57,19 +65,21 @@ export default function TransactionList({ transactions }: TransactionListProps) 
                   </Text>
                 )}
                 <Text className="font-comfortaa text-xs text-neutral-gray">
-                  {formatFullDate(txn.date)}
+                  {formatFullDate(txn.created_at || "")}
                 </Text>
               </View>
             </View>
-            <Text className={`font-sofia-bold text-lg ${
-              isCredit ? 'text-functional-success' : 'text-functional-error'
-            }`}>
-              {isCredit ? '+' : '-'}
+            <Text
+              className={`font-sofia-bold text-lg ${
+                isCredit ? "text-functional-success" : "text-functional-error"
+              }`}
+            >
+              {isCredit ? "+" : "-"}
               {formatCurrency(txn.amount)}
             </Text>
           </View>
-        );
+        )
       })}
     </View>
-  );
+  )
 }

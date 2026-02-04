@@ -1,68 +1,35 @@
-export interface User {
-  id: string;
-  name: string;
-  phone: string;
-  email: string;
-  language: 'english' | 'hindi' | 'kannada';
-  delivery_preference: 'ring_doorbell' | 'drop_at_door' | 'hand_delivery';
-  created_at: string;
-}
+// Re-export all types from supabase.types.ts for convenience
+import { Tables, TablesInsert, TablesUpdate } from "./supabase.types"
 
-export interface Address {
-  id: string;
-  user_id: string;
-  type: string;
-  line1: string;
-  line2: string | null;
-  city: string;
-  state: string;
-  pincode: string;
-  is_default: boolean;
-  created_at: string;
-}
+// Main types from database tables
+export type User = Tables<"users">
+export type Address = Tables<"addresses">
+export type Subscription = Tables<"subscriptions">
+export type Order = Tables<"orders">
+export type Wallet = Tables<"wallets">
+export type Transaction = Tables<"transactions">
+export type Product = Tables<"products">
+export type Notification = Tables<"notifications">
+export type UserPreference = Tables<"user_preferences">
+export type DeliveryPreference = Tables<"delivery_preferences">
+export type Offer = Tables<"offers">
+export type FAQ = Tables<"faqs">
+export type SupportTicket = Tables<"support_tickets">
+export type BottleReturn = Tables<"bottle_returns">
+export type SubscriptionHold = Tables<"subscription_holds">
+export type Referral = Tables<"referrals">
+export type AppSetting = Tables<"app_settings">
 
-export interface Subscription {
-  id: string;
-  user_id: string;
-  quantity: number;
-  frequency: string;
-  start_date: string;
-  status: string;
-  next_delivery: string | null;
-  paused_dates: string[];
-  created_at: string;
-}
+// Insert types for creating new records
+export type UserInsert = TablesInsert<"users">
+export type AddressInsert = TablesInsert<"addresses">
+export type SubscriptionInsert = TablesInsert<"subscriptions">
+export type OrderInsert = TablesInsert<"orders">
+export type WalletInsert = TablesInsert<"wallets">
+export type TransactionInsert = TablesInsert<"transactions">
 
-export interface Order {
-  id: string;
-  user_id: string;
-  date: string;
-  quantity: number;
-  amount: number;
-  status: string;
-  bottle_returned: boolean;
-  delivery_time: string | null;
-  created_at: string;
-}
-
-export interface Wallet {
-  id: string;
-  user_id: string;
-  balance: number;
-  auto_pay_enabled: boolean;
-  auto_pay_threshold: number;
-  low_balance_alert: number;
-  created_at: string;
-}
-
-export interface Transaction {
-  id: string;
-  user_id: string;
-  date: string;
-  type: 'recharge' | 'debit';
-  amount: number;
-  status: string;
-  description: string | null;
-  created_at: string;
-}
-
+// Update types for updating existing records
+export type UserUpdate = TablesUpdate<"users">
+export type AddressUpdate = TablesUpdate<"addresses">
+export type SubscriptionUpdate = TablesUpdate<"subscriptions">
+export type WalletUpdate = TablesUpdate<"wallets">

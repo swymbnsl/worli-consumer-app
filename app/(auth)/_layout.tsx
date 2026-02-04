@@ -1,3 +1,4 @@
+import { COLORS } from "@/constants/theme"
 import { useAuth } from "@/hooks/useAuth"
 import { Redirect, Stack } from "expo-router"
 import { ActivityIndicator, View } from "react-native"
@@ -13,10 +14,10 @@ export default function AuthLayout() {
           flex: 1,
           justifyContent: "center",
           alignItems: "center",
-          backgroundColor: "#101B53",
+          backgroundColor: COLORS.background,
         }}
       >
-        <ActivityIndicator size="large" color="#E4941C" />
+        <ActivityIndicator size="large" color={COLORS.primary} />
       </View>
     )
   }

@@ -6,6 +6,7 @@ import { Stack } from "expo-router"
 import * as SplashScreen from "expo-splash-screen"
 import { useEffect } from "react"
 import { GestureHandlerRootView } from "react-native-gesture-handler"
+import { SafeAreaProvider } from "react-native-safe-area-context"
 import "../global.css"
 
 SplashScreen.preventAutoHideAsync()
@@ -33,22 +34,29 @@ export default function RootLayout() {
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <AuthProvider>
-        <WalletProvider>
-          <CartProvider>
-            <Stack screenOptions={{ headerShown: false }}>
-              <Stack.Screen name="(auth)" options={{ headerShown: false }} />
-              <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-              <Stack.Screen name="cart" options={{ headerShown: false }} />
-              <Stack.Screen name="product" options={{ headerShown: false }} />
-              <Stack.Screen
-                name="order-detail"
-                options={{ headerShown: false }}
-              />
-            </Stack>
-          </CartProvider>
-        </WalletProvider>
-      </AuthProvider>
+      <SafeAreaProvider>
+        <AuthProvider>
+          <WalletProvider>
+            <CartProvider>
+              <Stack screenOptions={{ headerShown: false }}>
+                <Stack.Screen name="index" options={{ headerShown: false }} />
+                <Stack.Screen
+                  name="onboarding"
+                  options={{ headerShown: false }}
+                />
+                <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+                <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+                <Stack.Screen name="cart" options={{ headerShown: false }} />
+                <Stack.Screen name="product" options={{ headerShown: false }} />
+                <Stack.Screen
+                  name="order-detail"
+                  options={{ headerShown: false }}
+                />
+              </Stack>
+            </CartProvider>
+          </WalletProvider>
+        </AuthProvider>
+      </SafeAreaProvider>
     </GestureHandlerRootView>
   )
 }

@@ -27,7 +27,7 @@ export default function OrdersScreen() {
         .from("orders")
         .select("*")
         .eq("user_id", user.id)
-        .order("date", { ascending: false })
+        .order("delivery_date", { ascending: false })
 
       if (error) throw error
       setOrders(data || [])

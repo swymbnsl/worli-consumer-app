@@ -1,16 +1,17 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
-import { supabase } from '@/lib/supabase';
-import { Transaction, Wallet } from '@/types/database.types';
-import { AuthContext } from './AuthContext';
+import { supabase } from "@/lib/supabase"
+import { useUserStore } from "@/stores/user-store"
+import { Transaction, Wallet } from "@/types/database.types"
+import React, { createContext, useContext, useEffect, useState } from "react"
+import { AuthContext } from "./AuthContext"
 
 interface WalletContextType {
-  wallet: Wallet | null;
-  transactions: Transaction[];
-  loading: boolean;
-  rechargeWallet: (amount: number) => Promise<boolean>;
-  deductFromWallet: (amount: number, description: string) => Promise<boolean>;
-  updateWalletSettings: (settings: Partial<Wallet>) => Promise<boolean>;
-  refreshWallet: () => Promise<void>;
+  wallet: Wallet | null
+  transactions: Transaction[]
+  loading: boolean
+  rechargeWallet: (amount: number) => Promise<boolean>
+  deductFromWallet: (amount: number, description: string) => Promise<boolean>
+  updateWalletSettings: (settings: Partial<Wallet>) => Promise<boolean>
+  refreshWallet: () => Promise<void>
 }
 
 export const WalletContext = createContext<WalletContextType>({
@@ -21,168 +22,178 @@ export const WalletContext = createContext<WalletContextType>({
   deductFromWallet: async () => false,
   updateWalletSettings: async () => false,
   refreshWallet: async () => {},
-});
+})
 
-export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { user, isLoggedIn } = useContext(AuthContext);
-  const [wallet, setWallet] = useState<Wallet | null>(null);
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [loading, setLoading] = useState(true);
+export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({
+  children,
+}) => {
+  const { isLoggedIn } = useContext(AuthContext)
+  const user = useUserStore((state) => state.user)
+  const [wallet, setWallet] = useState<Wallet | null>(null)
+  const [transactions, setTransactions] = useState<Transaction[]>([])
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     if (isLoggedIn && user) {
-      fetchWallet();
-      fetchTransactions();
+      fetchWallet()
+      fetchTransactions()
     } else {
-      setWallet(null);
-      setTransactions([]);
-      setLoading(false);
+      setWallet(null)
+      setTransactions([])
+      setLoading(false)
     }
-  }, [isLoggedIn, user]);
+  }, [isLoggedIn, user])
 
   const fetchWallet = async () => {
-    if (!user) return;
+    if (!user) return
 
     try {
       const { data, error } = await supabase
-        .from('wallets')
-        .select('*')
-        .eq('user_id', user.id)
-        .single();
+        .from("wallets")
+        .select("*")
+        .eq("user_id", user.id)
+        .single()
 
-      if (error) throw error;
-      setWallet(data);
+      if (error) throw error
+      setWallet(data)
     } catch (error) {
-      console.error('Error fetching wallet:', error);
+      console.error("Error fetching wallet:", error)
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
   const fetchTransactions = async () => {
-    if (!user) return;
+    if (!user) return
 
     try {
       const { data, error } = await supabase
-        .from('transactions')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false })
-        .limit(50);
+        .from("transactions")
+        .select("*")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false })
+        .limit(50)
 
-      if (error) throw error;
-      setTransactions(data || []);
+      if (error) throw error
+      setTransactions(data || [])
     } catch (error) {
-      console.error('Error fetching transactions:', error);
+      console.error("Error fetching transactions:", error)
     }
-  };
+  }
 
   const rechargeWallet = async (amount: number): Promise<boolean> => {
-    if (!user || !wallet) return false;
+    if (!user || !wallet) return false
 
     try {
-      const newBalance = Number(wallet.balance) + amount;
+      const newBalance = Number(wallet.balance) + amount
 
       // Update wallet balance
       const { error: walletError } = await supabase
-        .from('wallets')
+        .from("wallets")
         .update({ balance: newBalance })
-        .eq('user_id', user.id);
+        .eq("user_id", user.id)
 
-      if (walletError) throw walletError;
+      if (walletError) throw walletError
 
       // Create transaction record
-      const { error: txnError } = await supabase
-        .from('transactions')
-        .insert([
-          {
-            user_id: user.id,
-            date: new Date().toISOString().split('T')[0],
-            type: 'recharge',
-            amount: amount,
-            status: 'success',
-            description: 'Wallet recharge',
-          },
-        ]);
+      const { error: txnError } = await supabase.from("transactions").insert([
+        {
+          transaction_id: `TXN${Date.now()}`,
+          user_id: user.id,
+          wallet_id: wallet.id,
+          type: "credit",
+          amount: amount,
+          status: "success",
+          description: "Wallet recharge",
+          balance_before: wallet.balance,
+          balance_after: newBalance,
+        },
+      ])
 
-      if (txnError) throw txnError;
+      if (txnError) throw txnError
 
-      await fetchWallet();
-      await fetchTransactions();
-      return true;
+      await fetchWallet()
+      await fetchTransactions()
+      return true
     } catch (error) {
-      console.error('Recharge Error:', error);
-      return false;
+      console.error("Recharge Error:", error)
+      return false
     }
-  };
+  }
 
-  const deductFromWallet = async (amount: number, description: string): Promise<boolean> => {
-    if (!user || !wallet) return false;
+  const deductFromWallet = async (
+    amount: number,
+    description: string,
+  ): Promise<boolean> => {
+    if (!user || !wallet) return false
 
     try {
-      const newBalance = Number(wallet.balance) - amount;
+      const newBalance = Number(wallet.balance) - amount
 
       if (newBalance < 0) {
-        console.error('Insufficient balance');
-        return false;
+        console.error("Insufficient balance")
+        return false
       }
 
       // Update wallet balance
       const { error: walletError } = await supabase
-        .from('wallets')
+        .from("wallets")
         .update({ balance: newBalance })
-        .eq('user_id', user.id);
+        .eq("user_id", user.id)
 
-      if (walletError) throw walletError;
+      if (walletError) throw walletError
 
       // Create transaction record
-      const { error: txnError } = await supabase
-        .from('transactions')
-        .insert([
-          {
-            user_id: user.id,
-            date: new Date().toISOString().split('T')[0],
-            type: 'debit',
-            amount: amount,
-            status: 'success',
-            description: description,
-          },
-        ]);
+      const { error: txnError } = await supabase.from("transactions").insert([
+        {
+          transaction_id: `TXN${Date.now()}`,
+          user_id: user.id,
+          wallet_id: wallet.id,
+          type: "debit",
+          amount: amount,
+          status: "success",
+          description: description,
+          balance_before: wallet.balance,
+          balance_after: newBalance,
+        },
+      ])
 
-      if (txnError) throw txnError;
+      if (txnError) throw txnError
 
-      await fetchWallet();
-      await fetchTransactions();
-      return true;
+      await fetchWallet()
+      await fetchTransactions()
+      return true
     } catch (error) {
-      console.error('Deduct Error:', error);
-      return false;
+      console.error("Deduct Error:", error)
+      return false
     }
-  };
+  }
 
-  const updateWalletSettings = async (settings: Partial<Wallet>): Promise<boolean> => {
-    if (!user) return false;
+  const updateWalletSettings = async (
+    settings: Partial<Wallet>,
+  ): Promise<boolean> => {
+    if (!user) return false
 
     try {
       const { error } = await supabase
-        .from('wallets')
+        .from("wallets")
         .update(settings)
-        .eq('user_id', user.id);
+        .eq("user_id", user.id)
 
-      if (error) throw error;
+      if (error) throw error
 
-      await fetchWallet();
-      return true;
+      await fetchWallet()
+      return true
     } catch (error) {
-      console.error('Update Settings Error:', error);
-      return false;
+      console.error("Update Settings Error:", error)
+      return false
     }
-  };
+  }
 
   const refreshWallet = async () => {
-    await fetchWallet();
-    await fetchTransactions();
-  };
+    await fetchWallet()
+    await fetchTransactions()
+  }
 
   return (
     <WalletContext.Provider
@@ -198,6 +209,5 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     >
       {children}
     </WalletContext.Provider>
-  );
-};
-
+  )
+}

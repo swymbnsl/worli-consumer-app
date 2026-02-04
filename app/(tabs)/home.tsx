@@ -39,7 +39,7 @@ export default function HomeScreen() {
         .from("orders")
         .select("*")
         .eq("user_id", user.id)
-        .order("date", { ascending: false })
+        .order("delivery_date", { ascending: false })
         .limit(30)
 
       if (ordersError) throw ordersError
@@ -66,9 +66,8 @@ export default function HomeScreen() {
     fetchData()
   }
 
-  const unreturnedBottles = orders.filter(
-    (o) => o.status === "delivered" && !o.bottle_returned,
-  ).length
+  // TODO: Implement bottle tracking when schema supports it
+  const unreturnedBottles = 0
 
   return (
     <SafeAreaView

@@ -1,6 +1,7 @@
 import Button from "@/components/ui/Button"
 import TextInput from "@/components/ui/TextInput"
 import { useAuth } from "@/hooks/useAuth"
+import { router } from "expo-router"
 import React, { useEffect, useRef, useState } from "react"
 import {
   Alert,
@@ -21,10 +22,17 @@ export default function LoginScreen() {
   const [otpSent, setOtpSent] = useState(false)
   const [loading, setLoading] = useState(false)
 
-  const { login, sendOTP } = useAuth()
+  const { login, sendOTP, isLoggedIn } = useAuth()
 
   // Create refs for OTP inputs
   const otpRefs = useRef<Array<RNTextInput | null>>([])
+
+  // Redirect to home if already logged in
+  useEffect(() => {
+    if (isLoggedIn) {
+      router.replace("/(tabs)/home")
+    }
+  }, [isLoggedIn])
 
   // Focus first OTP input when OTP screen is shown
   useEffect(() => {
@@ -74,13 +82,15 @@ export default function LoginScreen() {
       console.log(otp)
       const success = await login(fullPhone, otp)
 
-      if (!success) {
+      if (success) {
+        // Navigation will be handled by the useEffect watching isLoggedIn
+        router.replace("/(tabs)/home")
+      } else {
         Alert.alert(
           "Invalid OTP",
           "The OTP you entered is incorrect. Please try again.",
         )
       }
-      // If successful, the AuthContext will handle the redirect
     } catch (error) {
       console.error("Verification Error:", error)
       Alert.alert("Error", "Failed to verify OTP. Please try again.")

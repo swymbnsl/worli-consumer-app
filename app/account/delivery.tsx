@@ -7,29 +7,45 @@ import { Text, TouchableOpacity, View } from "react-native"
 
 export default function DeliveryPreferencesScreen() {
   const router = useRouter()
-  const { user, updateUser } = useAuth()
+  const { deliveryPreference, updateDeliveryPreference } = useAuth()
 
   const preferences = [
     {
       id: "ring_doorbell",
       label: "Ring Doorbell",
       description: "Delivery person will ring the doorbell",
+      field: "ring_doorbell",
     },
     {
-      id: "drop_at_door",
+      id: "leave_at_door",
       label: "Drop at Door",
       description: "Leave the order at your doorstep",
+      field: "leave_at_door",
     },
     {
       id: "hand_delivery",
       label: "In-hand Delivery",
       description: "Hand over the order directly to you",
+      field: "hand_delivery",
     },
   ]
 
-  const handleSelect = async (prefId: string) => {
-    await updateUser({ delivery_preference: prefId as any })
+  const getCurrentPreference = () => {
+    if (deliveryPreference?.hand_delivery) return "hand_delivery"
+    if (deliveryPreference?.leave_at_door) return "leave_at_door"
+    return "ring_doorbell" // Default
   }
+
+  const handleSelect = async (prefId: string) => {
+    const updates = {
+      ring_doorbell: prefId === "ring_doorbell",
+      leave_at_door: prefId === "leave_at_door",
+      hand_delivery: prefId === "hand_delivery",
+    }
+    await updateDeliveryPreference(updates)
+  }
+
+  const currentPref = getCurrentPreference()
 
   return (
     <View style={{ flex: 1, backgroundColor: COLORS.background }}>
@@ -82,7 +98,7 @@ export default function DeliveryPreferencesScreen() {
               flexDirection: "row",
               justifyContent: "space-between",
               alignItems: "center",
-              borderWidth: user?.delivery_preference === pref.id ? 2 : 0,
+              borderWidth: currentPref === pref.id ? 2 : 0,
               borderColor: COLORS.primary,
             }}
             onPress={() => handleSelect(pref.id)}
@@ -108,7 +124,7 @@ export default function DeliveryPreferencesScreen() {
                 {pref.description}
               </Text>
             </View>
-            {user?.delivery_preference === pref.id && (
+            {currentPref === pref.id && (
               <CheckCircle size={28} color={COLORS.primary} />
             )}
           </TouchableOpacity>

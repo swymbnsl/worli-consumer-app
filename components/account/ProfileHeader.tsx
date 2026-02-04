@@ -1,15 +1,15 @@
-import { Edit2 } from 'lucide-react-native';
-import React from 'react';
-import { Text, TouchableOpacity, View } from 'react-native';
-import { User } from '@/types/database.types';
-import { formatPhone } from '@/utils/formatters';
+import { User } from "@/types/database.types"
+import { formatPhone } from "@/utils/formatters"
+import { Edit2 } from "lucide-react-native"
+import React from "react"
+import { Text, TouchableOpacity, View } from "react-native"
 
 interface ProfileHeaderProps {
-  user: User | null;
+  user: User | null
 }
 
 export default function ProfileHeader({ user }: ProfileHeaderProps) {
-  if (!user) return null;
+  if (!user) return null
 
   return (
     <View className="bg-primary-navy px-4 pt-8 pb-8 items-center">
@@ -18,16 +18,16 @@ export default function ProfileHeader({ user }: ProfileHeaderProps) {
           <Text className="text-4xl">👤</Text>
         </View>
         <TouchableOpacity className="absolute -bottom-2 -right-2 bg-primary-orange w-10 h-10 rounded-xl items-center justify-center border-2 border-white shadow-sm">
-           <Edit2 size={16} color="#FFFFFF" strokeWidth={2.5} />
+          <Edit2 size={16} color="#FFFFFF" strokeWidth={2.5} />
         </TouchableOpacity>
       </View>
-      
+
       <Text className="font-sofia-bold text-2xl text-white mb-1">
-        {user.name}
+        {user.full_name || "User"}
       </Text>
       <Text className="font-comfortaa text-sm text-white/70 tracking-widest">
-        {formatPhone(user.phone)}
+        {formatPhone(user.phone_number)}
       </Text>
     </View>
-  );
+  )
 }
