@@ -3,7 +3,6 @@ import {
   CategoriesGrid,
   DateStrip,
   PromoBanner,
-  SearchBar,
   TodayDeliveryCard,
 } from "@/components/home"
 import Header from "@/components/ui/Header"
@@ -131,7 +130,7 @@ export default function HomeScreen() {
   }
 
   return (
-    <View className="flex-1 bg-neutral-lightCream">
+    <View className="flex-1 bg-white">
       {/* Header with Logo and Location */}
       <Header />
 
@@ -148,15 +147,10 @@ export default function HomeScreen() {
         }
         contentContainerStyle={{ paddingBottom: 120 }}
       >
-        {/* Search Bar */}
-        <View className="px-4 mt-4 mb-5">
-          <SearchBar onPress={handleSearchPress} />
-        </View>
-
         {/* Date Strip Calendar */}
         <Animated.View
           entering={FadeInDown.duration(400).delay(150)}
-          className="mb-2"
+          className="mb-2 bg-neutral-lightCream/30"
         >
           <DateStrip
             orders={orders}
@@ -166,12 +160,12 @@ export default function HomeScreen() {
         </Animated.View>
 
         {/* Calendar Legend */}
-        <View className="mb-4">
+        <View className="mb-4 bg-neutral-lightCream/30 pb-3">
           <CalendarLegend />
         </View>
 
         {/* Today's Delivery Status Card */}
-        <View className="px-4 mb-6">
+        <View className="px-4 mb-5">
           <TodayDeliveryCard
             selectedDate={selectedDate}
             order={selectedDateOrder}
@@ -179,17 +173,14 @@ export default function HomeScreen() {
         </View>
 
         {/* Promotional Banners Carousel */}
-        {offers.length > 0 && (
-          <View className="mb-6">
-            <PromoBanner offers={offers} onPressOffer={handleOfferPress} />
-          </View>
-        )}
+        <View className="mb-6">
+          <PromoBanner offers={offers} onPressOffer={handleOfferPress} />
+        </View>
 
-        {/* All Categories Section */}
         <View className="px-4">
           <Animated.View entering={FadeInDown.duration(400).delay(300)}>
             <Text className="font-sofia-bold text-xl text-primary-navy mb-4">
-              All Categories
+              All Products
             </Text>
           </Animated.View>
 

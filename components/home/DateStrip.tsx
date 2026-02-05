@@ -33,7 +33,7 @@ const generateDays = (
   holdDates: string[] = [],
 ): DayItem[] => {
   const days: DayItem[] = []
-  
+
   // Get today's date in local timezone
   const today = new Date()
   const todayYear = today.getFullYear()
@@ -45,14 +45,14 @@ const generateDays = (
 
   for (let i = 0; i < 31; i++) {
     const currentDate = new Date(todayYear, todayMonth, todayDate - 15 + i)
-    
+
     // Format date as YYYY-MM-DD in local timezone
     const year = currentDate.getFullYear()
     const month = String(currentDate.getMonth() + 1).padStart(2, "0")
     const day = String(currentDate.getDate()).padStart(2, "0")
     const dateStr = `${year}-${month}-${day}`
 
-    const isToday = 
+    const isToday =
       currentDate.getFullYear() === todayYear &&
       currentDate.getMonth() === todayMonth &&
       currentDate.getDate() === todayDate

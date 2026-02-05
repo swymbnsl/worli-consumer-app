@@ -13,7 +13,7 @@ const formatDisplayDate = (dateStr: string): string => {
   // Parse date string in local timezone (YYYY-MM-DD format)
   const [year, month, day] = dateStr.split("-").map(Number)
   const date = new Date(year, month - 1, day)
-  
+
   const today = new Date()
   const todayYear = today.getFullYear()
   const todayMonth = today.getMonth()

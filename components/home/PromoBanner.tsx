@@ -1,184 +1,139 @@
 import { Offer } from "@/types/database.types"
 import { Image } from "expo-image"
-import React, { useEffect, useRef, useState } from "react"
-import {
-  Dimensions,
-  FlatList,
-  NativeScrollEvent,
-  NativeSyntheticEvent,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native"
-import Animated, { FadeIn } from "react-native-reanimated"
+import React, { useRef } from "react"
+import { Dimensions, TouchableOpacity, View } from "react-native"
+import { useSharedValue } from "react-native-reanimated"
+import Carousel, {
+  ICarouselInstance,
+  Pagination,
+} from "react-native-reanimated-carousel"
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window")
-const BANNER_WIDTH = SCREEN_WIDTH - 32 // 16px padding on each side
-const BANNER_HEIGHT = 180
+const ITEM_WIDTH = SCREEN_WIDTH * 0.8 // 80% of screen width for main item
+const BANNER_HEIGHT = 150
+
+// Local carousel images
+const CAROUSEL_IMAGES = [
+  require("@/assets/images/carousel/1.png"),
+  require("@/assets/images/carousel/2.png"),
+  require("@/assets/images/carousel/3.png"),
+  require("@/assets/images/carousel/4.png"),
+]
+
+interface CarouselItem {
+  id: string
+  image: any
+  offer?: Offer
+}
 
 interface PromoBannerProps {
-  offers: Offer[]
+  offers?: Offer[]
   onPressOffer?: (offer: Offer) => void
   autoScrollInterval?: number
 }
 
 export default function PromoBanner({
-  offers,
+  offers = [],
   onPressOffer,
   autoScrollInterval = 4000,
 }: PromoBannerProps) {
-  const flatListRef = useRef<FlatList>(null)
-  const [activeIndex, setActiveIndex] = useState(0)
-  const autoScrollTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const carouselRef = useRef<ICarouselInstance>(null)
+  const progressValue = useSharedValue<number>(0)
 
-  // Auto-scroll functionality
-  useEffect(() => {
-    if (offers.length <= 1) return
+  // Create carousel items from local images
+  const carouselItems: CarouselItem[] = CAROUSEL_IMAGES.map((image, index) => ({
+    id: `carousel-${index + 1}`,
+    image,
+    offer: offers[index], // Link to offer if available
+  }))
 
-    const startAutoScroll = () => {
-      autoScrollTimerRef.current = setInterval(() => {
-        const nextIndex = (activeIndex + 1) % offers.length
-        flatListRef.current?.scrollToIndex({
-          index: nextIndex,
-          animated: true,
-        })
-        setActiveIndex(nextIndex)
-      }, autoScrollInterval)
-    }
-
-    startAutoScroll()
-
-    return () => {
-      if (autoScrollTimerRef.current) {
-        clearInterval(autoScrollTimerRef.current)
-      }
-    }
-  }, [activeIndex, offers.length, autoScrollInterval])
-
-  const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
-    const scrollPosition = event.nativeEvent.contentOffset.x
-    const index = Math.round(scrollPosition / BANNER_WIDTH)
-    if (index !== activeIndex && index >= 0 && index < offers.length) {
-      setActiveIndex(index)
-    }
+  const onPressPagination = (index: number) => {
+    carouselRef.current?.scrollTo({
+      count: index - progressValue.value,
+      animated: true,
+    })
   }
-
-  const handleScrollBeginDrag = () => {
-    // Stop auto-scroll when user starts dragging
-    if (autoScrollTimerRef.current) {
-      clearInterval(autoScrollTimerRef.current)
-    }
-  }
-
-  const renderBanner = ({ item, index }: { item: Offer; index: number }) => {
+  const renderItem = ({ item }: { item: CarouselItem; index: number }) => {
     return (
-      <TouchableOpacity
-        activeOpacity={0.95}
-        onPress={() => onPressOffer?.(item)}
-        style={{ width: BANNER_WIDTH }}
+      <View
+        className="py-3"
+        style={{
+          width: ITEM_WIDTH,
+          height: BANNER_HEIGHT,
+          paddingHorizontal: 6,
+        }}
       >
-        <Animated.View
-          entering={FadeIn.delay(index * 100).duration(300)}
-          className="bg-white rounded-2xl overflow-hidden shadow-md"
-          style={{ height: BANNER_HEIGHT }}
+        <TouchableOpacity
+          activeOpacity={0.95}
+          onPress={() => item.offer && onPressOffer?.(item.offer)}
+          style={{
+            flex: 1,
+            borderRadius: 20,
+            overflow: "hidden",
+            shadowColor: "#000",
+            shadowOffset: { width: 0, height: 4 },
+            shadowOpacity: 0.15,
+            shadowRadius: 12,
+            elevation: 8,
+          }}
         >
-          {item.image_url ? (
-            <Image
-              source={{ uri: item.image_url }}
-              style={{ width: "100%", height: "100%" }}
-              contentFit="cover"
-              transition={200}
-            />
-          ) : (
-            // Fallback banner design when no image
-            <View className="flex-1 flex-row bg-gradient-to-r from-primary-cream to-white p-5">
-              {/* Left side - Product visualization */}
-              <View className="flex-1 justify-center items-center">
-                <View className="bg-white rounded-2xl p-4 shadow-sm">
-                  <Text className="text-5xl">🥛</Text>
-                </View>
-              </View>
-
-              {/* Right side - Offer details */}
-              <View className="flex-1 justify-center pl-4">
-                <Text className="font-sofia-bold text-xl text-primary-navy mb-2">
-                  {item.title}
-                </Text>
-                {item.description && (
-                  <Text
-                    className="font-comfortaa text-sm text-neutral-gray mb-3"
-                    numberOfLines={2}
-                  >
-                    {item.description}
-                  </Text>
-                )}
-                {item.discount_percentage && (
-                  <View className="bg-primary-orange rounded-full px-3 py-1 self-start">
-                    <Text className="font-sofia-bold text-white text-sm">
-                      {item.discount_percentage}% OFF
-                    </Text>
-                  </View>
-                )}
-              </View>
-            </View>
-          )}
-        </Animated.View>
-      </TouchableOpacity>
+          <Image
+            source={item.image}
+            style={{ width: "100%", height: "100%" }}
+            contentFit="cover"
+            transition={200}
+          />
+        </TouchableOpacity>
+      </View>
     )
   }
 
-  // Empty state
-  if (!offers || offers.length === 0) {
-    return null
-  }
-
   return (
-    <View>
-      <FlatList
-        ref={flatListRef}
-        data={offers}
-        keyExtractor={(item) => item.id}
-        renderItem={renderBanner}
-        horizontal
-        pagingEnabled
-        showsHorizontalScrollIndicator={false}
-        onScroll={handleScroll}
-        onScrollBeginDrag={handleScrollBeginDrag}
-        scrollEventThrottle={16}
-        snapToInterval={BANNER_WIDTH}
-        decelerationRate="fast"
-        contentContainerStyle={{ paddingHorizontal: 16 }}
-        ItemSeparatorComponent={() => <View style={{ width: 12 }} />}
-        getItemLayout={(_, index) => ({
-          length: BANNER_WIDTH + 12,
-          offset: (BANNER_WIDTH + 12) * index,
-          index,
-        })}
-        onScrollToIndexFailed={() => {}}
+    <View className="flex justify-center items-center">
+      <Carousel
+        ref={carouselRef}
+        loop
+        width={ITEM_WIDTH}
+        height={BANNER_HEIGHT}
+        autoPlay={true}
+        autoPlayInterval={autoScrollInterval}
+        data={carouselItems}
+        scrollAnimationDuration={800}
+        onProgressChange={(_, absoluteProgress) => {
+          progressValue.value = absoluteProgress
+        }}
+        renderItem={renderItem}
+        mode="parallax"
+        modeConfig={{
+          parallaxScrollingScale: 1,
+          parallaxScrollingOffset: 0,
+          parallaxAdjacentItemScale: 1,
+        }}
+        style={{
+          width: SCREEN_WIDTH,
+          justifyContent: "center",
+          alignItems: "center",
+        }}
+        containerStyle={{}}
       />
-
-      {/* Pagination Dots */}
-      {offers.length > 1 && (
-        <View className="flex-row justify-center items-center mt-4 gap-2">
-          {offers.map((_, index) => (
-            <TouchableOpacity
-              key={index}
-              onPress={() => {
-                flatListRef.current?.scrollToIndex({ index, animated: true })
-                setActiveIndex(index)
-              }}
-            >
-              <View
-                className={`h-2 rounded-full transition-all ${
-                  index === activeIndex
-                    ? "bg-primary-navy w-6"
-                    : "bg-neutral-lightGray w-2"
-                }`}
-              />
-            </TouchableOpacity>
-          ))}
-        </View>
-      )}
+      <Pagination.Basic
+        progress={progressValue}
+        data={carouselItems}
+        dotStyle={{
+          width: 8,
+          height: 8,
+          borderRadius: 4,
+          backgroundColor: "#D1D5DB", // neutral-lightGray
+        }}
+        activeDotStyle={{
+          backgroundColor: "#101B53", // primary-navy
+        }}
+        containerStyle={{
+          gap: 8,
+          marginTop: 8,
+        }}
+        onPress={onPressPagination}
+      />
     </View>
   )
 }

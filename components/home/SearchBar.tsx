@@ -23,12 +23,12 @@ export default function SearchBar({
   return (
     <Animated.View entering={FadeInDown.duration(400).delay(100)}>
       <Container onPress={onPress} activeOpacity={0.8} className="relative">
-        <View className="bg-white border border-neutral-lightGray rounded-2xl flex-row items-center px-4 py-3 shadow-sm">
-          <Search size={20} color="#B3B3B3" />
+        <View className="bg-neutral-lightCream/50 border border-neutral-lightGray/60 rounded-2xl flex-row items-center px-4 py-1 shadow-sm">
+          <Search size={22} color="#9CA3AF" strokeWidth={2.5} />
           <TextInput
-            className="flex-1 ml-3 font-comfortaa text-base text-neutral-darkGray"
+            className="flex-1 ml-3 font-comfortaa text-[15px] text-neutral-darkGray"
             placeholder={placeholder}
-            placeholderTextColor="#B3B3B3"
+            placeholderTextColor="#9CA3AF"
             value={value}
             onChangeText={onChangeText}
             editable={editable && !onPress}

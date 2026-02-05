@@ -112,11 +112,11 @@ export default function CategoriesGrid({
             activeOpacity={0.8}
           >
             {/* Product Image */}
-            <View className="bg-neutral-lightCream rounded-xl p-4 mb-3 items-center justify-center h-24">
+            <View className="bg-neutral-lightCream/50 rounded-3xl p-4 mb-3 items-center justify-center h-24">
               {category.image_url ? (
                 <Image
                   source={{ uri: category.image_url }}
-                  style={{ width: 64, height: 64 }}
+                  style={{ width: 90, height: 90 }}
                   contentFit="contain"
                   transition={200}
                 />
