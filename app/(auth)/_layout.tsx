@@ -1,10 +1,12 @@
 import { COLORS } from "@/constants/theme"
 import { useAuth } from "@/hooks/useAuth"
+import { useUserStore } from "@/stores/user-store"
 import { Redirect, Stack } from "expo-router"
 import { ActivityIndicator, View } from "react-native"
 
 export default function AuthLayout() {
-  const { isLoggedIn, loading } = useAuth()
+  const { isLoggedIn, loading, isProfileComplete } = useAuth()
+  const user = useUserStore((s) => s.user)
 
   // Show loading state while checking auth
   if (loading) {
@@ -22,8 +24,11 @@ export default function AuthLayout() {
     )
   }
 
-  // Redirect to home if already logged in
+  // Redirect based on auth and profile completion status
   if (isLoggedIn) {
+    if (!isProfileComplete) {
+      return <Redirect href="/complete-profile" />
+    }
     return <Redirect href="/(tabs)/home" />
   }
 

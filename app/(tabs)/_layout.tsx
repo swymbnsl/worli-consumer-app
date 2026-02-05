@@ -1,12 +1,12 @@
 import { COLORS } from "@/constants/theme"
 import { useAuth } from "@/hooks/useAuth"
-import { Tabs } from "expo-router"
+import { Redirect, Tabs } from "expo-router"
 import { Home, Package, ShoppingCart, User, Wallet } from "lucide-react-native"
 import { ActivityIndicator, Platform, View } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 
 export default function TabsLayout() {
-  const { isLoggedIn, loading } = useAuth()
+  const { isLoggedIn, loading, isProfileComplete } = useAuth()
   const insets = useSafeAreaInsets()
 
   // Show loading state while checking auth
@@ -23,6 +23,11 @@ export default function TabsLayout() {
         <ActivityIndicator size="large" color={COLORS.primary} />
       </View>
     )
+  }
+
+  // Redirect to complete profile if not complete
+  if (isLoggedIn && !isProfileComplete) {
+    return <Redirect href="/complete-profile" />
   }
 
   // Redirect to login if not authenticated

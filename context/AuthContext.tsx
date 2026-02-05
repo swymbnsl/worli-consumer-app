@@ -16,6 +16,7 @@ interface AuthContextType {
   session: Session | null
   loading: boolean
   isLoggedIn: boolean
+  isProfileComplete: boolean
   sendOTP: (phone: string) => Promise<boolean>
   login: (phone: string, otp: string) => Promise<boolean>
   logout: () => Promise<void>
@@ -30,6 +31,7 @@ export const AuthContext = createContext<AuthContextType>({
   session: null,
   loading: true,
   isLoggedIn: false,
+  isProfileComplete: false,
   sendOTP: async () => false,
   login: async () => false,
   logout: async () => {},
@@ -383,6 +385,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         session,
         loading,
         isLoggedIn: !!session && !!user,
+        isProfileComplete: !!user?.full_name && user.full_name.trim() !== "",
         sendOTP,
         login,
         logout,

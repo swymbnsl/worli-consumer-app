@@ -14,15 +14,21 @@ export default function Index() {
       if (loading) return
 
       if (!isLoggedIn) {
-        router.replace("/onboarding" as any)
+        router.replace("/onboarding")
         return
       }
 
       // User is logged in, check if profile is complete
       if (user) {
-        router.replace("/(tabs)/home")
+        // Check if profile is incomplete (full_name is null/empty)
+        if (!user.full_name || user.full_name.trim() === "") {
+          router.replace("/complete-profile")
+        } else {
+          router.replace("/(tabs)/home")
+        }
       } else {
         // If user data is not available yet, wait for it
+        // This shouldn't happen as fetchUserAndWallet is called after login
         router.replace("/(tabs)/home")
       }
     }

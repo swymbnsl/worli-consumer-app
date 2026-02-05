@@ -55,6 +55,10 @@ export default function RootLayout() {
                     options={{ headerShown: false }}
                   />
                   <Stack.Screen
+                    name="complete-profile"
+                    options={{ headerShown: false }}
+                  />
+                  <Stack.Screen
                     name="(tabs)"
                     options={{ headerShown: false }}
                   />
