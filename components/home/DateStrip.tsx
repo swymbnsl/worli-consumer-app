@@ -33,19 +33,29 @@ const generateDays = (
   holdDates: string[] = [],
 ): DayItem[] => {
   const days: DayItem[] = []
+  
+  // Get today's date in local timezone
   const today = new Date()
-  today.setHours(0, 0, 0, 0)
+  const todayYear = today.getFullYear()
+  const todayMonth = today.getMonth()
+  const todayDate = today.getDate()
 
   // Start from 15 days ago, show 31 days total (15 past + today + 15 future)
-  const startDate = new Date(today)
-  startDate.setDate(startDate.getDate() - 15)
+  const startDate = new Date(todayYear, todayMonth, todayDate - 15)
 
   for (let i = 0; i < 31; i++) {
-    const currentDate = new Date(startDate)
-    currentDate.setDate(startDate.getDate() + i)
-    const dateStr = currentDate.toISOString().split("T")[0]
+    const currentDate = new Date(todayYear, todayMonth, todayDate - 15 + i)
+    
+    // Format date as YYYY-MM-DD in local timezone
+    const year = currentDate.getFullYear()
+    const month = String(currentDate.getMonth() + 1).padStart(2, "0")
+    const day = String(currentDate.getDate()).padStart(2, "0")
+    const dateStr = `${year}-${month}-${day}`
 
-    const isToday = currentDate.getTime() === today.getTime()
+    const isToday = 
+      currentDate.getFullYear() === todayYear &&
+      currentDate.getMonth() === todayMonth &&
+      currentDate.getDate() === todayDate
     const isFirstOfMonth = currentDate.getDate() === 1
 
     // Determine status

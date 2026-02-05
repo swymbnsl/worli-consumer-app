@@ -10,20 +10,31 @@ interface TodayDeliveryCardProps {
 }
 
 const formatDisplayDate = (dateStr: string): string => {
-  const date = new Date(dateStr)
+  // Parse date string in local timezone (YYYY-MM-DD format)
+  const [year, month, day] = dateStr.split("-").map(Number)
+  const date = new Date(year, month - 1, day)
+  
   const today = new Date()
-  today.setHours(0, 0, 0, 0)
+  const todayYear = today.getFullYear()
+  const todayMonth = today.getMonth()
+  const todayDate = today.getDate()
 
-  const dateToCheck = new Date(dateStr)
-  dateToCheck.setHours(0, 0, 0, 0)
-
-  if (dateToCheck.getTime() === today.getTime()) {
+  // Check if it's today
+  if (
+    date.getFullYear() === todayYear &&
+    date.getMonth() === todayMonth &&
+    date.getDate() === todayDate
+  ) {
     return "Today"
   }
 
-  const tomorrow = new Date(today)
-  tomorrow.setDate(tomorrow.getDate() + 1)
-  if (dateToCheck.getTime() === tomorrow.getTime()) {
+  // Check if it's tomorrow
+  const tomorrow = new Date(todayYear, todayMonth, todayDate + 1)
+  if (
+    date.getFullYear() === tomorrow.getFullYear() &&
+    date.getMonth() === tomorrow.getMonth() &&
+    date.getDate() === tomorrow.getDate()
+  ) {
     return "Tomorrow"
   }
 

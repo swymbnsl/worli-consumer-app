@@ -27,10 +27,15 @@ export default function HomeScreen() {
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
 
-  // Selected date for calendar
-  const [selectedDate, setSelectedDate] = useState<string>(
-    new Date().toISOString().split("T")[0],
-  )
+  // Selected date for calendar (using local date to avoid timezone issues)
+  const getTodayLocalDate = () => {
+    const today = new Date()
+    const year = today.getFullYear()
+    const month = String(today.getMonth() + 1).padStart(2, "0")
+    const day = String(today.getDate()).padStart(2, "0")
+    return `${year}-${month}-${day}`
+  }
+  const [selectedDate, setSelectedDate] = useState<string>(getTodayLocalDate())
 
   // Fetch all data
   const fetchData = useCallback(async () => {
