@@ -1,19 +1,18 @@
+import { COLORS } from "@/constants/theme"
 import { useAuth } from "@/hooks/useAuth"
 import * as Clipboard from "expo-clipboard"
-import { Stack, useRouter } from "expo-router"
 import { Copy, Gift, Share2, Users } from "lucide-react-native"
 import React from "react"
 import {
-    Alert,
-    ScrollView,
-    Share,
-    Text,
-    TouchableOpacity,
-    View,
+  Alert,
+  ScrollView,
+  Share,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native"
 
 export default function ReferScreen() {
-  const router = useRouter()
   const { user } = useAuth()
   const referralCode = user?.id.slice(0, 8).toUpperCase() || "FRESH123"
 
@@ -34,8 +33,6 @@ export default function ReferScreen() {
 
   return (
     <View className="flex-1 bg-neutral-lightCream">
-      <Stack.Screen options={{ title: "Refer & Earn" }} />
-
       <ScrollView
         className="flex-1 px-6 pt-6"
         showsVerticalScrollIndicator={false}
@@ -47,7 +44,7 @@ export default function ReferScreen() {
           <View className="absolute -bottom-8 -left-8 w-28 h-28 rounded-full bg-secondary-skyBlue opacity-20" />
 
           <View className="w-16 h-16 rounded-2xl bg-white items-center justify-center mb-5 shadow-sm">
-            <Gift size={32} color="#101B53" />
+            <Gift size={32} color={COLORS.primary.navy} />
           </View>
 
           <Text className="font-comfortaa text-xs text-primary-cream mb-3 tracking-widest opacity-90">
@@ -62,7 +59,7 @@ export default function ReferScreen() {
               className="flex-1 bg-primary-orange py-4 rounded-xl flex-row items-center justify-center active:opacity-90 shadow-sm"
               onPress={handleCopyCode}
             >
-              <Copy size={18} color="#FFFFFF" />
+              <Copy size={18} color={COLORS.neutral.white} />
               <Text className="font-sofia-bold text-sm text-white ml-2">
                 Copy Code
               </Text>
@@ -71,7 +68,7 @@ export default function ReferScreen() {
               className="flex-1 bg-white/10 py-4 rounded-xl flex-row items-center justify-center border border-white/20 active:opacity-80"
               onPress={handleShare}
             >
-              <Share2 size={18} color="#FFFFFF" />
+              <Share2 size={18} color={COLORS.neutral.white} />
               <Text className="font-sofia-bold text-sm text-white ml-2">
                 Share
               </Text>

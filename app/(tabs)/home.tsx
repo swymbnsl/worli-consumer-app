@@ -6,6 +6,7 @@ import {
   TodayDeliveryCard,
 } from "@/components/home"
 import Header from "@/components/ui/Header"
+import { COLORS } from "@/constants/theme"
 import { useAuth } from "@/hooks/useAuth"
 import { supabase } from "@/lib/supabase"
 import { Offer, Order, Product, Subscription } from "@/types/database.types"
@@ -141,8 +142,8 @@ export default function HomeScreen() {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            tintColor="#101B53"
-            colors={["#101B53"]}
+            tintColor={COLORS.primary.navy}
+            colors={[COLORS.primary.navy]}
           />
         }
         contentContainerStyle={{ paddingBottom: 120 }}

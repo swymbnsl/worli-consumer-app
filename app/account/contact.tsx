@@ -1,9 +1,8 @@
-import { Stack } from "expo-router"
 import {
-    Mail,
-    MapPin,
-    MessageCircle,
-    Phone
+  Mail,
+  MapPin,
+  MessageCircle,
+  Phone,
 } from "lucide-react-native"
 import React from "react"
 import { Linking, ScrollView, Text, TouchableOpacity, View } from "react-native"
@@ -46,8 +45,6 @@ export default function ContactScreen() {
 
   return (
     <View className="flex-1 bg-neutral-lightCream">
-      <Stack.Screen options={{ title: "Contact Us" }} />
-
       <ScrollView
         className="flex-1 px-4 pt-4"
         showsVerticalScrollIndicator={false}

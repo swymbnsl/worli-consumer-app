@@ -42,63 +42,63 @@ export default function AccountScreen() {
       id: "faq",
       label: "FAQs",
       icon: HelpCircle,
-      color: "#101B53",
+      color: COLORS.primary.navy,
       route: "/account/faq",
     },
     {
       id: "contact",
       label: "Contact Us",
       icon: MessageCircle,
-      color: "#101B53",
+      color: COLORS.primary.navy,
       route: "/account/contact",
     },
     {
       id: "refer",
       label: "Refer & Earn",
       icon: Gift,
-      color: "#101B53",
+      color: COLORS.primary.navy,
       route: "/account/refer",
     },
     {
       id: "language",
       label: "App Language",
       icon: Globe,
-      color: "#101B53",
+      color: COLORS.primary.navy,
       route: "/account/language",
     },
     {
       id: "delivery",
       label: "Delivery Preferences",
       icon: Settings,
-      color: "#101B53",
+      color: COLORS.primary.navy,
       route: "/account/delivery",
     },
     {
       id: "address",
       label: "Address Requests",
       icon: MapPin,
-      color: "#101B53",
+      color: COLORS.primary.navy,
       route: "/account/addresses",
     },
     {
       id: "terms",
       label: "Terms and Conditions",
       icon: FileText,
-      color: "#101B53",
+      color: COLORS.primary.navy,
       route: "/account/terms",
     },
     {
       id: "privacy",
       label: "Privacy Policy",
       icon: Lock,
-      color: "#101B53",
+      color: COLORS.primary.navy,
       route: "/account/privacy",
     },
     {
       id: "delete",
       label: "Delete My Account",
       icon: Trash2,
-      color: COLORS.secondary,
+      color: COLORS.functional.error,
       route: "/account/delete",
       isDanger: true,
     },
@@ -106,7 +106,7 @@ export default function AccountScreen() {
       id: "logout",
       label: "Logout",
       icon: LogOut,
-      color: COLORS.secondary,
+      color: COLORS.functional.error,
       action: triggerLogout,
       isDanger: true,
     },
@@ -132,7 +132,7 @@ export default function AccountScreen() {
             activeOpacity={0.7}
           >
             <View className="bg-primary-navy/5 w-12 h-12 rounded-xl items-center justify-center mb-2">
-              <Package size={24} color="#101B53" strokeWidth={2} />
+              <Package size={24} color={COLORS.primary.navy} strokeWidth={2} />
             </View>
             <Text className="font-comfortaa text-xs text-primary-navy text-center font-semibold">
               My Orders
@@ -144,7 +144,7 @@ export default function AccountScreen() {
             activeOpacity={0.7}
           >
             <View className="bg-primary-navy/5 w-12 h-12 rounded-xl items-center justify-center mb-2">
-              <RefreshCw size={24} color="#101B53" strokeWidth={2} />
+              <RefreshCw size={24} color={COLORS.primary.navy} strokeWidth={2} />
             </View>
             <Text className="font-comfortaa text-xs text-primary-navy text-center font-semibold">
               Transactions
@@ -156,7 +156,7 @@ export default function AccountScreen() {
             activeOpacity={0.7}
           >
             <View className="bg-primary-navy/5 w-12 h-12 rounded-xl items-center justify-center mb-2">
-              <FileText size={24} color="#101B53" strokeWidth={2} />
+              <FileText size={24} color={COLORS.primary.navy} strokeWidth={2} />
             </View>
             <Text className="font-comfortaa text-xs text-primary-navy text-center font-semibold">
               Monthly Bill
@@ -178,7 +178,7 @@ export default function AccountScreen() {
           <View className="bg-white rounded-2xl p-6 w-full shadow-xl">
             <Text 
               className="font-sofia-bold text-2xl mb-4"
-              style={{ color: COLORS.secondary }}
+              style={{ color: COLORS.functional.error }}
             >
               Logout
             </Text>

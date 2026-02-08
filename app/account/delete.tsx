@@ -1,15 +1,15 @@
 import { BORDER_RADIUS, COLORS, SHADOWS, SPACING } from "@/constants/theme"
 import { useAuth } from "@/hooks/useAuth"
-import { Stack, useRouter } from "expo-router"
+import { useRouter } from "expo-router"
 import { AlertTriangle } from "lucide-react-native"
 import React, { useState } from "react"
 import {
-    Alert,
-    ScrollView,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  Alert,
+  ScrollView,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native"
 
 export default function DeleteAccountScreen() {
@@ -65,8 +65,6 @@ export default function DeleteAccountScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: COLORS.background }}>
-      <Stack.Screen options={{ title: "Delete Account" }} />
-
       <ScrollView
         style={{
           flex: 1,
@@ -142,7 +140,7 @@ export default function DeleteAccountScreen() {
             style={{
               fontSize: 18,
               fontWeight: "700",
-              color: COLORS.secondary,
+              color: COLORS.primary.navy,
               marginBottom: 16,
             }}
           >
@@ -184,7 +182,7 @@ export default function DeleteAccountScreen() {
             style={{
               fontSize: 16,
               fontWeight: "700",
-              color: COLORS.secondary,
+              color: COLORS.primary.navy,
               marginBottom: 12,
             }}
           >
@@ -211,7 +209,7 @@ export default function DeleteAccountScreen() {
               paddingVertical: 16,
               marginBottom: 20,
               fontSize: 16,
-              color: COLORS.secondary,
+              color: COLORS.primary.navy,
               fontWeight: "600",
             }}
             value={confirmText}

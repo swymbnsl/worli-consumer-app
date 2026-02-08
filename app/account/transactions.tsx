@@ -1,4 +1,4 @@
-import { Stack, useRouter } from "expo-router"
+import { useRouter } from "expo-router"
 import React from "react"
 import { Text, TouchableOpacity, View } from "react-native"
 
@@ -7,8 +7,6 @@ export default function TransactionsScreen() {
 
   return (
     <View className="flex-1 bg-neutral-lightCream">
-      <Stack.Screen options={{ title: "Transactions" }} />
-
       <View className="flex-1 justify-center items-center px-6">
         <Text className="font-comfortaa text-base text-neutral-gray text-center">
           Transaction history is available in the Wallet tab

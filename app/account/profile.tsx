@@ -1,7 +1,7 @@
 import Button from "@/components/ui/Button"
 import TextInput from "@/components/ui/TextInput"
 import { useAuth } from "@/hooks/useAuth"
-import { Stack, useRouter } from "expo-router"
+import { useRouter } from "expo-router"
 import React, { useState } from "react"
 import { Alert, ScrollView, View } from "react-native"
 
@@ -36,8 +36,6 @@ export default function ProfileScreen() {
 
   return (
     <View className="flex-1 bg-neutral-lightCream">
-      <Stack.Screen options={{ title: "Edit Profile" }} />
-
       <ScrollView
         className="flex-1 px-6 pt-6"
         showsVerticalScrollIndicator={false}

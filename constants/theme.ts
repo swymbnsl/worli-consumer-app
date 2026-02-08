@@ -1,21 +1,51 @@
 export const COLORS = {
-  primary: "#E4941C",
-  secondary: "#101B53",
+  // Primary colors
+  primary: {
+    navy: "#101B53",
+    orange: "#E4941C",
+    cream: "#FFF0D2",
+  },
+  // Secondary colors
+  secondary: {
+    skyBlue: "#A1C3E3",
+    gold: "#D4A95A",
+  },
+  // Neutral colors
+  neutral: {
+    white: "#FFFFFF",
+    lightCream: "#F9F7F3",
+    lightGray: "#D1D5DB",
+    gray: "#9CA3AF",
+    darkGray: "#4B5563",
+    black: "#000000",
+  },
+  // Functional colors
+  functional: {
+    success: "#638C5F",
+    error: "#E53E3E",
+    warning: "#E4941C",
+    info: "#A1C3E3",
+  },
+  // Legacy flat mappings for backwards compatibility
+  primaryNavy: "#101B53",
+  primaryOrange: "#E4941C",
+  primaryCream: "#FFF0D2",
+  secondaryBlue: "#101B53", // Legacy secondary was navy
   accent: "#638C5F",
-  background: "#F1F1F1",
+  background: "#F9F7F3",
   white: "#FFFFFF",
+  border: "#F1F1F1",
+  card: "#FFFFFF",
   text: {
     primary: "#101B53",
-    secondary: "#666",
-    light: "#999",
+    secondary: "#4B5563",
+    light: "#9CA3AF",
     bright: "#A1C3E3",
   },
   success: "#638C5F",
   error: "#E53E3E",
   warning: "#E4941C",
   info: "#A1C3E3",
-  border: "#F1F1F1",
-  card: "#FFFFFF",
 }
 
 export const SPACING = {

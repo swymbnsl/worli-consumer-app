@@ -22,7 +22,7 @@ export default function TabsLayout() {
           backgroundColor: COLORS.background,
         }}
       >
-        <ActivityIndicator size="large" color={COLORS.primary} />
+        <ActivityIndicator size="large" color={COLORS.primary.navy} />
       </View>
     )
   }
@@ -43,20 +43,20 @@ export default function TabsLayout() {
         headerShown: false,
         tabBarShowLabel: false,
         tabBarStyle: {
-          backgroundColor: "#FFFFFF",
+          backgroundColor: COLORS.neutral.white,
           borderTopWidth: 1,
-          borderTopColor: "#F1F1F1",
+          borderTopColor: COLORS.border,
           paddingBottom: bottomPad,
           paddingTop: 12,
           height: Platform.OS === "ios" ? 86 : 70,
-          shadowColor: "#000",
+          shadowColor: COLORS.neutral.black,
           shadowOffset: { width: 0, height: -4 },
           shadowOpacity: 0.06,
           shadowRadius: 12,
           elevation: 8,
         },
-        tabBarActiveTintColor: "#101B53",
-        tabBarInactiveTintColor: "#B3B3B3",
+        tabBarActiveTintColor: COLORS.primary.navy,
+        tabBarInactiveTintColor: COLORS.neutral.gray,
         tabBarLabelStyle: {
           fontSize: 11,
           fontFamily: "Comfortaa-Regular",
@@ -79,7 +79,7 @@ export default function TabsLayout() {
                 width: 56,
                 height: 56,
                 borderRadius: 16,
-                backgroundColor: focused ? "#FFF0D2" : "transparent",
+                backgroundColor: focused ? COLORS.primary.cream : "transparent",
                 alignItems: "center",
                 justifyContent: "center",
                 marginTop: 2,
@@ -94,7 +94,7 @@ export default function TabsLayout() {
                     fontWeight: "500",
                     letterSpacing: 0.2,
                     marginTop: 2,
-                    color: focused ? "#101B53" : "#B3B3B3",
+                    color: focused ? COLORS.primary.navy : COLORS.neutral.gray,
                   }}
                 >
                   Home
@@ -114,7 +114,7 @@ export default function TabsLayout() {
                 width: 56,
                 height: 56,
                 borderRadius: 16,
-                backgroundColor: focused ? "#FFF0D2" : "transparent",
+                backgroundColor: focused ? COLORS.primary.cream : "transparent",
                 alignItems: "center",
                 justifyContent: "center",
                 marginTop: 2,
@@ -129,7 +129,7 @@ export default function TabsLayout() {
                     fontWeight: "500",
                     letterSpacing: 0.2,
                     marginTop: 2,
-                    color: focused ? "#101B53" : "#B3B3B3",
+                    color: focused ? COLORS.primary.navy : COLORS.neutral.gray,
                   }}
                 >
                   Plan
@@ -149,7 +149,7 @@ export default function TabsLayout() {
                 width: 56,
                 height: 56,
                 borderRadius: 16,
-                backgroundColor: focused ? "#FFF0D2" : "transparent",
+                backgroundColor: focused ? COLORS.primary.cream : "transparent",
                 alignItems: "center",
                 justifyContent: "center",
                 marginTop: 2,
@@ -164,7 +164,7 @@ export default function TabsLayout() {
                     fontWeight: "500",
                     letterSpacing: 0.2,
                     marginTop: 2,
-                    color: focused ? "#101B53" : "#B3B3B3",
+                    color: focused ? COLORS.primary.navy : COLORS.neutral.gray,
                   }}
                 >
                   Wallet
@@ -184,7 +184,7 @@ export default function TabsLayout() {
                 width: 56,
                 height: 56,
                 borderRadius: 16,
-                backgroundColor: focused ? "#FFF0D2" : "transparent",
+                backgroundColor: focused ? COLORS.primary.cream : "transparent",
                 alignItems: "center",
                 justifyContent: "center",
                 marginTop: 2,
@@ -199,7 +199,7 @@ export default function TabsLayout() {
                     fontWeight: "500",
                     letterSpacing: 0.2,
                     marginTop: 2,
-                    color: focused ? "#101B53" : "#B3B3B3",
+                    color: focused ? COLORS.primary.navy : COLORS.neutral.gray,
                   }}
                 >
                   Orders
@@ -219,7 +219,7 @@ export default function TabsLayout() {
                 width: 56,
                 height: 56,
                 borderRadius: 16,
-                backgroundColor: focused ? "#FFF0D2" : "transparent",
+                backgroundColor: focused ? COLORS.primary.cream : "transparent",
                 alignItems: "center",
                 justifyContent: "center",
                 marginTop: 2,
@@ -234,7 +234,7 @@ export default function TabsLayout() {
                     fontWeight: "500",
                     letterSpacing: 0.2,
                     marginTop: 2,
-                    color: focused ? "#101B53" : "#B3B3B3",
+                    color: focused ? COLORS.primary.navy : COLORS.neutral.gray,
                   }}
                 >
                   Account

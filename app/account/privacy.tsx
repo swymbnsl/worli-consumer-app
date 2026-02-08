@@ -1,10 +1,7 @@
-import { Stack, useRouter } from "expo-router"
 import React from "react"
 import { ScrollView, Text, View } from "react-native"
 
 export default function PrivacyScreen() {
-  const router = useRouter()
-
   const sections = [
     {
       title: "Information We Collect",
@@ -50,8 +47,6 @@ export default function PrivacyScreen() {
 
   return (
     <View className="flex-1 bg-neutral-lightCream">
-      <Stack.Screen options={{ title: "Privacy Policy" }} />
-
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
         <View className="px-6 py-6">
           <Text className="font-comfortaa text-sm text-neutral-gray mb-6 leading-5">

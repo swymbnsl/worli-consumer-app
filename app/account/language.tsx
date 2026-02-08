@@ -1,11 +1,9 @@
 import { useAuth } from "@/hooks/useAuth"
-import { Stack, useRouter } from "expo-router"
 import { CheckCircle } from "lucide-react-native"
 import React from "react"
 import { Text, TouchableOpacity, View } from "react-native"
 
 export default function LanguageScreen() {
-  const router = useRouter()
   const { userPreference, updateUserPreference } = useAuth()
 
   const languages = [
@@ -20,8 +18,6 @@ export default function LanguageScreen() {
 
   return (
     <View className="flex-1 bg-neutral-lightCream">
-      <Stack.Screen options={{ title: "Language" }} />
-
       <View className="px-6 pt-6">
         {languages.map((lang) => (
           <TouchableOpacity

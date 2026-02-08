@@ -1,10 +1,9 @@
-import { Stack, useRouter } from "expo-router"
+import { COLORS } from "@/constants/theme"
 import { ChevronDown, ChevronUp } from "lucide-react-native"
 import React, { useState } from "react"
 import { ScrollView, Text, TouchableOpacity, View } from "react-native"
 
 export default function FAQScreen() {
-  const router = useRouter()
   const [expandedIndex, setExpandedIndex] = useState<number | null>(null)
 
   const faqs = [
@@ -52,8 +51,6 @@ export default function FAQScreen() {
 
   return (
     <View className="flex-1 bg-neutral-lightCream">
-      <Stack.Screen options={{ title: "FAQ" }} />
-
       <ScrollView
         className="flex-1 px-6 pt-6"
         showsVerticalScrollIndicator={false}
@@ -77,9 +74,9 @@ export default function FAQScreen() {
                 {faq.question}
               </Text>
               {expandedIndex === index ? (
-                <ChevronUp size={20} color="#EF6600" />
+                <ChevronUp size={20} color={COLORS.primary.orange} />
               ) : (
-                <ChevronDown size={20} color="#B3B3B3" />
+                <ChevronDown size={20} color={COLORS.neutral.gray} />
               )}
             </TouchableOpacity>
 

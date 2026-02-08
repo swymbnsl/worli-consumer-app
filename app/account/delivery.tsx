@@ -1,12 +1,10 @@
 import { BORDER_RADIUS, COLORS, SHADOWS, SPACING } from "@/constants/theme"
 import { useAuth } from "@/hooks/useAuth"
-import { Stack, useRouter } from "expo-router"
 import { CheckCircle } from "lucide-react-native"
 import React from "react"
 import { Text, TouchableOpacity, View } from "react-native"
 
 export default function DeliveryPreferencesScreen() {
-  const router = useRouter()
   const { deliveryPreference, updateDeliveryPreference } = useAuth()
 
   const preferences = [
@@ -49,8 +47,6 @@ export default function DeliveryPreferencesScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: COLORS.background }}>
-      <Stack.Screen options={{ title: "Delivery" }} />
-
       <View style={{ paddingHorizontal: SPACING.xxl, paddingTop: SPACING.xxl }}>
         {preferences.map((pref) => (
           <TouchableOpacity
@@ -65,7 +61,7 @@ export default function DeliveryPreferencesScreen() {
               justifyContent: "space-between",
               alignItems: "center",
               borderWidth: currentPref === pref.id ? 2 : 0,
-              borderColor: COLORS.secondary,
+              borderColor: COLORS.primary.navy,
             }}
             onPress={() => handleSelect(pref.id)}
           >
@@ -74,7 +70,7 @@ export default function DeliveryPreferencesScreen() {
                 style={{
                   fontWeight: "700",
                   fontSize: 16,
-                  color: COLORS.secondary,
+                  color: COLORS.primary.navy,
                   marginBottom: 4,
                 }}
               >
@@ -91,7 +87,7 @@ export default function DeliveryPreferencesScreen() {
               </Text>
             </View>
             {currentPref === pref.id && (
-              <CheckCircle size={28} color={COLORS.secondary} />
+              <CheckCircle size={28} color={COLORS.primary.orange} />
             )}
           </TouchableOpacity>
         ))}

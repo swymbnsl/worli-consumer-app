@@ -1,22 +1,21 @@
 import AddEditAddressModal from "@/components/addresses/AddEditAddressModal"
 import AddressCard from "@/components/addresses/AddressCard"
+import { COLORS } from "@/constants/theme"
 import { useAuth } from "@/hooks/useAuth"
 import { supabase } from "@/lib/supabase"
 import { Address } from "@/types/database.types"
-import { Stack, useRouter } from "expo-router"
 import { Plus } from "lucide-react-native"
 import React, { useEffect, useState } from "react"
 import {
-    Alert,
-    RefreshControl,
-    ScrollView,
-    Text,
-    TouchableOpacity,
-    View,
+  Alert,
+  RefreshControl,
+  ScrollView,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native"
 
 export default function AddressesScreen() {
-  const router = useRouter()
   const { user } = useAuth()
   const [addresses, setAddresses] = useState<Address[]>([])
   const [loading, setLoading] = useState(true)
@@ -107,8 +106,6 @@ export default function AddressesScreen() {
 
   return (
     <View className="flex-1 bg-neutral-lightCream">
-      <Stack.Screen options={{ title: "Addresses" }} />
-
       <ScrollView
         className="flex-1 px-4 pt-4"
         showsVerticalScrollIndicator={false}
@@ -116,7 +113,7 @@ export default function AddressesScreen() {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            tintColor="#101B53"
+            tintColor={COLORS.primary.navy}
           />
         }
       >
@@ -149,7 +146,7 @@ export default function AddressesScreen() {
           className="bg-primary-navy rounded-2xl py-4 px-6 items-center mb-8 flex-row justify-center shadow-md active:opacity-90"
           onPress={handleAddAddress}
         >
-          <Plus size={20} color="#FFFFFF" />
+          <Plus size={20} color={COLORS.neutral.white} />
           <Text className="font-sofia-bold text-base text-white ml-2">
             Add New Address
           </Text>

@@ -1,3 +1,4 @@
+import { COLORS } from "@/constants/theme"
 import { Product } from "@/types/database.types"
 import { Image } from "expo-image"
 import { useRouter } from "expo-router"
@@ -82,7 +83,7 @@ export default function CategoriesGrid({
   if (isLoading) {
     return (
       <View className="items-center justify-center py-8">
-        <ActivityIndicator size="large" color="#101B53" />
+        <ActivityIndicator size="large" color={COLORS.primary.navy} />
       </View>
     )
   }

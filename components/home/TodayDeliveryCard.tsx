@@ -1,3 +1,4 @@
+import { COLORS } from "@/constants/theme"
 import { Order } from "@/types/database.types"
 import { Calendar } from "lucide-react-native"
 import React from "react"
@@ -102,7 +103,7 @@ export default function TodayDeliveryCard({
       className="bg-secondary-skyBlue/20 rounded-2xl p-4 flex-row items-center"
     >
       <View className="bg-white rounded-full p-3 mr-4">
-        <Calendar size={24} color="#101B53" />
+        <Calendar size={24} color={COLORS.primary.navy} />
       </View>
       <View className="flex-1">
         <Text className="font-sofia-bold text-sm text-primary-navy mb-0.5">
