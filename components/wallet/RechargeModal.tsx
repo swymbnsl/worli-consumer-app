@@ -1,27 +1,26 @@
-import React, { useState } from 'react';
-import {
-    Alert,
-    Modal,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
-} from 'react-native';
-import { BORDER_RADIUS, COLORS, SPACING } from '@/constants/theme';
+import Button from '@/components/ui/Button';
 import { useWallet } from '@/hooks/useWallet';
 import { formatCurrency } from '@/utils/formatters';
+import { Info } from 'lucide-react-native';
+import React, { useState } from 'react';
+import {
+  Alert,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 
-interface RechargeModalProps {
-  visible: boolean;
-  onClose: () => void;
-}
-
-export default function RechargeModal({ visible, onClose }: RechargeModalProps) {
+export default function RechargeModal() {
   const { rechargeWallet } = useWallet();
   const [amount, setAmount] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const quickAmounts = [200, 500, 1000, 2000];
+  const quickAmounts = [
+    { value: 2000, recommended: false },
+    { value: 3000, recommended: true },
+    { value: 5000, recommended: false },
+  ];
 
   const handleRecharge = async () => {
     const amountNum = parseInt(amount);
@@ -42,7 +41,6 @@ export default function RechargeModal({ visible, onClose }: RechargeModalProps) 
       if (success) {
         Alert.alert('Success', `${formatCurrency(amountNum)} added to your wallet`);
         setAmount('');
-        onClose();
       } else {
         Alert.alert('Error', 'Failed to recharge wallet. Please try again.');
       }
@@ -53,143 +51,97 @@ export default function RechargeModal({ visible, onClose }: RechargeModalProps) 
     }
   };
 
-  const handleClose = () => {
-    setAmount('');
-    onClose();
+  const handleSetAutoPay = () => {
+    Alert.alert(
+      'AutoPay',
+      'AutoPay feature will automatically recharge your wallet when balance falls below your set threshold.',
+    );
   };
 
   return (
-    <Modal visible={visible} transparent animationType="slide">
-      <View
-        style={{
-          flex: 1,
-          backgroundColor: 'rgba(0,0,0,0.5)',
-          justifyContent: 'flex-end',
-        }}
-      >
-        <View
-          style={{
-            backgroundColor: COLORS.white,
-            borderTopLeftRadius: SPACING.xxxl,
-            borderTopRightRadius: SPACING.xxxl,
-            padding: SPACING.xxxl,
-          }}
-        >
-          {/* Handle Bar */}
-          <View
-            style={{
-              width: 40,
-              height: 4,
-              backgroundColor: '#E0E0E0',
-              borderRadius: 2,
-              alignSelf: 'center',
-              marginBottom: SPACING.xxl,
-            }}
-          />
+    <View className="bg-white mx-4 rounded-2xl p-8 mb-5 shadow-lg">
+      <Text className="font-sofia-bold text-2xl text-primary-navy mb-2">
+        Recharge
+      </Text>
+      <Text className="font-comfortaa text-sm text-neutral-gray mb-6">
+        Enter the amount to add to your wallet
+      </Text>
 
-          <Text
-            style={{
-              fontSize: 24,
-              fontWeight: '700',
-              color: COLORS.secondary,
-              marginBottom: 12,
-            }}
-          >
-            Add Money
-          </Text>
-          <Text style={{ fontSize: 14, color: COLORS.text.secondary, marginBottom: SPACING.xxl }}>
-            Enter the amount to add to your wallet
-          </Text>
+      {/* Amount Input */}
+      <View className="mb-4">
+        <TextInput
+          className="border-2 border-neutral-lightGray rounded-xl px-5 py-4 font-sofia-bold text-2xl text-primary-navy"
+          placeholder="₹ 2000"
+          placeholderTextColor="#B3B3B3"
+          keyboardType="numeric"
+          value={amount}
+          onChangeText={setAmount}
+          editable={!loading}
+        />
+      </View>
 
-          {/* Amount Input */}
-          <TextInput
-            style={{
-              borderWidth: 2,
-              borderColor: COLORS.border,
-              borderRadius: BORDER_RADIUS.sm,
-              paddingHorizontal: 20,
-              paddingVertical: 18,
-              fontSize: 18,
-              fontWeight: '600',
-              color: COLORS.secondary,
-              marginBottom: 20,
-            }}
-            placeholder="₹ Enter amount"
-            placeholderTextColor={COLORS.text.light}
-            keyboardType="numeric"
-            value={amount}
-            onChangeText={setAmount}
-          />
-
-          {/* Quick Amount Buttons */}
-          <View
-            style={{
-              flexDirection: 'row',
-              flexWrap: 'wrap',
-              marginBottom: SPACING.xxl,
-              gap: 8,
-            }}
-          >
-            {quickAmounts.map((amt) => (
-              <TouchableOpacity
-                key={amt}
-                style={{
-                  backgroundColor: '#FFF0D2',
-                  paddingHorizontal: 20,
-                  paddingVertical: 12,
-                  borderRadius: BORDER_RADIUS.xs,
-                  marginRight: 8,
-                  marginBottom: 8,
-                  borderWidth: 1,
-                  borderColor: COLORS.primary,
-                }}
-                onPress={() => setAmount(amt.toString())}
-              >
-                <Text
-                  style={{
-                    color: COLORS.primary,
-                    fontWeight: '700',
-                    fontSize: 14,
-                  }}
-                >
-                  {formatCurrency(amt)}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-
-          {/* Recharge Button */}
+      {/* Quick Amount Buttons */}
+      <View className="flex-row justify-between mb-3">
+        {quickAmounts.map((item) => (
           <TouchableOpacity
-            style={{
-              backgroundColor: loading ? COLORS.text.secondary : COLORS.primary,
-              paddingVertical: 18,
-              borderRadius: BORDER_RADIUS.sm,
-              alignItems: 'center',
-              marginBottom: 12,
-            }}
-            onPress={handleRecharge}
+            key={item.value}
+            className={`flex-1 mx-1 py-3 rounded-full border-2 ${
+              item.recommended
+                ? 'border-primary-navy bg-primary-cream/10'
+                : 'border-neutral-lightGray bg-white'
+            } active:opacity-70`}
+            onPress={() => setAmount(item.value.toString())}
             disabled={loading}
           >
             <Text
-              style={{ color: COLORS.white, fontWeight: '700', fontSize: 16 }}
+              className={`font-sofia-bold text-center ${
+                item.recommended ? 'text-primary-navy' : 'text-neutral-darkGray'
+              }`}
             >
-              {loading ? 'Processing...' : 'Proceed to Pay'}
+              + {formatCurrency(item.value)}
             </Text>
           </TouchableOpacity>
-
-          {/* Cancel Button */}
-          <TouchableOpacity
-            style={{ paddingVertical: 16, alignItems: 'center' }}
-            onPress={handleClose}
-          >
-            <Text
-              style={{ color: COLORS.text.secondary, fontWeight: '600', fontSize: 14 }}
-            >
-              Cancel
-            </Text>
-          </TouchableOpacity>
-        </View>
+        ))}
       </View>
-    </Modal>
+
+      {/* Recommended Label */}
+      <Text className="font-comfortaa text-xs text-primary-navy text-center mb-6">
+        Recommended
+      </Text>
+
+      {/* Continue Button */}
+      <Button
+        title={loading ? 'Processing...' : 'Continue'}
+        onPress={handleRecharge}
+        disabled={loading || !amount}
+        isLoading={loading}
+        variant="navy"
+        className="mb-4"
+      />
+
+      {/* AutoPay Button */}
+      <Button
+        title="Set AutoPay"
+        onPress={handleSetAutoPay}
+        variant="secondary"
+        className="mb-4"
+      />
+
+      {/* Info Link */}
+      <TouchableOpacity
+        className="flex-row items-center justify-center py-2 active:opacity-70"
+        onPress={() =>
+          Alert.alert(
+            'Never Miss A Delivery!',
+            'With AutoPay enabled, your wallet will be automatically recharged when the balance falls below your set threshold. This ensures uninterrupted delivery of your fresh milk subscription.',
+          )
+        }
+      >
+        <Info size={16} color="#B3B3B3" strokeWidth={2} />
+        <Text className="font-comfortaa text-sm text-neutral-gray underline ml-2">
+          Never Miss A Delivery! Know More
+        </Text>
+      </TouchableOpacity>
+    </View>
   );
 }

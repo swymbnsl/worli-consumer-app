@@ -5,6 +5,7 @@ import { router } from "expo-router"
 import React, { useEffect, useRef, useState } from "react"
 import {
   Alert,
+  Image,
   KeyboardAvoidingView,
   Platform,
   TextInput as RNTextInput,
@@ -128,18 +129,22 @@ export default function LoginScreen() {
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : "height"}
       className="flex-1 bg-neutral-lightCream"
-      keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
+      keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 80}
     >
       <ScrollView
         contentContainerStyle={{ flexGrow: 1, paddingBottom: 20 }}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        <View className="flex-1 justify-center px-6 py-8">
+        <View className="flex-1 justify-start px-6 pt-12 pb-8">
           {/* Logo Section */}
           <View className="items-center mb-12">
-            <View className="w-20 h-20 rounded-2xl bg-primary-orange items-center justify-center mb-6 shadow-md">
-              <Text className="text-5xl">🥛</Text>
+            <View className="items-center justify-center mb-6">
+              <Image
+                source={require("../../assets/images/splash-icon.jpg")}
+                style={{ width: 80, height: 80, alignSelf: "center" }}
+                resizeMode="contain"
+              />
             </View>
             <Text className="font-sofia-bold text-4xl text-primary-navy mb-2 tracking-wider">
               Worli Dairy
@@ -201,7 +206,7 @@ export default function LoginScreen() {
                 <Text className="font-comfortaa text-xs font-semibold text-primary-navy mb-4 uppercase tracking-wide">
                   Enter OTP
                 </Text>
-                <View className="flex-row justify-between mb-6 gap-2">
+                <View className="flex-row justify-between mb-4 gap-1">
                   {[0, 1, 2, 3, 4, 5].map((index) => (
                     <RNTextInput
                       key={index}

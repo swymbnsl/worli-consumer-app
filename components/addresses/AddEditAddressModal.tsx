@@ -1,3 +1,7 @@
+import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/lib/supabase';
+import { Address } from '@/types/database.types';
+import { validatePincode } from '@/utils/validators';
 import React, { useEffect, useState } from 'react';
 import {
     Alert,
@@ -10,11 +14,6 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
-import { BORDER_RADIUS, COLORS, SPACING } from '@/constants/theme';
-import { useAuth } from '@/hooks/useAuth';
-import { supabase } from '@/lib/supabase';
-import { Address } from '@/types/database.types';
-import { validatePincode } from '@/utils/validators';
 
 interface AddEditAddressModalProps {
   visible: boolean;
@@ -30,36 +29,39 @@ export default function AddEditAddressModal({
   onSuccess,
 }: AddEditAddressModalProps) {
   const { user } = useAuth();
-  const [type, setType] = useState('Home');
   const [line1, setLine1] = useState('');
   const [line2, setLine2] = useState('');
   const [city, setCity] = useState('');
   const [state, setState] = useState('');
   const [pincode, setPincode] = useState('');
+  const [landmark, setLandmark] = useState('');
+  const [deliveryInstructions, setDeliveryInstructions] = useState('');
   const [isDefault, setIsDefault] = useState(false);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (address) {
-      setType(address.type);
-      setLine1(address.line1);
-      setLine2(address.line2 || '');
-      setCity(address.city);
-      setState(address.state);
-      setPincode(address.pincode);
-      setIsDefault(address.is_default);
+      setLine1(address.address_line1 || '');
+      setLine2(address.address_line2 || '');
+      setCity(address.city || '');
+      setState(address.state || '');
+      setPincode(address.pincode || '');
+      setLandmark(address.landmark || '');
+      setDeliveryInstructions(address.delivery_instructions || '');
+      setIsDefault(address.is_default || false);
     } else {
       resetForm();
     }
   }, [address, visible]);
 
   const resetForm = () => {
-    setType('Home');
     setLine1('');
     setLine2('');
     setCity('');
     setState('');
     setPincode('');
+    setLandmark('');
+    setDeliveryInstructions('');
     setIsDefault(false);
   };
 
@@ -88,12 +90,13 @@ export default function AddEditAddressModal({
     try {
       const addressData = {
         user_id: user.id,
-        type,
-        line1: line1.trim(),
-        line2: line2.trim() || null,
+        address_line1: line1.trim(),
+        address_line2: line2.trim() || null,
         city: city.trim(),
         state: state.trim(),
         pincode: pincode.trim(),
+        landmark: landmark.trim() || null,
+        delivery_instructions: deliveryInstructions.trim() || null,
         is_default: isDefault,
       };
 
@@ -139,308 +142,167 @@ export default function AddEditAddressModal({
     onClose();
   };
 
-  const addressTypes = ['Home', 'Office', 'Other'];
-
   return (
     <Modal visible={visible} transparent animationType="slide">
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={{ flex: 1 }}
+        className="flex-1"
       >
-        <View
-          style={{
-            flex: 1,
-            backgroundColor: 'rgba(0,0,0,0.5)',
-            justifyContent: 'flex-end',
-          }}
-        >
-          <View
-            style={{
-              backgroundColor: COLORS.white,
-              borderTopLeftRadius: SPACING.xxxl,
-              borderTopRightRadius: SPACING.xxxl,
-              padding: SPACING.xxxl,
-              maxHeight: '90%',
-            }}
-          >
+        <View className="flex-1 bg-black/50 justify-end">
+          <View className="bg-white rounded-t-3xl px-6 pt-4 pb-8 max-h-[90%]">
             {/* Handle Bar */}
-            <View
-              style={{
-                width: 40,
-                height: 4,
-                backgroundColor: '#E0E0E0',
-                borderRadius: 2,
-                alignSelf: 'center',
-                marginBottom: SPACING.xxl,
-              }}
-            />
+            <View className="w-10 h-1 bg-neutral-lightGray rounded-full self-center mb-6" />
 
-            <Text
-              style={{
-                fontSize: 24,
-                fontWeight: '700',
-                color: COLORS.secondary,
-                marginBottom: 12,
-              }}
-            >
+            <Text className="font-sofia-bold text-2xl text-primary-navy mb-2">
               {address ? 'Edit Address' : 'Add New Address'}
             </Text>
-            <Text style={{ fontSize: 14, color: COLORS.text.secondary, marginBottom: SPACING.xxl }}>
+            <Text className="font-comfortaa text-sm text-neutral-gray mb-6">
               {address ? 'Update your delivery address' : 'Add a new delivery address'}
             </Text>
 
             <ScrollView showsVerticalScrollIndicator={false}>
-              {/* Address Type */}
-              <Text
-                style={{
-                  fontSize: 14,
-                  fontWeight: '600',
-                  color: COLORS.secondary,
-                  marginBottom: 12,
-                }}
-              >
-                Address Type
-              </Text>
-              <View style={{ flexDirection: 'row', marginBottom: SPACING.xxl }}>
-                {addressTypes.map((t) => (
-                  <TouchableOpacity
-                    key={t}
-                    style={{
-                      flex: 1,
-                      paddingVertical: 12,
-                      borderRadius: BORDER_RADIUS.xs,
-                      backgroundColor: type === t ? '#FFF0D2' : COLORS.white,
-                      borderWidth: type === t ? 2 : 1,
-                      borderColor: type === t ? COLORS.primary : COLORS.border,
-                      marginRight: 8,
-                      alignItems: 'center',
-                    }}
-                    onPress={() => setType(t)}
-                  >
-                    <Text
-                      style={{
-                        fontSize: 14,
-                        fontWeight: '600',
-                        color: type === t ? COLORS.primary : COLORS.text.secondary,
-                      }}
-                    >
-                      {t}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-
               {/* Address Line 1 */}
-              <Text
-                style={{
-                  fontSize: 14,
-                  fontWeight: '600',
-                  color: COLORS.secondary,
-                  marginBottom: 12,
-                }}
-              >
+              <Text className="font-sofia-bold text-sm text-primary-navy mb-3">
                 Address Line 1 *
               </Text>
               <TextInput
-                style={{
-                  borderWidth: 2,
-                  borderColor: COLORS.border,
-                  borderRadius: BORDER_RADIUS.xs,
-                  paddingHorizontal: 16,
-                  paddingVertical: 14,
-                  fontSize: 15,
-                  color: COLORS.secondary,
-                  marginBottom: SPACING.lg,
-                }}
+                className="border-2 border-neutral-lightGray rounded-xl px-4 py-3.5 text-base text-primary-navy mb-4 font-comfortaa"
                 placeholder="House/Flat No, Building Name"
+                placeholderTextColor="#9CA3AF"
                 value={line1}
                 onChangeText={setLine1}
               />
 
               {/* Address Line 2 */}
-              <Text
-                style={{
-                  fontSize: 14,
-                  fontWeight: '600',
-                  color: COLORS.secondary,
-                  marginBottom: 12,
-                }}
-              >
+              <Text className="font-sofia-bold text-sm text-primary-navy mb-3">
                 Address Line 2
               </Text>
               <TextInput
-                style={{
-                  borderWidth: 2,
-                  borderColor: COLORS.border,
-                  borderRadius: BORDER_RADIUS.xs,
-                  paddingHorizontal: 16,
-                  paddingVertical: 14,
-                  fontSize: 15,
-                  color: COLORS.secondary,
-                  marginBottom: SPACING.lg,
-                }}
-                placeholder="Area, Street (Optional)"
+                className="border-2 border-neutral-lightGray rounded-xl px-4 py-3.5 text-base text-primary-navy mb-4 font-comfortaa"
+                placeholder="Area, Street, Locality (Optional)"
+                placeholderTextColor="#9CA3AF"
                 value={line2}
                 onChangeText={setLine2}
               />
 
               {/* City */}
-              <Text
-                style={{
-                  fontSize: 14,
-                  fontWeight: '600',
-                  color: COLORS.secondary,
-                  marginBottom: 12,
-                }}
-              >
+              <Text className="font-sofia-bold text-sm text-primary-navy mb-3">
                 City *
               </Text>
               <TextInput
-                style={{
-                  borderWidth: 2,
-                  borderColor: COLORS.border,
-                  borderRadius: BORDER_RADIUS.xs,
-                  paddingHorizontal: 16,
-                  paddingVertical: 14,
-                  fontSize: 15,
-                  color: COLORS.secondary,
-                  marginBottom: SPACING.lg,
-                }}
+                className="border-2 border-neutral-lightGray rounded-xl px-4 py-3.5 text-base text-primary-navy mb-4 font-comfortaa"
                 placeholder="Enter city"
+                placeholderTextColor="#9CA3AF"
                 value={city}
                 onChangeText={setCity}
               />
 
               {/* State */}
-              <Text
-                style={{
-                  fontSize: 14,
-                  fontWeight: '600',
-                  color: COLORS.secondary,
-                  marginBottom: 12,
-                }}
-              >
+              <Text className="font-sofia-bold text-sm text-primary-navy mb-3">
                 State *
               </Text>
               <TextInput
-                style={{
-                  borderWidth: 2,
-                  borderColor: COLORS.border,
-                  borderRadius: BORDER_RADIUS.xs,
-                  paddingHorizontal: 16,
-                  paddingVertical: 14,
-                  fontSize: 15,
-                  color: COLORS.secondary,
-                  marginBottom: SPACING.lg,
-                }}
+                className="border-2 border-neutral-lightGray rounded-xl px-4 py-3.5 text-base text-primary-navy mb-4 font-comfortaa"
                 placeholder="Enter state"
+                placeholderTextColor="#9CA3AF"
                 value={state}
                 onChangeText={setState}
               />
 
               {/* Pincode */}
-              <Text
-                style={{
-                  fontSize: 14,
-                  fontWeight: '600',
-                  color: COLORS.secondary,
-                  marginBottom: 12,
-                }}
-              >
+              <Text className="font-sofia-bold text-sm text-primary-navy mb-3">
                 Pincode *
               </Text>
               <TextInput
-                style={{
-                  borderWidth: 2,
-                  borderColor: COLORS.border,
-                  borderRadius: BORDER_RADIUS.xs,
-                  paddingHorizontal: 16,
-                  paddingVertical: 14,
-                  fontSize: 15,
-                  color: COLORS.secondary,
-                  marginBottom: SPACING.xxl,
-                }}
+                className="border-2 border-neutral-lightGray rounded-xl px-4 py-3.5 text-base text-primary-navy mb-4 font-comfortaa"
                 placeholder="6-digit pincode"
+                placeholderTextColor="#9CA3AF"
                 keyboardType="numeric"
                 maxLength={6}
                 value={pincode}
                 onChangeText={setPincode}
               />
 
+              {/* Landmark */}
+              <Text className="font-sofia-bold text-sm text-primary-navy mb-3">
+                Landmark (Optional)
+              </Text>
+              <TextInput
+                className="border-2 border-neutral-lightGray rounded-xl px-4 py-3.5 text-base text-primary-navy mb-4 font-comfortaa"
+                placeholder="Nearby landmark for easy location"
+                placeholderTextColor="#9CA3AF"
+                value={landmark}
+                onChangeText={setLandmark}
+              />
+
+              {/* Delivery Instructions */}
+              <Text className="font-sofia-bold text-sm text-primary-navy mb-3">
+                Delivery Instructions (Optional)
+              </Text>
+              <TextInput
+                className="border-2 border-neutral-lightGray rounded-xl px-4 py-3.5 text-base text-primary-navy mb-6 font-comfortaa"
+                placeholder="E.g., Ring the doorbell twice, Leave at door"
+                placeholderTextColor="#9CA3AF"
+                value={deliveryInstructions}
+                onChangeText={setDeliveryInstructions}
+                multiline
+                numberOfLines={2}
+                textAlignVertical="top"
+              />
+
               {/* Set as Default */}
-              <TouchableOpacity
-                style={{
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  padding: 16,
-                  borderRadius: BORDER_RADIUS.xs,
-                  backgroundColor: COLORS.background,
-                  marginBottom: SPACING.xxl,
-                }}
-                onPress={() => setIsDefault(!isDefault)}
-              >
-                <Text
-                  style={{
-                    fontSize: 15,
-                    fontWeight: '600',
-                    color: COLORS.secondary,
-                  }}
-                >
-                  Set as default address
+              <View className="mb-6">
+                <Text className="font-sofia-bold text-sm text-primary-navy mb-3">
+                  Preferences
                 </Text>
-                <View
-                  style={{
-                    width: 24,
-                    height: 24,
-                    borderRadius: 12,
-                    borderWidth: 2,
-                    borderColor: isDefault ? COLORS.primary : COLORS.border,
-                    backgroundColor: isDefault ? COLORS.primary : COLORS.white,
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}
+                <TouchableOpacity
+                  className="flex-row items-center justify-between p-4 rounded-2xl bg-neutral-lightCream/50 border-2 border-neutral-lightGray/50"
+                  onPress={() => setIsDefault(!isDefault)}
+                  activeOpacity={0.7}
                 >
-                  {isDefault && (
-                    <View
-                      style={{
-                        width: 12,
-                        height: 12,
-                        borderRadius: 6,
-                        backgroundColor: COLORS.white,
-                      }}
-                    />
-                  )}
-                </View>
-              </TouchableOpacity>
+                  <View className="flex-1 mr-4">
+                    <Text className="font-sofia-bold text-sm text-primary-navy mb-1">
+                      Set as default address
+                    </Text>
+                    <Text className="font-comfortaa text-xs text-neutral-gray">
+                      This address will be used for all deliveries
+                    </Text>
+                  </View>
+                  <View
+                    className={`w-6 h-6 rounded-full border-2 items-center justify-center ${
+                      isDefault
+                        ? 'border-primary-navy bg-primary-navy'
+                        : 'border-neutral-gray bg-white'
+                    }`}
+                  >
+                    {isDefault && (
+                      <View className="w-3 h-3 rounded-full bg-white" />
+                    )}
+                  </View>
+                </TouchableOpacity>
+              </View>
 
               {/* Save Button */}
               <TouchableOpacity
-                style={{
-                  backgroundColor: loading ? COLORS.text.secondary : COLORS.primary,
-                  paddingVertical: 18,
-                  borderRadius: BORDER_RADIUS.sm,
-                  alignItems: 'center',
-                  marginBottom: 12,
-                }}
+                className={`py-3.5 rounded-2xl items-center mb-3 shadow-md ${
+                  loading ? 'bg-neutral-gray' : 'bg-primary-navy'
+                }`}
                 onPress={handleSave}
                 disabled={loading}
+                activeOpacity={0.8}
               >
-                <Text
-                  style={{ color: COLORS.white, fontWeight: '700', fontSize: 16 }}
-                >
+                <Text className="font-sofia-bold text-sm text-white">
                   {loading ? 'Saving...' : address ? 'Update Address' : 'Add Address'}
                 </Text>
               </TouchableOpacity>
 
               {/* Cancel Button */}
               <TouchableOpacity
-                style={{ paddingVertical: 16, alignItems: 'center', marginBottom: SPACING.lg }}
+                className="py-3.5 items-center mb-4"
                 onPress={handleClose}
+                activeOpacity={0.7}
               >
-                <Text
-                  style={{ color: COLORS.text.secondary, fontWeight: '600', fontSize: 14 }}
-                >
+                <Text className="font-comfortaa text-sm text-neutral-gray">
                   Cancel
                 </Text>
               </TouchableOpacity>

@@ -1,11 +1,15 @@
+import FullCalendar from "@/components/orders/FullCalendar"
 import OrderCard from "@/components/orders/OrderCard"
+import Button from "@/components/ui/Button"
 import Header from "@/components/ui/Header"
+import { COLORS } from "@/constants/theme"
 import { useAuth } from "@/hooks/useAuth"
 import { supabase } from "@/lib/supabase"
 import { Order } from "@/types/database.types"
+import { formatFullDate } from "@/utils/dateUtils"
 import { useRouter } from "expo-router"
 import React, { useEffect, useState } from "react"
-import { FlatList, RefreshControl, Text, View } from "react-native"
+import { RefreshControl, ScrollView, Text, View } from "react-native"
 
 export default function OrdersScreen() {
   const router = useRouter()
@@ -13,6 +17,9 @@ export default function OrdersScreen() {
   const [orders, setOrders] = useState<Order[]>([])
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
+  const [selectedDate, setSelectedDate] = useState(
+    new Date().toISOString().split("T")[0],
+  )
 
   useEffect(() => {
     fetchOrders()
@@ -47,40 +54,63 @@ export default function OrdersScreen() {
     router.push(`/order-detail?id=${orderId}`)
   }
 
+  // Filter orders for selected date
+  const selectedOrders = orders.filter((o) => o.delivery_date === selectedDate)
+
   return (
     <View className="flex-1 bg-neutral-lightCream">
       <Header />
 
-      {/* Orders List */}
-      {orders.length === 0 && !loading ? (
-        <View className="flex-1 justify-center items-center px-6">
-          <Text className="text-5xl mb-4">📦</Text>
-          <Text className="font-sofia-bold text-lg text-primary-navy mb-2">
-            No Orders Yet
-          </Text>
-          <Text className="font-comfortaa text-sm text-neutral-gray text-center">
-            Your order history will appear here
-          </Text>
-        </View>
-      ) : (
-        <FlatList
-          data={orders}
-          keyExtractor={(item) => item.id}
-          className="flex-1 px-4 pt-6"
-          showsVerticalScrollIndicator={false}
-          renderItem={({ item }) => (
-            <OrderCard order={item} onPress={() => handleOrderPress(item.id)} />
-          )}
-          refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={onRefresh}
-              tintColor="#101B53"
-            />
-          }
-          contentContainerStyle={{ paddingBottom: 100 }}
+      <ScrollView
+        className="flex-1 px-4 pt-4"
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: 100 }}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={COLORS.secondary}
+          />
+        }
+      >
+        <FullCalendar
+          orders={orders}
+          selectedDate={selectedDate}
+          onDateSelect={setSelectedDate}
         />
-      )}
+
+        <View className="mb-6">
+          <Text className="font-sofia-bold text-xl text-primary-navy text-center mb-6">
+            {formatFullDate(selectedDate)}
+          </Text>
+
+          {selectedOrders.length > 0 ? (
+            <View>
+              {selectedOrders.map((order) => (
+                <OrderCard
+                  key={order.id}
+                  order={order}
+                  onPress={() => handleOrderPress(order.id)}
+                />
+              ))}
+            </View>
+          ) : (
+            <View className="items-center py-6">
+              <Text className="font-comfortaa-bold text-lg text-primary-navy mb-4 text-center">
+                There are no orders scheduled for this day
+              </Text>
+              <Button
+                title="Add Products"
+                onPress={() => router.push("/(tabs)/home")}
+                variant="navy"
+                size="medium"
+              />
+            </View>
+          )}
+        </View>
+      </ScrollView>
+
+      {/* WhatsApp Button could go here absolutely positioned if needed */}
     </View>
   )
 }

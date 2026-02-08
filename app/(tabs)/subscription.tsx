@@ -5,18 +5,21 @@ import Header from "@/components/ui/Header"
 import { useAuth } from "@/hooks/useAuth"
 import { supabase } from "@/lib/supabase"
 import { Subscription } from "@/types/database.types"
+import { useRouter } from "expo-router"
+import { Calendar, X } from "lucide-react-native"
 import React, { useEffect, useState } from "react"
 import {
-  Alert,
-  RefreshControl,
-  ScrollView,
-  Text,
-  TouchableOpacity,
-  View,
+    Alert,
+    RefreshControl,
+    ScrollView,
+    Text,
+    TouchableOpacity,
+    View,
 } from "react-native"
 
 export default function SubscriptionScreen() {
   const { user } = useAuth()
+  const router = useRouter()
   const [subscription, setSubscription] = useState<Subscription | null>(null)
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
@@ -93,25 +96,41 @@ export default function SubscriptionScreen() {
 
   if (!subscription && !loading) {
     return (
-      <View className="flex-1 bg-neutral-lightCream">
+      <View className="flex-1 bg-white">
         <Header />
 
-        {/* No Subscription State */}
-        <View className="flex-1 justify-center items-center px-6">
-          <Text className="text-5xl mb-4">📦</Text>
-          <Text className="font-sofia-bold text-lg text-primary-navy mb-2">
-            No Active Subscription
+        {/* Empty State */}
+        <View className="flex-1 justify-center items-center px-8">
+          {/* Calendar Icon with X */}
+          <View className="mb-8 relative">
+            <View className="bg-primary-navy/5 p-6 rounded-2xl">
+              <Calendar size={80} color="#7c3aed" strokeWidth={1.5} />
+            </View>
+            <View className="absolute -bottom-2 -right-2 bg-functional-error rounded-full p-3 border-4 border-white">
+              <X size={24} color="white" strokeWidth={3} />
+            </View>
+          </View>
+
+          <Text className="font-sofia-bold text-2xl text-neutral-darkGray mb-3 text-center">
+            You don't have any subscriptions yet
           </Text>
-          <Text className="font-comfortaa text-sm text-neutral-gray text-center">
-            Start a subscription for daily fresh milk delivery
-          </Text>
+          
+          <TouchableOpacity
+            className="bg-secondary-skyBlue px-8 py-4 rounded-xl mt-4 shadow-md"
+            onPress={() => router.push("/(tabs)/home")}
+            activeOpacity={0.8}
+          >
+            <Text className="font-sofia-bold text-white text-base">
+              Start Shopping
+            </Text>
+          </TouchableOpacity>
         </View>
       </View>
     )
   }
 
   return (
-    <View className="flex-1 bg-neutral-lightCream">
+    <View className="flex-1 bg-white">
       <Header />
 
       <ScrollView
@@ -123,9 +142,17 @@ export default function SubscriptionScreen() {
             refreshing={refreshing}
             onRefresh={onRefresh}
             tintColor="#101B53"
+            colors={["#101B53"]}
           />
         }
       >
+        {/* Page Title */}
+        <View className="px-4 pt-4 pb-2">
+          <Text className="font-sofia-bold text-2xl text-primary-navy">
+            My Subscriptions
+          </Text>
+        </View>
+
         {/* Active Subscription Card */}
         {subscription && (
           <SubscriptionCard
@@ -135,18 +162,18 @@ export default function SubscriptionScreen() {
           />
         )}
 
-        {/* TODO: Paused Dates feature - requires paused_dates column in subscriptions table */}
-
         {/* Cancel Subscription Button */}
-        <TouchableOpacity
-          className="bg-white mx-4 mt-4 rounded-xl p-5 items-center border border-red-100"
-          onPress={handleCancelSubscription}
-          activeOpacity={0.7}
-        >
-          <Text className="font-sofia-bold text-sm text-functional-error">
-            Cancel Subscription
-          </Text>
-        </TouchableOpacity>
+        {subscription && (
+          <TouchableOpacity
+            className="bg-white mx-4 mt-4 rounded-2xl py-3 items-center border-2 border-functional-error/20"
+            onPress={handleCancelSubscription}
+            activeOpacity={0.7}
+          >
+            <Text className="font-sofia-bold text-sm text-functional-error">
+              Cancel Subscription
+            </Text>
+          </TouchableOpacity>
+        )}
       </ScrollView>
 
       {/* Pause Modal */}

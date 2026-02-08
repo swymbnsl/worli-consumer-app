@@ -2,12 +2,14 @@ import { COLORS } from "@/constants/theme"
 import { useAuth } from "@/hooks/useAuth"
 import { Redirect, Tabs } from "expo-router"
 import { Home, Package, ShoppingCart, User, Wallet } from "lucide-react-native"
-import { ActivityIndicator, Platform, View } from "react-native"
+import { ActivityIndicator, Platform, Text, View } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 
 export default function TabsLayout() {
   const { isLoggedIn, loading, isProfileComplete } = useAuth()
   const insets = useSafeAreaInsets()
+  const bottomPad =
+    Platform.OS === "ios" ? 24 : Math.min(Math.max(insets.bottom || 0, 8), 20)
 
   // Show loading state while checking auth
   if (loading) {
@@ -39,14 +41,14 @@ export default function TabsLayout() {
     <Tabs
       screenOptions={{
         headerShown: false,
+        tabBarShowLabel: false,
         tabBarStyle: {
           backgroundColor: "#FFFFFF",
           borderTopWidth: 1,
           borderTopColor: "#F1F1F1",
-          paddingBottom:
-            Platform.OS === "ios" ? 28 : Math.max(insets.bottom, 12),
+          paddingBottom: bottomPad,
           paddingTop: 12,
-          height: Platform.OS === "ios" ? 90 : 70 + Math.max(insets.bottom, 12),
+          height: Platform.OS === "ios" ? 86 : 70,
           shadowColor: "#000",
           shadowOffset: { width: 0, height: -4 },
           shadowOpacity: 0.06,
@@ -80,9 +82,24 @@ export default function TabsLayout() {
                 backgroundColor: focused ? "#FFF0D2" : "transparent",
                 alignItems: "center",
                 justifyContent: "center",
+                marginTop: 2,
               }}
             >
-              <Home size={24} color={color} />
+              <View style={{ alignItems: "center" }}>
+                <Home size={24} color={color} />
+                <Text
+                  style={{
+                    fontSize: 11,
+                    fontFamily: "Comfortaa-Regular",
+                    fontWeight: "500",
+                    letterSpacing: 0.2,
+                    marginTop: 2,
+                    color: focused ? "#101B53" : "#B3B3B3",
+                  }}
+                >
+                  Home
+                </Text>
+              </View>
             </View>
           ),
         }}
@@ -100,9 +117,24 @@ export default function TabsLayout() {
                 backgroundColor: focused ? "#FFF0D2" : "transparent",
                 alignItems: "center",
                 justifyContent: "center",
+                marginTop: 2,
               }}
             >
-              <Package size={24} color={color} />
+              <View style={{ alignItems: "center" }}>
+                <Package size={24} color={color} />
+                <Text
+                  style={{
+                    fontSize: 11,
+                    fontFamily: "Comfortaa-Regular",
+                    fontWeight: "500",
+                    letterSpacing: 0.2,
+                    marginTop: 2,
+                    color: focused ? "#101B53" : "#B3B3B3",
+                  }}
+                >
+                  Plan
+                </Text>
+              </View>
             </View>
           ),
         }}
@@ -120,9 +152,24 @@ export default function TabsLayout() {
                 backgroundColor: focused ? "#FFF0D2" : "transparent",
                 alignItems: "center",
                 justifyContent: "center",
+                marginTop: 2,
               }}
             >
-              <Wallet size={24} color={color} />
+              <View style={{ alignItems: "center" }}>
+                <Wallet size={24} color={color} />
+                <Text
+                  style={{
+                    fontSize: 11,
+                    fontFamily: "Comfortaa-Regular",
+                    fontWeight: "500",
+                    letterSpacing: 0.2,
+                    marginTop: 2,
+                    color: focused ? "#101B53" : "#B3B3B3",
+                  }}
+                >
+                  Wallet
+                </Text>
+              </View>
             </View>
           ),
         }}
@@ -140,9 +187,24 @@ export default function TabsLayout() {
                 backgroundColor: focused ? "#FFF0D2" : "transparent",
                 alignItems: "center",
                 justifyContent: "center",
+                marginTop: 2,
               }}
             >
-              <ShoppingCart size={24} color={color} />
+              <View style={{ alignItems: "center" }}>
+                <ShoppingCart size={24} color={color} />
+                <Text
+                  style={{
+                    fontSize: 11,
+                    fontFamily: "Comfortaa-Regular",
+                    fontWeight: "500",
+                    letterSpacing: 0.2,
+                    marginTop: 2,
+                    color: focused ? "#101B53" : "#B3B3B3",
+                  }}
+                >
+                  Orders
+                </Text>
+              </View>
             </View>
           ),
         }}
@@ -160,9 +222,24 @@ export default function TabsLayout() {
                 backgroundColor: focused ? "#FFF0D2" : "transparent",
                 alignItems: "center",
                 justifyContent: "center",
+                marginTop: 2,
               }}
             >
-              <User size={24} color={color} />
+              <View style={{ alignItems: "center" }}>
+                <User size={24} color={color} />
+                <Text
+                  style={{
+                    fontSize: 11,
+                    fontFamily: "Comfortaa-Regular",
+                    fontWeight: "500",
+                    letterSpacing: 0.2,
+                    marginTop: 2,
+                    color: focused ? "#101B53" : "#B3B3B3",
+                  }}
+                >
+                  Account
+                </Text>
+              </View>
             </View>
           ),
         }}

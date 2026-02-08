@@ -1,8 +1,9 @@
 import { BORDER_RADIUS, COLORS, SHADOWS } from "@/constants/theme"
+import { supabase } from "@/lib/supabase"
 import { Order } from "@/types/database.types"
 import { formatFullDate } from "@/utils/dateUtils"
 import { formatCurrency } from "@/utils/formatters"
-import React from "react"
+import React, { useEffect, useState } from "react"
 import { Text, TouchableOpacity, View } from "react-native"
 
 interface OrderCardProps {
@@ -11,6 +12,25 @@ interface OrderCardProps {
 }
 
 export default function OrderCard({ order, onPress }: OrderCardProps) {
+  const [productName, setProductName] = useState<string>('Order')
+
+  useEffect(() => {
+    const fetchProductName = async () => {
+      if (order.product_id) {
+        const { data, error } = await supabase
+          .from('products')
+          .select('name')
+          .eq('id', order.product_id)
+          .single()
+        
+        if (data && !error) {
+          setProductName(data.name)
+        }
+      }
+    }
+    fetchProductName()
+  }, [order.product_id])
+
   const getStatusColor = () => {
     switch (order.status) {
       case "delivered":
@@ -48,7 +68,7 @@ export default function OrderCard({ order, onPress }: OrderCardProps) {
         <Text
           style={{ fontWeight: "700", fontSize: 16, color: COLORS.secondary }}
         >
-          Order #{order.id}
+          {productName}
         </Text>
         <View
           style={{

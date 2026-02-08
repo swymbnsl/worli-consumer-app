@@ -1,6 +1,7 @@
 import { User } from "@/types/database.types"
-import { formatPhone } from "@/utils/formatters"
-import { Edit2 } from "lucide-react-native"
+import FontAwesome6 from '@expo/vector-icons/FontAwesome6'
+import { useRouter } from "expo-router"
+import { User as UserIcon } from "lucide-react-native"
 import React from "react"
 import { Text, TouchableOpacity, View } from "react-native"
 
@@ -9,25 +10,45 @@ interface ProfileHeaderProps {
 }
 
 export default function ProfileHeader({ user }: ProfileHeaderProps) {
+  const router = useRouter()
+  
   if (!user) return null
 
   return (
-    <View className="bg-primary-navy px-4 pt-8 pb-8 items-center">
-      <View className="relative mb-4">
-        <View className="w-24 h-24 rounded-3xl bg-primary-cream items-center justify-center border-4 border-white shadow-lg">
-          <Text className="text-4xl">👤</Text>
+    <View className="bg-primary-navy px-4 pt-6 pb-6">
+      <View className="flex-row items-center justify-between">
+        {/* Left: Avatar + Name & Phone */}
+        <View className="flex-row items-center flex-1">
+          {/* Avatar */}
+          <View className="w-16 h-16 rounded-full bg-white/30 items-center justify-center border-2 border-white mr-4">
+            <UserIcon size={28} color="#FFFFFF" strokeWidth={2} />
+          </View>
+          
+          {/* Name & Phone */}
+          <View className="flex-1">
+            <Text className="font-sofia-bold text-lg text-white mb-0.5" numberOfLines={1}>
+              {user.full_name || "User"}
+            </Text>
+            <Text className="font-comfortaa text-sm text-white/80" numberOfLines={1}>
+              {user.phone_number}
+            </Text>
+          </View>
         </View>
-        <TouchableOpacity className="absolute -bottom-2 -right-2 bg-primary-orange w-10 h-10 rounded-xl items-center justify-center border-2 border-white shadow-sm">
-          <Edit2 size={16} color="#FFFFFF" strokeWidth={2.5} />
+        
+        {/* Right: EDIT PROFILE Button */}
+        <TouchableOpacity 
+          className="ml-3 px-2 py-1"
+          onPress={() => router.push("/account/profile")}
+          activeOpacity={0.7}
+        >
+          <Text className="font-comfortaa-bold text-xs text-white text-left leading-4">
+            EDIT{"\n"}PROFILE
+          </Text>
         </TouchableOpacity>
+        <View className="mr-2">
+          <FontAwesome6 name="pencil" size={14} color="#FFFFFF" />
+        </View>
       </View>
-
-      <Text className="font-sofia-bold text-2xl text-white mb-1">
-        {user.full_name || "User"}
-      </Text>
-      <Text className="font-comfortaa text-sm text-white/70 tracking-widest">
-        {formatPhone(user.phone_number)}
-      </Text>
     </View>
   )
 }

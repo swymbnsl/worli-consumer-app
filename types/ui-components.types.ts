@@ -3,7 +3,7 @@ import { TextInputProps, TouchableOpacityProps, ViewProps } from "react-native"
 // Button Component Types
 export interface ButtonProps extends TouchableOpacityProps {
   title: string
-  variant?: "primary" | "secondary" | "danger" | "outline"
+  variant?: "primary" | "secondary" | "danger" | "outline" | "navy"
   size?: "small" | "medium" | "large"
   isLoading?: boolean
   animationDelay?: number

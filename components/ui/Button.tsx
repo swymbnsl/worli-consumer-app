@@ -18,6 +18,8 @@ export default function Button({
     switch (variant) {
       case "primary":
         return "bg-primary-orange"
+      case "navy":
+        return "bg-primary-navy"
       case "secondary":
         return "bg-secondary-sage"
       case "danger":
@@ -32,6 +34,8 @@ export default function Button({
   const getTextClasses = () => {
     switch (variant) {
       case "primary":
+        return "text-white font-sofia-bold"
+      case "navy":
         return "text-white font-sofia-bold"
       case "secondary":
         return "text-white font-sofia-bold"

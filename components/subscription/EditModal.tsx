@@ -1,17 +1,16 @@
-import { Minus, Plus } from 'lucide-react-native';
-import React, { useEffect, useState } from 'react';
-import {
-  Alert,
-  Modal,
-  Text,
-  TouchableOpacity,
-  View,
-} from 'react-native';
-import { PRODUCT } from '@/constants/product';
-import { BORDER_RADIUS, COLORS, SHADOWS, SPACING } from '@/constants/theme';
 import { supabase } from '@/lib/supabase';
 import { Subscription } from '@/types/database.types';
 import { formatCurrency } from '@/utils/formatters';
+import { Clock, Minus, Plus } from 'lucide-react-native';
+import React, { useEffect, useState } from 'react';
+import {
+    Alert,
+    Modal,
+    ScrollView,
+    Text,
+    TouchableOpacity,
+    View,
+} from 'react-native';
 
 interface EditModalProps {
   visible: boolean;
@@ -23,17 +22,46 @@ interface EditModalProps {
 export default function EditModal({ visible, onClose, subscription, onUpdate }: EditModalProps) {
   const [quantity, setQuantity] = useState(subscription.quantity);
   const [frequency, setFrequency] = useState(subscription.frequency);
+  const [deliveryTime, setDeliveryTime] = useState(subscription.delivery_time || '7:00 AM - 8:00 AM');
+  const [productPrice, setProductPrice] = useState(0);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     setQuantity(subscription.quantity);
     setFrequency(subscription.frequency);
+    setDeliveryTime(subscription.delivery_time || '7:00 AM - 8:00 AM');
+    
+    // Fetch product price from database
+    const fetchProductPrice = async () => {
+      if (subscription.product_id) {
+        const { data, error } = await supabase
+          .from('products')
+          .select('price')
+          .eq('id', subscription.product_id)
+          .single();
+        
+        if (data && !error) {
+          setProductPrice(data.price);
+        }
+      }
+    };
+    
+    if (visible) {
+      fetchProductPrice();
+    }
   }, [subscription, visible]);
 
   const frequencies = [
     { id: 'daily', label: 'Daily' },
     { id: 'alternate', label: 'Alternate Days' },
     { id: 'weekly', label: 'Weekly' },
+  ];
+
+  const deliveryTimes = [
+    { id: '6:00 AM - 7:00 AM', label: '6:00 AM - 7:00 AM' },
+    { id: '7:00 AM - 8:00 AM', label: '7:00 AM - 8:00 AM' },
+    { id: '8:00 AM - 9:00 AM', label: '8:00 AM - 9:00 AM' },
+    { id: '9:00 AM - 10:00 AM', label: '9:00 AM - 10:00 AM' },
   ];
 
   const handleSave = async () => {
@@ -49,6 +77,7 @@ export default function EditModal({ visible, onClose, subscription, onUpdate }: 
         .update({ 
           quantity,
           frequency,
+          delivery_time: deliveryTime,
         })
         .eq('id', subscription.id);
 
@@ -67,228 +96,156 @@ export default function EditModal({ visible, onClose, subscription, onUpdate }: 
 
   return (
     <Modal visible={visible} transparent animationType="slide">
-      <View
-        style={{
-          flex: 1,
-          backgroundColor: 'rgba(0,0,0,0.5)',
-          justifyContent: 'flex-end',
-        }}
-      >
-        <View
-          style={{
-            backgroundColor: COLORS.white,
-            borderTopLeftRadius: SPACING.xxxl,
-            borderTopRightRadius: SPACING.xxxl,
-            padding: SPACING.xxxl,
-          }}
-        >
+      <View className="flex-1 bg-black/50 justify-end">
+        <View className="bg-white rounded-t-3xl px-6 pt-4 pb-8">
           {/* Handle Bar */}
-          <View
-            style={{
-              width: 40,
-              height: 4,
-              backgroundColor: '#E0E0E0',
-              borderRadius: 2,
-              alignSelf: 'center',
-              marginBottom: SPACING.xxl,
-            }}
-          />
+          <View className="w-10 h-1 bg-neutral-lightGray rounded-full self-center mb-6" />
 
-          <Text
-            style={{
-              fontSize: 24,
-              fontWeight: '700',
-              color: COLORS.secondary,
-              marginBottom: 12,
-            }}
-          >
+          <Text className="font-sofia-bold text-2xl text-primary-navy mb-2">
             Edit Subscription
           </Text>
-          <Text style={{ fontSize: 14, color: COLORS.text.secondary, marginBottom: SPACING.xxxl }}>
+          <Text className="font-comfortaa text-sm text-neutral-gray mb-6">
             Modify your subscription details
           </Text>
 
-          {/* Quantity Selector */}
-          <View style={{ marginBottom: SPACING.xxxl }}>
-            <Text
-              style={{
-                fontSize: 16,
-                fontWeight: '600',
-                color: COLORS.secondary,
-                marginBottom: 16,
-              }}
-            >
-              Daily Quantity
-            </Text>
-            <View
-              style={{
-                flexDirection: 'row',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                backgroundColor: COLORS.background,
-                borderRadius: BORDER_RADIUS.sm,
-                padding: 20,
-              }}
-            >
-              <TouchableOpacity
-                style={{
-                  width: 40,
-                  height: 40,
-                  borderRadius: BORDER_RADIUS.md,
-                  backgroundColor: COLORS.white,
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  ...SHADOWS.sm,
-                }}
-                onPress={() => quantity > 1 && setQuantity(quantity - 1)}
-              >
-                <Minus size={20} color={COLORS.secondary} />
-              </TouchableOpacity>
-              <Text
-                style={{
-                  fontSize: 24,
-                  fontWeight: '700',
-                  color: COLORS.secondary,
-                }}
-              >
-                {quantity} Bottles
+          <ScrollView 
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={{ paddingBottom: 20 }}
+          >
+            {/* Quantity Selector */}
+            <View className="mb-6">
+              <Text className="font-sofia-bold text-base text-primary-navy mb-3">
+                Daily Quantity
               </Text>
-              <TouchableOpacity
-                style={{
-                  width: 40,
-                  height: 40,
-                  borderRadius: BORDER_RADIUS.md,
-                  backgroundColor: COLORS.primary,
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  ...SHADOWS.primary,
-                }}
-                onPress={() => setQuantity(quantity + 1)}
-              >
-                <Plus size={20} color={COLORS.white} />
-              </TouchableOpacity>
-            </View>
-          </View>
-
-          {/* Frequency Selector */}
-          <View style={{ marginBottom: SPACING.xxxl }}>
-            <Text
-              style={{
-                fontSize: 16,
-                fontWeight: '600',
-                color: COLORS.secondary,
-                marginBottom: 16,
-              }}
-            >
-              Delivery Frequency
-            </Text>
-            {frequencies.map((freq) => (
-              <TouchableOpacity
-                key={freq.id}
-                style={{
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  padding: 16,
-                  borderRadius: BORDER_RADIUS.sm,
-                  backgroundColor: frequency === freq.id ? '#FFF0D2' : COLORS.white,
-                  borderWidth: frequency === freq.id ? 2 : 1,
-                  borderColor: frequency === freq.id ? COLORS.primary : COLORS.border,
-                  marginBottom: 12,
-                }}
-                onPress={() => setFrequency(freq.id)}
-              >
-                <Text
-                  style={{
-                    fontSize: 15,
-                    fontWeight: '600',
-                    color: COLORS.secondary,
-                  }}
+              <View className="flex-row items-center justify-between bg-neutral-lightCream/50 rounded-2xl p-5">
+                <TouchableOpacity
+                  className="w-10 h-10 rounded-xl bg-white items-center justify-center shadow-sm"
+                  onPress={() => quantity > 1 && setQuantity(quantity - 1)}
+                  activeOpacity={0.7}
                 >
-                  {freq.label}
+                  <Minus size={20} color="#101B53" strokeWidth={2.5} />
+                </TouchableOpacity>
+                <Text className="font-sofia-bold text-2xl text-primary-navy">
+                  {quantity} Bottles
                 </Text>
-                {frequency === freq.id && (
-                  <View
-                    style={{
-                      width: 20,
-                      height: 20,
-                      borderRadius: 10,
-                      backgroundColor: COLORS.primary,
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                    }}
-                  >
-                    <View
-                      style={{
-                        width: 8,
-                        height: 8,
-                        borderRadius: 4,
-                        backgroundColor: COLORS.white,
-                      }}
-                    />
-                  </View>
-                )}
-              </TouchableOpacity>
-            ))}
-          </View>
-
-          {/* Cost Summary */}
-          <View
-            style={{
-              backgroundColor: COLORS.background,
-              borderRadius: BORDER_RADIUS.sm,
-              padding: 20,
-              marginBottom: SPACING.xxl,
-            }}
-          >
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
-              <Text style={{ fontSize: 14, color: COLORS.text.secondary }}>
-                Price per bottle
-              </Text>
-              <Text style={{ fontSize: 14, fontWeight: '600', color: COLORS.secondary }}>
-                {formatCurrency(PRODUCT.price)}
-              </Text>
+                <TouchableOpacity
+                  className="w-10 h-10 rounded-xl bg-primary-navy items-center justify-center shadow-md"
+                  onPress={() => setQuantity(quantity + 1)}
+                  activeOpacity={0.8}
+                >
+                  <Plus size={20} color="white" strokeWidth={2.5} />
+                </TouchableOpacity>
+              </View>
             </View>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-              <Text style={{ fontSize: 16, fontWeight: '700', color: COLORS.secondary }}>
-                Daily Cost
+
+            {/* Frequency Selector */}
+            <View className="mb-6">
+              <Text className="font-sofia-bold text-base text-primary-navy mb-3">
+                Delivery Frequency
               </Text>
-              <Text style={{ fontSize: 18, fontWeight: '700', color: COLORS.primary }}>
-                {formatCurrency(PRODUCT.price * quantity)}
-              </Text>
+              {frequencies.map((freq) => (
+                <TouchableOpacity
+                  key={freq.id}
+                  className={`flex-row items-center justify-between p-4 rounded-2xl mb-3 ${
+                    frequency === freq.id 
+                      ? 'bg-primary-navy/5 border-2 border-primary-navy' 
+                      : 'bg-white border border-neutral-lightGray'
+                  }`}
+                  onPress={() => setFrequency(freq.id)}
+                  activeOpacity={0.7}
+                >
+                  <Text className={`font-sofia-bold text-base ${
+                    frequency === freq.id ? 'text-primary-navy' : 'text-neutral-darkGray'
+                  }`}>
+                    {freq.label}
+                  </Text>
+                  {frequency === freq.id && (
+                    <View className="w-5 h-5 rounded-full bg-primary-navy items-center justify-center">
+                      <View className="w-2 h-2 rounded-full bg-white" />
+                    </View>
+                  )}
+                </TouchableOpacity>
+              ))}
             </View>
-          </View>
 
-          {/* Save Button */}
-          <TouchableOpacity
-            style={{
-              backgroundColor: loading ? COLORS.text.secondary : COLORS.primary,
-              paddingVertical: 18,
-              borderRadius: BORDER_RADIUS.sm,
-              alignItems: 'center',
-              marginBottom: 12,
-            }}
-            onPress={handleSave}
-            disabled={loading}
-          >
-            <Text
-              style={{ color: COLORS.white, fontWeight: '700', fontSize: 16 }}
-            >
-              {loading ? 'Saving...' : 'Save Changes'}
-            </Text>
-          </TouchableOpacity>
+            {/* Delivery Time Selector */}
+            <View className="mb-6">
+              <View className="flex-row items-center mb-3">
+                <Clock size={18} color="#101B53" strokeWidth={2} />
+                <Text className="font-sofia-bold text-base text-primary-navy ml-2">
+                  Delivery Time
+                </Text>
+              </View>
+              {deliveryTimes.map((time) => (
+                <TouchableOpacity
+                  key={time.id}
+                  className={`flex-row items-center justify-between p-4 rounded-2xl mb-3 ${
+                    deliveryTime === time.id 
+                      ? 'bg-secondary-sage/10 border-2 border-secondary-sage' 
+                      : 'bg-white border border-neutral-lightGray'
+                  }`}
+                  onPress={() => setDeliveryTime(time.id)}
+                  activeOpacity={0.7}
+                >
+                  <Text className={`font-sofia-bold text-base ${
+                    deliveryTime === time.id ? 'text-secondary-sage' : 'text-neutral-darkGray'
+                  }`}>
+                    {time.label}
+                  </Text>
+                  {deliveryTime === time.id && (
+                    <View className="w-5 h-5 rounded-full bg-secondary-sage items-center justify-center">
+                      <View className="w-2 h-2 rounded-full bg-white" />
+                    </View>
+                  )}
+                </TouchableOpacity>
+              ))}
+            </View>
 
-          {/* Cancel Button */}
-          <TouchableOpacity
-            style={{ paddingVertical: 16, alignItems: 'center' }}
-            onPress={onClose}
-          >
-            <Text
-              style={{ color: COLORS.text.secondary, fontWeight: '600', fontSize: 14 }}
+            {/* Cost Summary */}
+            <View className="bg-neutral-lightCream/50 rounded-2xl p-5 mb-6">
+              <View className="flex-row justify-between mb-2">
+                <Text className="font-comfortaa text-sm text-neutral-gray">
+                  Price per bottle
+                </Text>
+                <Text className="font-sofia-bold text-sm text-neutral-darkGray">
+                  {formatCurrency(productPrice)}
+                </Text>
+              </View>
+              <View className="flex-row justify-between pt-2 border-t border-neutral-lightGray">
+                <Text className="font-sofia-bold text-base text-primary-navy">
+                  Daily Cost
+                </Text>
+                <Text className="font-sofia-bold text-xl text-primary-navy">
+                  {formatCurrency(productPrice * quantity)}
+                </Text>
+              </View>
+            </View>
+
+            {/* Save Button */}
+            <TouchableOpacity
+              className={`py-4 rounded-2xl items-center mb-3 shadow-md ${
+                loading ? 'bg-neutral-gray' : 'bg-primary-navy'
+              }`}
+              onPress={handleSave}
+              disabled={loading}
+              activeOpacity={0.8}
             >
-              Cancel
-            </Text>
-          </TouchableOpacity>
+              <Text className="font-sofia-bold text-base text-white">
+                {loading ? 'Saving...' : 'Save Changes'}
+              </Text>
+            </TouchableOpacity>
+
+            {/* Cancel Button */}
+            <TouchableOpacity
+              className="py-4 items-center"
+              onPress={onClose}
+              activeOpacity={0.7}
+            >
+              <Text className="font-sofia-bold text-sm text-neutral-gray">
+                Cancel
+              </Text>
+            </TouchableOpacity>
+          </ScrollView>
         </View>
       </View>
     </Modal>
