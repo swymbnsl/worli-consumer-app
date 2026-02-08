@@ -1,6 +1,7 @@
 import MenuList from "@/components/account/MenuList"
 import ProfileHeader from "@/components/account/ProfileHeader"
 import Header from "@/components/ui/Header"
+import { COLORS } from "@/constants/theme"
 import { useAuth } from "@/hooks/useAuth"
 import { useRouter } from "expo-router"
 import {
@@ -13,61 +14,33 @@ import {
   MapPin,
   MessageCircle,
   Package,
+  RefreshCw,
   Settings,
   Trash2,
-  User,
 } from "lucide-react-native"
-import React from "react"
-import { ScrollView, Text, TouchableOpacity, View } from "react-native"
+import React, { useState } from "react"
+import { Modal, ScrollView, Text, TouchableOpacity, View } from "react-native"
+
 
 export default function AccountScreen() {
   const { user, logout } = useAuth()
   const router = useRouter()
+  const [showLogoutModal, setShowLogoutModal] = useState(false)
 
   const handleLogout = async () => {
+    setShowLogoutModal(false)
     await logout()
     router.replace("/(auth)/login")
   }
 
+  const triggerLogout = () => {
+    setShowLogoutModal(true)
+  }
+
   const menuItems = [
     {
-      id: "profile",
-      label: "Edit Profile",
-      icon: User,
-      color: "#101B53",
-      route: "/account/profile",
-    },
-    {
-      id: "orders",
-      label: "My Orders",
-      icon: Package,
-      color: "#101B53",
-      route: "/(tabs)/orders",
-    },
-    {
-      id: "address",
-      label: "Manage Addresses",
-      icon: MapPin,
-      color: "#101B53",
-      route: "/account/addresses",
-    },
-    {
-      id: "delivery",
-      label: "Delivery Preferences",
-      icon: Settings,
-      color: "#101B53",
-      route: "/account/delivery",
-    },
-    {
-      id: "transactions",
-      label: "Transaction History",
-      icon: FileText,
-      color: "#101B53",
-      route: "/account/transactions",
-    },
-    {
       id: "faq",
-      label: "FAQ",
+      label: "FAQs",
       icon: HelpCircle,
       color: "#101B53",
       route: "/account/faq",
@@ -94,8 +67,22 @@ export default function AccountScreen() {
       route: "/account/language",
     },
     {
+      id: "delivery",
+      label: "Delivery Preferences",
+      icon: Settings,
+      color: "#101B53",
+      route: "/account/delivery",
+    },
+    {
+      id: "address",
+      label: "Address Requests",
+      icon: MapPin,
+      color: "#101B53",
+      route: "/account/addresses",
+    },
+    {
       id: "terms",
-      label: "Terms & Conditions",
+      label: "Terms and Conditions",
       icon: FileText,
       color: "#101B53",
       route: "/account/terms",
@@ -109,9 +96,9 @@ export default function AccountScreen() {
     },
     {
       id: "delete",
-      label: "Delete Account",
+      label: "Delete My Account",
       icon: Trash2,
-      color: "#FF4444",
+      color: COLORS.secondary,
       route: "/account/delete",
       isDanger: true,
     },
@@ -119,8 +106,8 @@ export default function AccountScreen() {
       id: "logout",
       label: "Logout",
       icon: LogOut,
-      color: "#FF4444",
-      action: handleLogout,
+      color: COLORS.secondary,
+      action: triggerLogout,
       isDanger: true,
     },
   ]
@@ -137,39 +124,89 @@ export default function AccountScreen() {
       >
         <ProfileHeader user={user} />
 
-        {/* Quick Actions Overlay */}
-        <View className="flex-row justify-between px-4 mt-8 mb-6">
+        {/* Quick Actions */}
+        <View className="flex-row justify-between px-4 mt-6 mb-6">
           <TouchableOpacity
-            className="bg-white p-4 rounded-xl shadow-md items-center flex-1 mr-2 border-b-4 border-b-primary-orange"
+            className="bg-white p-4 rounded-xl shadow-md items-center flex-1 mr-2"
             onPress={() => router.push("/(tabs)/orders")}
+            activeOpacity={0.7}
           >
-            <Package size={22} color="#101B53" strokeWidth={2} />
-            <Text className="font-comfortaa text-xs text-primary-navy mt-2 text-center font-semibold">
-              Orders
+            <View className="bg-primary-navy/5 w-12 h-12 rounded-xl items-center justify-center mb-2">
+              <Package size={24} color="#101B53" strokeWidth={2} />
+            </View>
+            <Text className="font-comfortaa text-xs text-primary-navy text-center font-semibold">
+              My Orders
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
-            className="bg-white p-4 rounded-xl shadow-md items-center flex-1 mx-1 border-b-4 border-b-primary-orange"
+            className="bg-white p-4 rounded-xl shadow-md items-center flex-1 mx-1"
             onPress={() => router.push("/account/transactions")}
+            activeOpacity={0.7}
           >
-            <FileText size={22} color="#101B53" strokeWidth={2} />
-            <Text className="font-comfortaa text-xs text-primary-navy mt-2 text-center font-semibold">
-              History
+            <View className="bg-primary-navy/5 w-12 h-12 rounded-xl items-center justify-center mb-2">
+              <RefreshCw size={24} color="#101B53" strokeWidth={2} />
+            </View>
+            <Text className="font-comfortaa text-xs text-primary-navy text-center font-semibold">
+              Transactions
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
-            className="bg-white p-4 rounded-xl shadow-md items-center flex-1 ml-2 border-b-4 border-b-primary-orange"
-            onPress={() => router.push("/account/contact")}
+            className="bg-white p-4 rounded-xl shadow-md items-center flex-1 ml-2"
+            onPress={() => router.push("/account/transactions")}
+            activeOpacity={0.7}
           >
-            <MessageCircle size={22} color="#101B53" strokeWidth={2} />
-            <Text className="font-comfortaa text-xs text-primary-navy mt-2 text-center font-semibold">
-              Support
+            <View className="bg-primary-navy/5 w-12 h-12 rounded-xl items-center justify-center mb-2">
+              <FileText size={24} color="#101B53" strokeWidth={2} />
+            </View>
+            <Text className="font-comfortaa text-xs text-primary-navy text-center font-semibold">
+              Monthly Bill
             </Text>
           </TouchableOpacity>
         </View>
 
         <MenuList items={menuItems} />
       </ScrollView>
+
+      {/* Logout Confirmation Modal */}
+      <Modal
+        visible={showLogoutModal}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowLogoutModal(false)}
+      >
+        <View className="flex-1 bg-black/50 justify-center items-center px-8">
+          <View className="bg-white rounded-2xl p-6 w-full shadow-xl">
+            <Text 
+              className="font-sofia-bold text-2xl mb-4"
+              style={{ color: COLORS.secondary }}
+            >
+              Logout
+            </Text>
+            <Text className="font-comfortaa text-base text-neutral-gray mb-8 leading-6">
+              You will be logged out from all devices.
+            </Text>
+            
+            <View className="flex-row justify-end space-x-6">
+              <TouchableOpacity 
+                onPress={() => setShowLogoutModal(false)}
+                activeOpacity={0.7}
+              >
+                <Text className="font-sofia-bold text-lg text-secondary-sage">
+                  Cancel
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity 
+                onPress={handleLogout}
+                activeOpacity={0.7}
+              >
+                <Text className="font-sofia-bold text-lg text-navy ml-4">
+                  Continue
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   )
 }

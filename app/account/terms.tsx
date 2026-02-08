@@ -1,5 +1,4 @@
-import PageHeader from "@/components/ui/PageHeader"
-import { useRouter } from "expo-router"
+import { Stack, useRouter } from "expo-router"
 import React from "react"
 import { ScrollView, Text, View } from "react-native"
 
@@ -51,12 +50,7 @@ export default function TermsScreen() {
 
   return (
     <View className="flex-1 bg-neutral-lightCream">
-      {/* Header */}
-      <PageHeader
-        title="Terms & Conditions"
-        subtitle="Legal"
-        showBackButton={true}
-      />
+      <Stack.Screen options={{ title: "Terms & Conditions" }} />
 
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
         <View className="px-6 py-6">

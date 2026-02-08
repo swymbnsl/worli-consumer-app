@@ -1,123 +1,114 @@
-import { useRouter } from "expo-router"
+import { Stack } from "expo-router"
 import {
-  ChevronLeft,
-  Clock,
-  Mail,
-  MapPin,
-  MessageCircle,
-  Phone,
+    Mail,
+    MapPin,
+    MessageCircle,
+    Phone
 } from "lucide-react-native"
 import React from "react"
 import { Linking, ScrollView, Text, TouchableOpacity, View } from "react-native"
 
 export default function ContactScreen() {
-  const router = useRouter()
-
-  const contactMethods = [
+  const contactInfo = [
     {
       icon: Phone,
-      title: "Phone Support",
-      description: "+91 1800-123-4567",
+      label: "Phone",
+      value: "+91 1800-123-4567",
       action: () => Linking.openURL("tel:+918001234567"),
-      color: "#EF6600",
+      actionLabel: "Call",
+      actionColor: "#4285F4",
     },
     {
       icon: Mail,
-      title: "Email Us",
-      description: "support@freshmilk.com",
-      action: () => Linking.openURL("mailto:support@freshmilk.com"),
-      color: "#638C5F",
-    },
-    {
-      icon: MessageCircle,
-      title: "WhatsApp",
-      description: "Chat with us on WhatsApp",
-      action: () => Linking.openURL("https://wa.me/918001234567"),
-      color: "#25D366",
+      label: "Mail",
+      value: "support@worlimilk.com",
+      action: () => Linking.openURL("mailto:support@worlimilk.com"),
+      actionLabel: "Mail",
+      actionColor: "#EA4335",
     },
     {
       icon: MapPin,
-      title: "Visit Us",
-      description: "123 Dairy Road, Bengaluru, Karnataka 560001",
-      action: null,
-      color: "#DC2626",
+      label: "Address",
+      value: "Worli Dairy Farm, 123 Dairy Road,\nMumbai, Maharashtra 400018",
+      action: () => Linking.openURL("https://maps.google.com/?q=Worli+Dairy+Farm+Mumbai"),
+      actionLabel: "Directions",
+      actionColor: "#638C5F",
+    },
+    {
+      icon: MessageCircle,
+      label: "WhatsApp",
+      value: "+91 1800-123-4567",
+      action: () => Linking.openURL("https://wa.me/918001234567"),
+      actionLabel: "WhatsApp",
+      actionColor: "#25D366",
     },
   ]
 
   return (
     <View className="flex-1 bg-neutral-lightCream">
-      {/* Header */}
-      <View className="bg-primary-navy px-6 pt-10 pb-6 flex-row items-center">
-        <TouchableOpacity
-          onPress={() => router.back()}
-          className="mr-4 active:opacity-70"
-        >
-          <ChevronLeft size={24} color="#FFFFFF" />
-        </TouchableOpacity>
-        <View>
-          <Text className="font-comfortaa text-xs text-primary-cream uppercase tracking-widest mb-1">
-            Get In Touch
-          </Text>
-          <Text className="font-sofia-bold text-2xl text-white">
-            Contact Us
-          </Text>
-        </View>
-      </View>
+      <Stack.Screen options={{ title: "Contact Us" }} />
 
       <ScrollView
-        className="flex-1 px-6 pt-6"
+        className="flex-1 px-4 pt-4"
         showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: 24 }}
       >
-        <Text className="font-comfortaa text-base text-neutral-gray mb-6 leading-6">
-          We're here to help! Reach out to us through any of these channels
-        </Text>
-
-        {contactMethods.map((method, index) => {
-          const IconComponent = method.icon
+        {contactInfo.map((item, index) => {
+          const IconComponent = item.icon
           return (
             <TouchableOpacity
               key={index}
-              className="bg-white rounded-2xl p-5 mb-4 shadow-md flex-row items-center active:opacity-80"
-              onPress={method.action || undefined}
-              disabled={!method.action}
+              className="bg-white rounded-2xl p-4 mb-3 shadow-sm active:opacity-70"
+              onPress={item.action}
             >
-              <View
-                className="w-14 h-14 rounded-2xl items-center justify-center mr-4"
-                style={{ backgroundColor: `${method.color}15` }}
-              >
-                <IconComponent size={26} color={method.color} />
-              </View>
-              <View className="flex-1">
-                <Text className="font-sofia-bold text-base text-primary-navy mb-1">
-                  {method.title}
-                </Text>
-                <Text className="font-comfortaa text-sm text-neutral-darkGray">
-                  {method.description}
-                </Text>
+              <View className="flex-row items-start justify-between">
+                <View className="flex-1">
+                  <Text className="font-comfortaa text-xs text-neutral-gray mb-2">
+                    {item.label}
+                  </Text>
+                  <Text className="font-comfortaa text-base text-primary-navy leading-6">
+                    {item.value}
+                  </Text>
+                </View>
+                <View className="ml-4 items-end">
+                  <View className="flex-row items-center">
+                    <Text
+                      className="font-sofia-bold text-sm mr-1"
+                      style={{ color: item.actionColor }}
+                    >
+                      {item.actionLabel}
+                    </Text>
+                    <IconComponent size={18} color={item.actionColor} />
+                  </View>
+                </View>
               </View>
             </TouchableOpacity>
           )
         })}
 
-        {/* Business Hours */}
-        <View className="bg-white rounded-2xl p-6 mb-8 shadow-md">
-          <View className="flex-row items-center mb-4">
-            <View className="w-11 h-11 rounded-xl bg-secondary-skyBlue bg-opacity-15 items-center justify-center mr-3">
-              <Clock size={22} color="#A1C3E3" />
-            </View>
-            <Text className="font-sofia-bold text-lg text-primary-navy">
-              Business Hours
-            </Text>
-          </View>
-          <View className="ml-14">
-            <Text className="font-comfortaa text-sm text-neutral-darkGray mb-2">
-              Monday - Saturday: 6:00 AM - 9:00 PM
-            </Text>
-            <Text className="font-comfortaa text-sm text-neutral-darkGray">
-              Sunday: 6:00 AM - 12:00 PM
-            </Text>
-          </View>
+        {/* Business Hours Card */}
+        <View className="bg-white rounded-2xl p-4 mt-2 shadow-sm">
+          <Text className="font-comfortaa text-xs text-neutral-gray mb-3">
+            Business Hours
+          </Text>
+          <Text className="font-comfortaa text-sm text-primary-navy mb-2">
+            Monday - Saturday
+          </Text>
+          <Text className="font-comfortaa text-sm text-neutral-gray mb-4">
+            6:00 AM - 9:00 PM
+          </Text>
+          <Text className="font-comfortaa text-sm text-primary-navy mb-2">
+            Sunday
+          </Text>
+          <Text className="font-comfortaa text-sm text-neutral-gray">
+            6:00 AM - 12:00 PM
+          </Text>
         </View>
+
+        {/* Help Text */}
+        <Text className="font-comfortaa text-xs text-neutral-gray text-center mt-6 px-8 leading-5">
+          We're here to help! Reach out through any of the above channels for quick support.
+        </Text>
       </ScrollView>
     </View>
   )

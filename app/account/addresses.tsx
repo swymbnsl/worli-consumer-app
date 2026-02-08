@@ -3,16 +3,16 @@ import AddressCard from "@/components/addresses/AddressCard"
 import { useAuth } from "@/hooks/useAuth"
 import { supabase } from "@/lib/supabase"
 import { Address } from "@/types/database.types"
-import { useRouter } from "expo-router"
-import { ChevronLeft, Plus } from "lucide-react-native"
+import { Stack, useRouter } from "expo-router"
+import { Plus } from "lucide-react-native"
 import React, { useEffect, useState } from "react"
 import {
-  Alert,
-  RefreshControl,
-  ScrollView,
-  Text,
-  TouchableOpacity,
-  View,
+    Alert,
+    RefreshControl,
+    ScrollView,
+    Text,
+    TouchableOpacity,
+    View,
 } from "react-native"
 
 export default function AddressesScreen() {
@@ -64,33 +64,20 @@ export default function AddressesScreen() {
   }
 
   const handleDeleteAddress = async (addressId: string) => {
-    Alert.alert(
-      "Delete Address",
-      "Are you sure you want to delete this address?",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Delete",
-          style: "destructive",
-          onPress: async () => {
-            try {
-              const { error } = await supabase
-                .from("addresses")
-                .delete()
-                .eq("id", addressId)
+    try {
+      const { error } = await supabase
+        .from("addresses")
+        .delete()
+        .eq("id", addressId)
 
-              if (error) throw error
+      if (error) throw error
 
-              Alert.alert("Success", "Address deleted successfully")
-              fetchAddresses()
-            } catch (error) {
-              console.error("Error deleting address:", error)
-              Alert.alert("Error", "Failed to delete address")
-            }
-          },
-        },
-      ],
-    )
+      Alert.alert("Success", "Address deleted successfully")
+      fetchAddresses()
+    } catch (error) {
+      console.error("Error deleting address:", error)
+      Alert.alert("Error", "Failed to delete address")
+    }
   }
 
   const handleSetDefault = async (addressId: string) => {
@@ -120,24 +107,10 @@ export default function AddressesScreen() {
 
   return (
     <View className="flex-1 bg-neutral-lightCream">
-      {/* Header */}
-      <View className="bg-primary-navy px-6 pt-10 pb-6 flex-row items-center">
-        <TouchableOpacity
-          onPress={() => router.back()}
-          className="mr-4 active:opacity-70"
-        >
-          <ChevronLeft size={24} color="#FFFFFF" />
-        </TouchableOpacity>
-        <View>
-          <Text className="font-comfortaa text-xs text-primary-cream uppercase tracking-widest mb-1">
-            Locations
-          </Text>
-          <Text className="font-sofia-bold text-2xl text-white">Addresses</Text>
-        </View>
-      </View>
+      <Stack.Screen options={{ title: "Addresses" }} />
 
       <ScrollView
-        className="flex-1 px-6 pt-6"
+        className="flex-1 px-4 pt-4"
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl
@@ -148,13 +121,15 @@ export default function AddressesScreen() {
         }
       >
         {addresses.length === 0 && !loading ? (
-          <View className="items-center py-16">
-            <Text className="text-5xl mb-4">📍</Text>
-            <Text className="font-sofia-bold text-lg text-primary-navy mb-2">
-              No Addresses Added
+          <View className="items-center py-20">
+            <View className="w-24 h-24 rounded-full bg-secondary-skyBlue/20 items-center justify-center mb-6">
+              <Text className="text-5xl">📍</Text>
+            </View>
+            <Text className="font-sofia-bold text-xl text-primary-navy mb-3">
+              No Addresses Yet
             </Text>
-            <Text className="font-comfortaa text-sm text-neutral-gray text-center">
-              Add a delivery address to get started
+            <Text className="font-comfortaa text-sm text-neutral-gray text-center px-8 leading-5">
+              Add your delivery address to get started with orders
             </Text>
           </View>
         ) : (
@@ -171,10 +146,10 @@ export default function AddressesScreen() {
 
         {/* Add New Address Button */}
         <TouchableOpacity
-          className="bg-primary-orange rounded-xl p-6 items-center mb-8 flex-row justify-center shadow-md active:opacity-90"
+          className="bg-primary-navy rounded-2xl py-4 px-6 items-center mb-8 flex-row justify-center shadow-md active:opacity-90"
           onPress={handleAddAddress}
         >
-          <Plus size={24} color="#FFFFFF" />
+          <Plus size={20} color="#FFFFFF" />
           <Text className="font-sofia-bold text-base text-white ml-2">
             Add New Address
           </Text>

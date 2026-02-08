@@ -1,17 +1,14 @@
 import Header from "@/components/ui/Header"
+import LowBalanceNotification from "@/components/wallet/LowBalanceNotification"
 import RechargeModal from "@/components/wallet/RechargeModal"
-import SettingsModal from "@/components/wallet/SettingsModal"
 import TransactionList from "@/components/wallet/TransactionList"
 import WalletBalanceCard from "@/components/wallet/WalletBalanceCard"
-import WalletSettingsCard from "@/components/wallet/WalletSettingsCard"
 import { useWallet } from "@/hooks/useWallet"
 import React, { useState } from "react"
 import { RefreshControl, ScrollView, View } from "react-native"
 
 export default function WalletScreen() {
   const { wallet, transactions, loading, refreshWallet } = useWallet()
-  const [rechargeModalVisible, setRechargeModalVisible] = useState(false)
-  const [settingsModalVisible, setSettingsModalVisible] = useState(false)
   const [refreshing, setRefreshing] = useState(false)
 
   const onRefresh = async () => {
@@ -37,33 +34,17 @@ export default function WalletScreen() {
         }
       >
         {/* Wallet Balance Card */}
-        <WalletBalanceCard
-          balance={wallet?.balance || 0}
-          onAddMoney={() => setRechargeModalVisible(true)}
-        />
+        <WalletBalanceCard balance={wallet?.balance || 0} />
 
-        {/* Wallet Settings Card */}
-        <WalletSettingsCard
-          wallet={wallet}
-          onPress={() => setSettingsModalVisible(true)}
-        />
+        {/* Recharge Section - Inline */}
+        <RechargeModal />
+
+        {/* Low Balance Notification Settings - Inline */}
+        <LowBalanceNotification />
 
         {/* Transaction List */}
         <TransactionList transactions={transactions} />
       </ScrollView>
-
-      {/* Recharge Modal */}
-      <RechargeModal
-        visible={rechargeModalVisible}
-        onClose={() => setRechargeModalVisible(false)}
-      />
-
-      {/* Settings Modal */}
-      <SettingsModal
-        visible={settingsModalVisible}
-        onClose={() => setSettingsModalVisible(false)}
-        wallet={wallet}
-      />
     </View>
   )
 }

@@ -1,7 +1,7 @@
 import { BORDER_RADIUS, COLORS, SHADOWS, SPACING } from "@/constants/theme"
 import { useAuth } from "@/hooks/useAuth"
-import { useRouter } from "expo-router"
-import { CheckCircle, ChevronLeft } from "lucide-react-native"
+import { Stack, useRouter } from "expo-router"
+import { CheckCircle } from "lucide-react-native"
 import React from "react"
 import { Text, TouchableOpacity, View } from "react-native"
 
@@ -49,41 +49,7 @@ export default function DeliveryPreferencesScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: COLORS.background }}>
-      {/* Header */}
-      <View
-        style={{
-          backgroundColor: COLORS.secondary,
-          paddingHorizontal: SPACING.xxl,
-          paddingTop: 56,
-          paddingBottom: SPACING.xxxl,
-          flexDirection: "row",
-          alignItems: "center",
-        }}
-      >
-        <TouchableOpacity
-          onPress={() => router.back()}
-          style={{ marginRight: 16 }}
-        >
-          <ChevronLeft size={24} color={COLORS.white} />
-        </TouchableOpacity>
-        <View>
-          <Text
-            style={{
-              color: COLORS.text.bright,
-              fontSize: 13,
-              letterSpacing: 1,
-              marginBottom: 4,
-            }}
-          >
-            PREFERENCES
-          </Text>
-          <Text
-            style={{ color: COLORS.white, fontSize: 24, fontWeight: "700" }}
-          >
-            Delivery
-          </Text>
-        </View>
-      </View>
+      <Stack.Screen options={{ title: "Delivery" }} />
 
       <View style={{ paddingHorizontal: SPACING.xxl, paddingTop: SPACING.xxl }}>
         {preferences.map((pref) => (
@@ -99,7 +65,7 @@ export default function DeliveryPreferencesScreen() {
               justifyContent: "space-between",
               alignItems: "center",
               borderWidth: currentPref === pref.id ? 2 : 0,
-              borderColor: COLORS.primary,
+              borderColor: COLORS.secondary,
             }}
             onPress={() => handleSelect(pref.id)}
           >
@@ -125,7 +91,7 @@ export default function DeliveryPreferencesScreen() {
               </Text>
             </View>
             {currentPref === pref.id && (
-              <CheckCircle size={28} color={COLORS.primary} />
+              <CheckCircle size={28} color={COLORS.secondary} />
             )}
           </TouchableOpacity>
         ))}

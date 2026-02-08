@@ -1,15 +1,15 @@
 import { BORDER_RADIUS, COLORS, SHADOWS, SPACING } from "@/constants/theme"
 import { useAuth } from "@/hooks/useAuth"
-import { useRouter } from "expo-router"
-import { AlertTriangle, ChevronLeft } from "lucide-react-native"
+import { Stack, useRouter } from "expo-router"
+import { AlertTriangle } from "lucide-react-native"
 import React, { useState } from "react"
 import {
-  Alert,
-  ScrollView,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
+    Alert,
+    ScrollView,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
 } from "react-native"
 
 export default function DeleteAccountScreen() {
@@ -65,41 +65,7 @@ export default function DeleteAccountScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: COLORS.background }}>
-      {/* Header */}
-      <View
-        style={{
-          backgroundColor: COLORS.secondary,
-          paddingHorizontal: SPACING.xxl,
-          paddingTop: 56,
-          paddingBottom: SPACING.xxxl,
-          flexDirection: "row",
-          alignItems: "center",
-        }}
-      >
-        <TouchableOpacity
-          onPress={() => router.back()}
-          style={{ marginRight: 16 }}
-        >
-          <ChevronLeft size={24} color={COLORS.white} />
-        </TouchableOpacity>
-        <View>
-          <Text
-            style={{
-              color: COLORS.text.bright,
-              fontSize: 13,
-              letterSpacing: 1,
-              marginBottom: 4,
-            }}
-          >
-            DANGER ZONE
-          </Text>
-          <Text
-            style={{ color: COLORS.white, fontSize: 24, fontWeight: "700" }}
-          >
-            Delete Account
-          </Text>
-        </View>
-      </View>
+      <Stack.Screen options={{ title: "Delete Account" }} />
 
       <ScrollView
         style={{

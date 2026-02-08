@@ -1,5 +1,5 @@
-import { useRouter } from "expo-router"
-import { ChevronDown, ChevronLeft, ChevronUp } from "lucide-react-native"
+import { Stack, useRouter } from "expo-router"
+import { ChevronDown, ChevronUp } from "lucide-react-native"
 import React, { useState } from "react"
 import { ScrollView, Text, TouchableOpacity, View } from "react-native"
 
@@ -52,21 +52,7 @@ export default function FAQScreen() {
 
   return (
     <View className="flex-1 bg-neutral-lightCream">
-      {/* Header */}
-      <View className="bg-primary-navy px-6 pt-10 pb-6 flex-row items-center">
-        <TouchableOpacity
-          onPress={() => router.back()}
-          className="mr-4 active:opacity-70"
-        >
-          <ChevronLeft size={24} color="#FFFFFF" />
-        </TouchableOpacity>
-        <View>
-          <Text className="font-comfortaa text-xs text-primary-cream uppercase tracking-widest mb-1">
-            Help Center
-          </Text>
-          <Text className="font-sofia-bold text-2xl text-white">FAQ</Text>
-        </View>
-      </View>
+      <Stack.Screen options={{ title: "FAQ" }} />
 
       <ScrollView
         className="flex-1 px-6 pt-6"

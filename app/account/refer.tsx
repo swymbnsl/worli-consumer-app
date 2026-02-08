@@ -1,15 +1,15 @@
 import { useAuth } from "@/hooks/useAuth"
 import * as Clipboard from "expo-clipboard"
-import { useRouter } from "expo-router"
-import { ChevronLeft, Copy, Gift, Share2, Users } from "lucide-react-native"
+import { Stack, useRouter } from "expo-router"
+import { Copy, Gift, Share2, Users } from "lucide-react-native"
 import React from "react"
 import {
-  Alert,
-  ScrollView,
-  Share,
-  Text,
-  TouchableOpacity,
-  View,
+    Alert,
+    ScrollView,
+    Share,
+    Text,
+    TouchableOpacity,
+    View,
 } from "react-native"
 
 export default function ReferScreen() {
@@ -34,57 +34,41 @@ export default function ReferScreen() {
 
   return (
     <View className="flex-1 bg-neutral-lightCream">
-      {/* Header */}
-      <View className="bg-primary-navy px-6 pt-10 pb-6 flex-row items-center">
-        <TouchableOpacity
-          onPress={() => router.back()}
-          className="mr-4 active:opacity-70"
-        >
-          <ChevronLeft size={24} color="#FFFFFF" />
-        </TouchableOpacity>
-        <View>
-          <Text className="font-comfortaa text-xs text-primary-cream uppercase tracking-widest mb-1">
-            Rewards
-          </Text>
-          <Text className="font-sofia-bold text-2xl text-white">
-            Refer & Earn
-          </Text>
-        </View>
-      </View>
+      <Stack.Screen options={{ title: "Refer & Earn" }} />
 
       <ScrollView
         className="flex-1 px-6 pt-6"
         showsVerticalScrollIndicator={false}
       >
         {/* Referral Code Card */}
-        <View className="bg-primary-navy rounded-2xl p-7 mb-6 relative overflow-hidden">
+        <View className="bg-primary-navy rounded-2xl p-7 mb-6 relative overflow-hidden shadow-lg">
           {/* Background decorations */}
-          <View className="absolute -top-8 -right-8 w-32 h-32 rounded-3xl bg-secondary-gold opacity-15" />
-          <View className="absolute -bottom-5 -left-5 w-28 h-28 rounded-3xl bg-primary-cream opacity-10" />
+          <View className="absolute -top-10 -right-10 w-36 h-36 rounded-full bg-primary-cream opacity-10" />
+          <View className="absolute -bottom-8 -left-8 w-28 h-28 rounded-full bg-secondary-skyBlue opacity-20" />
 
-          <View className="w-16 h-16 rounded-2xl bg-primary-orange items-center justify-center mb-5">
-            <Gift size={32} color="#FFFFFF" />
+          <View className="w-16 h-16 rounded-2xl bg-white items-center justify-center mb-5 shadow-sm">
+            <Gift size={32} color="#101B53" />
           </View>
 
-          <Text className="font-comfortaa text-xs text-primary-cream mb-3 tracking-widest">
+          <Text className="font-comfortaa text-xs text-primary-cream mb-3 tracking-widest opacity-90">
             YOUR REFERRAL CODE
           </Text>
-          <Text className="font-sofia-bold text-3xl text-white mb-6 tracking-widest">
+          <Text className="font-sofia-bold text-4xl text-primary-cream mb-8 tracking-wider">
             {referralCode}
           </Text>
 
           <View className="flex-row gap-3">
             <TouchableOpacity
-              className="flex-1 bg-primary-orange py-3.5 rounded-xl flex-row items-center justify-center active:opacity-90"
+              className="flex-1 bg-primary-orange py-4 rounded-xl flex-row items-center justify-center active:opacity-90 shadow-sm"
               onPress={handleCopyCode}
             >
               <Copy size={18} color="#FFFFFF" />
               <Text className="font-sofia-bold text-sm text-white ml-2">
-                Copy
+                Copy Code
               </Text>
             </TouchableOpacity>
             <TouchableOpacity
-              className="flex-1 bg-white bg-opacity-15 py-3.5 rounded-xl flex-row items-center justify-center border border-white border-opacity-20 active:opacity-80"
+              className="flex-1 bg-white/10 py-4 rounded-xl flex-row items-center justify-center border border-white/20 active:opacity-80"
               onPress={handleShare}
             >
               <Share2 size={18} color="#FFFFFF" />

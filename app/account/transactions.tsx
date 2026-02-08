@@ -1,5 +1,4 @@
-import { useRouter } from "expo-router"
-import { ChevronLeft } from "lucide-react-native"
+import { Stack, useRouter } from "expo-router"
 import React from "react"
 import { Text, TouchableOpacity, View } from "react-native"
 
@@ -8,23 +7,7 @@ export default function TransactionsScreen() {
 
   return (
     <View className="flex-1 bg-neutral-lightCream">
-      {/* Header */}
-      <View className="bg-primary-navy px-6 pt-10 pb-6 flex-row items-center">
-        <TouchableOpacity
-          onPress={() => router.back()}
-          className="mr-4 active:opacity-70"
-        >
-          <ChevronLeft size={24} color="#FFFFFF" />
-        </TouchableOpacity>
-        <View>
-          <Text className="font-comfortaa text-xs text-primary-cream uppercase tracking-widest mb-1">
-            History
-          </Text>
-          <Text className="font-sofia-bold text-2xl text-white">
-            Transactions
-          </Text>
-        </View>
-      </View>
+      <Stack.Screen options={{ title: "Transactions" }} />
 
       <View className="flex-1 justify-center items-center px-6">
         <Text className="font-comfortaa text-base text-neutral-gray text-center">

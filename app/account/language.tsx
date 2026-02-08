@@ -1,6 +1,6 @@
 import { useAuth } from "@/hooks/useAuth"
-import { useRouter } from "expo-router"
-import { CheckCircle, ChevronLeft } from "lucide-react-native"
+import { Stack, useRouter } from "expo-router"
+import { CheckCircle } from "lucide-react-native"
 import React from "react"
 import { Text, TouchableOpacity, View } from "react-native"
 
@@ -20,21 +20,7 @@ export default function LanguageScreen() {
 
   return (
     <View className="flex-1 bg-neutral-lightCream">
-      {/* Header */}
-      <View className="bg-primary-navy px-6 pt-10 pb-6 flex-row items-center">
-        <TouchableOpacity
-          onPress={() => router.back()}
-          className="mr-4 active:opacity-70"
-        >
-          <ChevronLeft size={24} color="#FFFFFF" />
-        </TouchableOpacity>
-        <View>
-          <Text className="font-comfortaa text-xs text-primary-cream uppercase tracking-widest mb-1">
-            Preferences
-          </Text>
-          <Text className="font-sofia-bold text-2xl text-white">Language</Text>
-        </View>
-      </View>
+      <Stack.Screen options={{ title: "Language" }} />
 
       <View className="px-6 pt-6">
         {languages.map((lang) => (
