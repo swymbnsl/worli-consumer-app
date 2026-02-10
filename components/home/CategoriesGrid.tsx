@@ -1,7 +1,9 @@
 import { COLORS } from "@/constants/theme"
 import { Product } from "@/types/database.types"
+import { formatCurrency } from "@/utils/formatters"
 import { Image } from "expo-image"
 import { useRouter } from "expo-router"
+import { Plus } from "lucide-react-native"
 import React from "react"
 import { ActivityIndicator, Text, TouchableOpacity, View } from "react-native"
 import Animated, { FadeInUp } from "react-native-reanimated"
@@ -13,6 +15,8 @@ interface Category {
   image_url: string | null
   productCount: number
   emoji: string
+  price: number
+  product: Product
 }
 
 interface CategoriesGridProps {
@@ -58,6 +62,8 @@ const groupProductsIntoCategories = (products: Product[]): Category[] => {
         image_url: product.image_url,
         productCount: 1,
         emoji: getProductEmoji(product.name),
+        price: product.price,
+        product: product,
       })
     }
   })
@@ -77,6 +83,16 @@ export default function CategoriesGrid({
     router.push({
       pathname: "/product",
       params: { productId: category.id },
+    })
+  }
+
+  const handleAddToCart = (e: any, product: Product) => {
+    e.stopPropagation() // Prevent navigation when clicking add button
+
+    // Navigate to cart with product pre-selected
+    router.push({
+      pathname: "/cart",
+      params: { productId: product.id },
     })
   }
 
@@ -128,11 +144,28 @@ export default function CategoriesGrid({
 
             {/* Category Name */}
             <Text
-              className="font-sofia-bold text-base text-center text-neutral-darkGray"
+              className="font-sofia-bold text-base text-primary-navy mb-2"
               numberOfLines={2}
             >
               {category.name}
             </Text>
+
+            {/* Price and Add Button */}
+            <View className="flex-row items-center justify-between mt-1">
+              <Text className="font-sofia-bold text-lg text-primary-orange">
+                {formatCurrency(category.price)}
+              </Text>
+              <TouchableOpacity
+                className="bg-primary-navy w-8 h-8 rounded-lg items-center justify-center active:opacity-80"
+                onPress={(e) => handleAddToCart(e, category.product)}
+              >
+                <Plus
+                  size={18}
+                  color={COLORS.neutral.white}
+                  strokeWidth={2.5}
+                />
+              </TouchableOpacity>
+            </View>
           </TouchableOpacity>
         </Animated.View>
       ))}

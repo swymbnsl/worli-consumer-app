@@ -141,7 +141,7 @@ export default function CartScreen() {
       {/* Header */}
       <View
         style={{
-          backgroundColor: COLORS.secondary,
+          backgroundColor: COLORS.primary.navy,
           paddingHorizontal: SPACING.xxl,
           paddingTop: 56,
           paddingBottom: SPACING.xxxl,
@@ -216,7 +216,7 @@ export default function CartScreen() {
                 style={{
                   fontSize: 18,
                   fontWeight: "700",
-                  color: COLORS.secondary,
+                  color: COLORS.primary.navy,
                   marginBottom: 4,
                 }}
               >
@@ -235,7 +235,7 @@ export default function CartScreen() {
                 style={{
                   fontSize: 22,
                   fontWeight: "700",
-                  color: COLORS.primary,
+                  color: COLORS.primary.orange,
                 }}
               >
                 {formatCurrency(PRODUCT.price)}
@@ -256,7 +256,7 @@ export default function CartScreen() {
           >
             <Text
               style={{
-                color: COLORS.secondary,
+                color: COLORS.primary.navy,
                 fontWeight: "600",
                 fontSize: 15,
               }}
@@ -278,14 +278,14 @@ export default function CartScreen() {
                   cart.quantity > 1 && updateQuantity(cart.quantity - 1)
                 }
               >
-                <Minus size={20} color={COLORS.secondary} />
+                <Minus size={20} color={COLORS.primary.navy} />
               </TouchableOpacity>
               <Text
                 style={{
                   marginHorizontal: 24,
                   fontSize: 20,
                   fontWeight: "700",
-                  color: COLORS.secondary,
+                  color: COLORS.primary.navy,
                 }}
               >
                 {cart.quantity}
@@ -295,7 +295,7 @@ export default function CartScreen() {
                   width: 40,
                   height: 40,
                   borderRadius: BORDER_RADIUS.md,
-                  backgroundColor: COLORS.primary,
+                  backgroundColor: COLORS.primary.navy,
                   alignItems: "center",
                   justifyContent: "center",
                   ...SHADOWS.primary,
@@ -330,17 +330,21 @@ export default function CartScreen() {
               style={{
                 fontWeight: "700",
                 fontSize: 16,
-                color: COLORS.secondary,
+                color: COLORS.primary.navy,
               }}
             >
               Delivery Date
             </Text>
             <TouchableOpacity onPress={() => setDatePickerVisible(true)}>
-              <Calendar size={20} color={COLORS.primary} />
+              <Calendar size={20} color={COLORS.primary.orange} />
             </TouchableOpacity>
           </View>
           <Text
-            style={{ fontSize: 15, color: COLORS.secondary, marginBottom: 12 }}
+            style={{
+              fontSize: 15,
+              color: COLORS.primary.navy,
+              marginBottom: 12,
+            }}
           >
             {formatFullDate(cart.date)}
           </Text>
@@ -353,7 +357,7 @@ export default function CartScreen() {
               alignItems: "center",
             }}
           >
-            <AlertCircle size={16} color={COLORS.primary} />
+            <AlertCircle size={16} color={COLORS.primary.orange} />
             <Text
               style={{
                 fontSize: 12,
@@ -389,14 +393,14 @@ export default function CartScreen() {
               style={{
                 fontWeight: "700",
                 fontSize: 16,
-                color: COLORS.secondary,
+                color: COLORS.primary.navy,
               }}
             >
               Delivery Address
             </Text>
             {/* @ts-ignore */}
             <TouchableOpacity onPress={() => router.push("/account/addresses")}>
-              <Edit2 size={18} color={COLORS.primary} />
+              <Edit2 size={18} color={COLORS.primary.orange} />
             </TouchableOpacity>
           </View>
           {defaultAddress ? (
@@ -413,7 +417,7 @@ export default function CartScreen() {
               >
                 <Text
                   style={{
-                    color: COLORS.primary,
+                    color: COLORS.primary.orange,
                     fontSize: 11,
                     fontWeight: "700",
                     letterSpacing: 0.3,
@@ -424,7 +428,7 @@ export default function CartScreen() {
               </View>
               <Text
                 style={{
-                  color: COLORS.secondary,
+                  color: COLORS.primary.navy,
                   fontSize: 14,
                   marginBottom: 4,
                 }}
@@ -434,7 +438,7 @@ export default function CartScreen() {
               {defaultAddress.address_line2 && (
                 <Text
                   style={{
-                    color: COLORS.secondary,
+                    color: COLORS.primary.navy,
                     fontSize: 14,
                     marginBottom: 4,
                   }}
@@ -485,7 +489,7 @@ export default function CartScreen() {
             style={{
               fontWeight: "700",
               fontSize: 16,
-              color: COLORS.secondary,
+              color: COLORS.primary.navy,
               marginBottom: 20,
             }}
           >
@@ -504,7 +508,7 @@ export default function CartScreen() {
             <Text
               style={{
                 fontWeight: "600",
-                color: COLORS.secondary,
+                color: COLORS.primary.navy,
                 fontSize: 15,
               }}
             >
@@ -525,13 +529,17 @@ export default function CartScreen() {
               style={{
                 fontWeight: "700",
                 fontSize: 18,
-                color: COLORS.secondary,
+                color: COLORS.primary.navy,
               }}
             >
               Total Amount
             </Text>
             <Text
-              style={{ fontWeight: "700", fontSize: 20, color: COLORS.primary }}
+              style={{
+                fontWeight: "700",
+                fontSize: 20,
+                color: COLORS.primary.orange,
+              }}
             >
               {formatCurrency(totalCost)}
             </Text>
@@ -630,7 +638,9 @@ export default function CartScreen() {
         <TouchableOpacity
           style={{
             backgroundColor:
-              canDeliver && !loading ? COLORS.primary : COLORS.text.secondary,
+              canDeliver && !loading
+                ? COLORS.primary.orange
+                : COLORS.text.secondary,
             borderRadius: BORDER_RADIUS.sm,
             paddingVertical: 20,
             alignItems: "center",

@@ -1,9 +1,4 @@
-import {
-  Mail,
-  MapPin,
-  MessageCircle,
-  Phone,
-} from "lucide-react-native"
+import { Mail, MapPin, MessageCircle, Phone } from "lucide-react-native"
 import React from "react"
 import { Linking, ScrollView, Text, TouchableOpacity, View } from "react-native"
 
@@ -29,7 +24,8 @@ export default function ContactScreen() {
       icon: MapPin,
       label: "Address",
       value: "Worli Dairy Farm, 123 Dairy Road,\nMumbai, Maharashtra 400018",
-      action: () => Linking.openURL("https://maps.google.com/?q=Worli+Dairy+Farm+Mumbai"),
+      action: () =>
+        Linking.openURL("https://maps.google.com/?q=Worli+Dairy+Farm+Mumbai"),
       actionLabel: "Directions",
       actionColor: "#638C5F",
     },
@@ -104,7 +100,8 @@ export default function ContactScreen() {
 
         {/* Help Text */}
         <Text className="font-comfortaa text-xs text-neutral-gray text-center mt-6 px-8 leading-5">
-          We're here to help! Reach out through any of the above channels for quick support.
+          We're here to help! Reach out through any of the above channels for
+          quick support.
         </Text>
       </ScrollView>
     </View>

@@ -1,338 +1,273 @@
-import { PRODUCT } from "@/constants/product"
-import { BORDER_RADIUS, COLORS, SHADOWS, SPACING } from "@/constants/theme"
+import Header from "@/components/ui/Header"
+import { COLORS } from "@/constants/theme"
+import { supabase } from "@/lib/supabase"
+import { Product } from "@/types/database.types"
 import { formatCurrency } from "@/utils/formatters"
-import { useRouter } from "expo-router"
-import { CheckCircle, ChevronLeft } from "lucide-react-native"
-import React from "react"
-import { ScrollView, Text, TouchableOpacity, View } from "react-native"
+import { Image } from "expo-image"
+import { useLocalSearchParams, useRouter } from "expo-router"
+import { CheckCircle } from "lucide-react-native"
+import React, { useEffect, useState } from "react"
+import {
+  ActivityIndicator,
+  ScrollView,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native"
+import Animated, { FadeInDown } from "react-native-reanimated"
+
+// Map product names to emojis for fallback
+const productEmojis: Record<string, string> = {
+  milk: "🥛",
+  "high protein": "💪",
+  curd: "🥣",
+  paneer: "🧀",
+  ghee: "🍯",
+  butter: "🧈",
+  yogurt: "🥛",
+  cream: "🍦",
+  default: "🥛",
+}
+
+const getProductEmoji = (name: string): string => {
+  const lowerName = name.toLowerCase()
+  for (const [key, emoji] of Object.entries(productEmojis)) {
+    if (lowerName.includes(key)) {
+      return emoji
+    }
+  }
+  return productEmojis.default
+}
+
+const defaultFeatures = [
+  "100% Pure & Fresh",
+  "Farm Fresh Quality",
+  "No Preservatives",
+  "Rich in Nutrients",
+  "Eco-Friendly Packaging",
+]
+
+const defaultNutritionalInfo = [
+  { label: "Energy", value: "66 kcal" },
+  { label: "Protein", value: "3.2g" },
+  { label: "Fat", value: "3.5g" },
+  { label: "Carbohydrates", value: "4.8g" },
+  { label: "Calcium", value: "120mg" },
+  { label: "Vitamin D", value: "0.1µg" },
+]
+
+const defaultDeliveryInfo = [
+  {
+    title: "Fresh Daily Delivery",
+    description: "Delivered fresh every morning between 6:00 AM - 8:00 AM",
+  },
+  {
+    title: "Glass Bottle Packaging",
+    description: "Eco-friendly glass bottles that preserve freshness and taste",
+  },
+  {
+    title: "Easy Returns",
+    description: "Return empty bottles during your next delivery",
+  },
+  {
+    title: "Quality Guaranteed",
+    description: "100% satisfaction guarantee or full refund",
+  },
+]
 
 export default function ProductScreen() {
   const router = useRouter()
+  const { productId } = useLocalSearchParams()
+  const [product, setProduct] = useState<Product | null>(null)
+  const [loading, setLoading] = useState(true)
 
-  return (
-    <View style={{ flex: 1, backgroundColor: COLORS.background }}>
-      {/* Header */}
-      <View
-        style={{
-          backgroundColor: COLORS.secondary,
-          paddingHorizontal: SPACING.xxl,
-          paddingTop: 56,
-          paddingBottom: SPACING.xxxl,
-          flexDirection: "row",
-          alignItems: "center",
-        }}
-      >
-        <TouchableOpacity
-          onPress={() => router.back()}
-          style={{ marginRight: 16 }}
-        >
-          <ChevronLeft size={24} color={COLORS.white} />
-        </TouchableOpacity>
-        <View>
-          <Text
-            style={{
-              color: COLORS.text.bright,
-              fontSize: 13,
-              letterSpacing: 1,
-              marginBottom: 4,
-            }}
-          >
-            PRODUCT
-          </Text>
-          <Text
-            style={{ color: COLORS.white, fontSize: 24, fontWeight: "700" }}
-          >
-            Details
-          </Text>
+  useEffect(() => {
+    if (productId) {
+      fetchProduct()
+    }
+  }, [productId])
+
+  const fetchProduct = async () => {
+    try {
+      setLoading(true)
+      const { data, error } = await supabase
+        .from("products")
+        .select("*")
+        .eq("id", productId)
+        .single()
+
+      if (error) throw error
+      setProduct(data)
+    } catch (error) {
+      console.error("Error fetching product:", error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  if (loading) {
+    return (
+      <View className="flex-1 bg-neutral-lightCream">
+        <Header />
+        <View className="flex-1 items-center justify-center">
+          <ActivityIndicator size="large" color={COLORS.primary.navy} />
         </View>
       </View>
+    )
+  }
 
-      <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false}>
-        {/* Product Image Section */}
-        <View
-          style={{
-            backgroundColor: COLORS.white,
-            alignItems: "center",
-            paddingVertical: 60,
-          }}
-        >
-          <View
-            style={{
-              width: 200,
-              height: 200,
-              borderRadius: 60,
-              backgroundColor: "#FFF0D2",
-              alignItems: "center",
-              justifyContent: "center",
-              ...SHADOWS.lg,
-            }}
+  if (!product) {
+    return (
+      <View className="flex-1 bg-neutral-lightCream">
+        <Header />
+        <View className="flex-1 items-center justify-center px-8">
+          <Text className="text-4xl mb-4">😕</Text>
+          <Text className="font-sofia-bold text-xl text-primary-navy text-center mb-4">
+            Product Not Found
+          </Text>
+          <TouchableOpacity
+            className="bg-primary-orange px-6 py-3 rounded-xl"
+            onPress={() => router.back()}
           >
-            <Text style={{ fontSize: 120 }}>{PRODUCT.image}</Text>
-          </View>
+            <Text className="font-sofia-bold text-white">Go Back</Text>
+          </TouchableOpacity>
         </View>
+      </View>
+    )
+  }
+
+  const emoji = getProductEmoji(product.name)
+
+  return (
+    <View className="flex-1 bg-neutral-lightCream">
+      {/* Header */}
+      <Header />
+
+      <ScrollView
+        className="flex-1"
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: 100 }}
+      >
+        {/* Product Image Section */}
+        <Animated.View
+          entering={FadeInDown.duration(400)}
+          className="bg-white items-center py-16"
+        >
+          <View className="w-52 h-52 rounded-3xl bg-primary-cream items-center justify-center shadow-lg">
+            {product.image_url ? (
+              <Image
+                source={{ uri: product.image_url }}
+                style={{ width: 180, height: 180 }}
+                contentFit="contain"
+                transition={200}
+              />
+            ) : (
+              <Text className="text-[120px]">{emoji}</Text>
+            )}
+          </View>
+        </Animated.View>
 
         {/* Product Details Section */}
-        <View
-          style={{
-            backgroundColor: COLORS.white,
-            paddingHorizontal: 28,
-            paddingTop: 32,
-            paddingBottom: 40,
-          }}
+        <Animated.View
+          entering={FadeInDown.duration(400).delay(100)}
+          className="bg-white px-6 pt-8 pb-10"
         >
-          <Text
-            style={{
-              fontSize: 28,
-              fontWeight: "700",
-              color: COLORS.secondary,
-              marginBottom: 8,
-            }}
-          >
-            {PRODUCT.name}
+          <Text className="text-3xl font-sofia-bold text-primary-navy mb-2">
+            {product.name}
           </Text>
-          <Text
-            style={{
-              fontSize: 16,
-              color: COLORS.text.secondary,
-              marginBottom: 20,
-            }}
-          >
-            {PRODUCT.size}
-          </Text>
-          <Text
-            style={{
-              fontSize: 36,
-              fontWeight: "700",
-              color: COLORS.primary,
-              marginBottom: 28,
-            }}
-          >
-            {formatCurrency(PRODUCT.price)}
+          {product.volume && (
+            <Text className="text-base font-comfortaa text-neutral-gray mb-5">
+              {product.volume}
+            </Text>
+          )}
+          <Text className="text-4xl font-sofia-bold text-primary-orange mb-7">
+            {formatCurrency(product.price)}
           </Text>
 
-          <Text
-            style={{
-              fontSize: 15,
-              color: COLORS.text.secondary,
-              lineHeight: 24,
-              marginBottom: 32,
-            }}
-          >
-            {PRODUCT.description}
-          </Text>
+          {product.description && (
+            <Text className="text-base font-comfortaa text-neutral-darkGray leading-6 mb-8">
+              {product.description}
+            </Text>
+          )}
 
           {/* Key Features */}
-          <Text
-            style={{
-              fontSize: 18,
-              fontWeight: "700",
-              color: COLORS.secondary,
-              marginBottom: 20,
-            }}
-          >
+          <Text className="text-xl font-sofia-bold text-primary-navy mb-5">
             Key Features
           </Text>
-          {PRODUCT.features.map((feature, idx) => (
-            <View
-              key={idx}
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                marginBottom: 16,
-              }}
-            >
-              <View
-                style={{
-                  width: 32,
-                  height: 32,
-                  borderRadius: BORDER_RADIUS.sm,
-                  backgroundColor: "#E8F5E9",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  marginRight: 12,
-                }}
-              >
-                <CheckCircle size={18} color={COLORS.accent} />
+          {defaultFeatures.map((feature, idx) => (
+            <View key={idx} className="flex-row items-center mb-4">
+              <View className="w-8 h-8 rounded-lg bg-functional-success/10 items-center justify-center mr-3">
+                <CheckCircle size={18} color={COLORS.functional.success} />
               </View>
-              <Text
-                style={{
-                  fontSize: 15,
-                  color: COLORS.secondary,
-                  fontWeight: "500",
-                }}
-              >
+              <Text className="flex-1 text-base font-comfortaa text-primary-navy">
                 {feature}
               </Text>
             </View>
           ))}
-        </View>
+        </Animated.View>
 
         {/* Nutritional Information */}
-        <View
-          style={{
-            backgroundColor: COLORS.white,
-            marginHorizontal: SPACING.xxl,
-            marginTop: 16,
-            borderRadius: BORDER_RADIUS.md,
-            padding: SPACING.xxl,
-            marginBottom: 20,
-            ...SHADOWS.md,
-          }}
+        <Animated.View
+          entering={FadeInDown.duration(400).delay(200)}
+          className="bg-white mx-5 mt-4 rounded-2xl p-6 shadow-md"
         >
-          <Text
-            style={{
-              fontSize: 18,
-              fontWeight: "700",
-              color: COLORS.secondary,
-              marginBottom: 16,
-            }}
-          >
+          <Text className="text-xl font-sofia-bold text-primary-navy mb-4">
             Nutritional Information
           </Text>
-          <Text
-            style={{
-              fontSize: 13,
-              color: COLORS.text.secondary,
-              marginBottom: 12,
-            }}
-          >
+          <Text className="text-sm font-comfortaa text-neutral-gray mb-3">
             Per 100ml serving
           </Text>
 
-          {[
-            { label: "Energy", value: "66 kcal" },
-            { label: "Protein", value: "3.2g" },
-            { label: "Fat", value: "3.5g" },
-            { label: "Carbohydrates", value: "4.8g" },
-            { label: "Calcium", value: "120mg" },
-            { label: "Vitamin D", value: "0.1µg" },
-          ].map((nutrient, idx, arr) => (
+          {defaultNutritionalInfo.map((nutrient, idx, arr) => (
             <View key={idx}>
-              <View
-                style={{
-                  flexDirection: "row",
-                  justifyContent: "space-between",
-                  paddingVertical: 12,
-                }}
-              >
-                <Text style={{ color: COLORS.text.secondary, fontSize: 14 }}>
+              <View className="flex-row justify-between py-3">
+                <Text className="font-comfortaa text-neutral-gray text-sm">
                   {nutrient.label}
                 </Text>
-                <Text
-                  style={{
-                    fontWeight: "600",
-                    color: COLORS.secondary,
-                    fontSize: 14,
-                  }}
-                >
+                <Text className="font-comfortaa-bold text-primary-navy text-sm">
                   {nutrient.value}
                 </Text>
               </View>
               {idx < arr.length - 1 && (
-                <View
-                  style={{
-                    height: 1,
-                    backgroundColor: COLORS.border,
-                    marginVertical: 4,
-                  }}
-                />
+                <View className="h-[1px] bg-neutral-lightGray my-1" />
               )}
             </View>
           ))}
-        </View>
+        </Animated.View>
 
         {/* Delivery Information */}
-        <View
-          style={{
-            backgroundColor: COLORS.white,
-            marginHorizontal: SPACING.xxl,
-            marginTop: 0,
-            borderRadius: BORDER_RADIUS.md,
-            padding: SPACING.xxl,
-            marginBottom: 20,
-            ...SHADOWS.md,
-          }}
+        <Animated.View
+          entering={FadeInDown.duration(400).delay(300)}
+          className="bg-white mx-5 mt-4 rounded-2xl p-6 shadow-md"
         >
-          <Text
-            style={{
-              fontSize: 18,
-              fontWeight: "700",
-              color: COLORS.secondary,
-              marginBottom: 16,
-            }}
-          >
+          <Text className="text-xl font-sofia-bold text-primary-navy mb-4">
             Delivery Information
           </Text>
 
-          {[
-            {
-              title: "Fresh Daily Delivery",
-              description:
-                "Delivered fresh every morning between 6:00 AM - 8:00 AM",
-            },
-            {
-              title: "Glass Bottle Packaging",
-              description:
-                "Eco-friendly glass bottles that preserve freshness and taste",
-            },
-            {
-              title: "Easy Returns",
-              description: "Return empty bottles during your next delivery",
-            },
-            {
-              title: "Quality Guaranteed",
-              description: "100% satisfaction guarantee or full refund",
-            },
-          ].map((info, idx) => (
-            <View
-              key={idx}
-              style={{
-                marginBottom: idx < 3 ? 20 : 0,
-              }}
-            >
-              <Text
-                style={{
-                  fontSize: 15,
-                  fontWeight: "600",
-                  color: COLORS.secondary,
-                  marginBottom: 4,
-                }}
-              >
+          {defaultDeliveryInfo.map((info, idx) => (
+            <View key={idx} className={idx < 3 ? "mb-5" : ""}>
+              <Text className="text-base font-comfortaa-bold text-primary-navy mb-1">
                 {info.title}
               </Text>
-              <Text
-                style={{
-                  fontSize: 13,
-                  color: COLORS.text.secondary,
-                  lineHeight: 18,
-                }}
-              >
+              <Text className="text-sm font-comfortaa text-neutral-gray leading-5">
                 {info.description}
               </Text>
             </View>
           ))}
-        </View>
+        </Animated.View>
 
         {/* Add to Cart Button */}
-        <View
-          style={{
-            paddingHorizontal: SPACING.xxl,
-            paddingVertical: SPACING.xxxl,
-          }}
-        >
+        <View className="px-5 py-8">
           <TouchableOpacity
-            style={{
-              backgroundColor: COLORS.primary,
-              borderRadius: BORDER_RADIUS.sm,
-              paddingVertical: 20,
-              alignItems: "center",
-              ...SHADOWS.primary,
-            }}
-            onPress={() => router.push("/cart")}
+            className="bg-primary-orange rounded-xl py-5 items-center shadow-lg active:opacity-90"
+            onPress={() =>
+              router.push({
+                pathname: "/cart",
+                params: { productId: product.id },
+              })
+            }
           >
-            <Text
-              style={{ color: COLORS.white, fontWeight: "700", fontSize: 18 }}
-            >
+            <Text className="font-sofia-bold text-white text-lg">
               Add to Cart
             </Text>
           </TouchableOpacity>

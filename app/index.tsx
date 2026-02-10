@@ -45,7 +45,7 @@ export default function Index() {
         backgroundColor: COLORS.background,
       }}
     >
-      <ActivityIndicator size="large" color={COLORS.primary} />
+      <ActivityIndicator size="large" color={COLORS.primary.navy} />
     </View>
   )
 }

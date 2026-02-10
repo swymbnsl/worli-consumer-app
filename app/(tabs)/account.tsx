@@ -21,7 +21,6 @@ import {
 import React, { useState } from "react"
 import { Modal, ScrollView, Text, TouchableOpacity, View } from "react-native"
 
-
 export default function AccountScreen() {
   const { user, logout } = useAuth()
   const router = useRouter()
@@ -144,7 +143,11 @@ export default function AccountScreen() {
             activeOpacity={0.7}
           >
             <View className="bg-primary-navy/5 w-12 h-12 rounded-xl items-center justify-center mb-2">
-              <RefreshCw size={24} color={COLORS.primary.navy} strokeWidth={2} />
+              <RefreshCw
+                size={24}
+                color={COLORS.primary.navy}
+                strokeWidth={2}
+              />
             </View>
             <Text className="font-comfortaa text-xs text-primary-navy text-center font-semibold">
               Transactions
@@ -176,7 +179,7 @@ export default function AccountScreen() {
       >
         <View className="flex-1 bg-black/50 justify-center items-center px-8">
           <View className="bg-white rounded-2xl p-6 w-full shadow-xl">
-            <Text 
+            <Text
               className="font-sofia-bold text-2xl mb-4"
               style={{ color: COLORS.functional.error }}
             >
@@ -185,9 +188,9 @@ export default function AccountScreen() {
             <Text className="font-comfortaa text-base text-neutral-gray mb-8 leading-6">
               You will be logged out from all devices.
             </Text>
-            
+
             <View className="flex-row justify-end space-x-6">
-              <TouchableOpacity 
+              <TouchableOpacity
                 onPress={() => setShowLogoutModal(false)}
                 activeOpacity={0.7}
               >
@@ -195,10 +198,7 @@ export default function AccountScreen() {
                   Cancel
                 </Text>
               </TouchableOpacity>
-              <TouchableOpacity 
-                onPress={handleLogout}
-                activeOpacity={0.7}
-              >
+              <TouchableOpacity onPress={handleLogout} activeOpacity={0.7}>
                 <Text className="font-sofia-bold text-lg text-navy ml-4">
                   Continue
                 </Text>
