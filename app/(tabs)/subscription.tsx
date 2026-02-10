@@ -1,21 +1,18 @@
 import EditModal from "@/components/subscription/EditModal"
 import PauseModal from "@/components/subscription/PauseModal"
 import SubscriptionCard from "@/components/subscription/SubscriptionCard"
-import Header from "@/components/ui/Header"
+import Button from "@/components/ui/Button"
+import { COLORS } from "@/constants/theme"
 import { useAuth } from "@/hooks/useAuth"
-import { supabase } from "@/lib/supabase"
+import {
+  cancelSubscription as cancelSub,
+  fetchActiveSubscription,
+} from "@/lib/supabase-service"
 import { Subscription } from "@/types/database.types"
 import { useRouter } from "expo-router"
 import { Calendar, X } from "lucide-react-native"
 import React, { useEffect, useState } from "react"
-import {
-    Alert,
-    RefreshControl,
-    ScrollView,
-    Text,
-    TouchableOpacity,
-    View,
-} from "react-native"
+import { Alert, RefreshControl, ScrollView, Text, View } from "react-native"
 
 export default function SubscriptionScreen() {
   const { user } = useAuth()
@@ -34,14 +31,7 @@ export default function SubscriptionScreen() {
     if (!user) return
 
     try {
-      const { data, error } = await supabase
-        .from("subscriptions")
-        .select("*")
-        .eq("user_id", user.id)
-        .eq("status", "active")
-        .single()
-
-      if (error && error.code !== "PGRST116") throw error
+      const data = await fetchActiveSubscription(user.id)
       setSubscription(data)
     } catch (error) {
       console.error("Error fetching subscription:", error)
@@ -69,12 +59,7 @@ export default function SubscriptionScreen() {
             if (!subscription) return
 
             try {
-              const { error } = await supabase
-                .from("subscriptions")
-                .update({ status: "cancelled" })
-                .eq("id", subscription.id)
-
-              if (error) throw error
+              await cancelSub(subscription.id)
 
               Alert.alert(
                 "Subscription Cancelled",
@@ -97,14 +82,23 @@ export default function SubscriptionScreen() {
   if (!subscription && !loading) {
     return (
       <View className="flex-1 bg-white">
-        <Header />
+        {/* Page Title */}
+        <View className="bg-primary-navy px-5 pt-14 pb-5">
+          <Text className="font-sofia-bold text-2xl text-white">
+            My Subscriptions
+          </Text>
+        </View>
 
         {/* Empty State */}
         <View className="flex-1 justify-center items-center px-8">
           {/* Calendar Icon with X */}
           <View className="mb-8 relative">
             <View className="bg-primary-navy/5 p-6 rounded-2xl">
-              <Calendar size={80} color="#7c3aed" strokeWidth={1.5} />
+              <Calendar
+                size={80}
+                color={COLORS.primary.navy}
+                strokeWidth={1.5}
+              />
             </View>
             <View className="absolute -bottom-2 -right-2 bg-functional-error rounded-full p-3 border-4 border-white">
               <X size={24} color="white" strokeWidth={3} />
@@ -114,16 +108,15 @@ export default function SubscriptionScreen() {
           <Text className="font-sofia-bold text-2xl text-neutral-darkGray mb-3 text-center">
             You don't have any subscriptions yet
           </Text>
-          
-          <TouchableOpacity
-            className="bg-secondary-skyBlue px-8 py-4 rounded-xl mt-4 shadow-md"
-            onPress={() => router.push("/(tabs)/home")}
-            activeOpacity={0.8}
-          >
-            <Text className="font-sofia-bold text-white text-base">
-              Start Shopping
-            </Text>
-          </TouchableOpacity>
+
+          <View className="mt-4 w-full px-8">
+            <Button
+              title="Start Shopping"
+              onPress={() => router.push("/(tabs)/home")}
+              variant="navy"
+              size="large"
+            />
+          </View>
         </View>
       </View>
     )
@@ -131,7 +124,12 @@ export default function SubscriptionScreen() {
 
   return (
     <View className="flex-1 bg-white">
-      <Header />
+      {/* Page Title */}
+      <View className="bg-primary-navy px-5 pt-14 pb-5">
+        <Text className="font-sofia-bold text-2xl text-white">
+          My Subscriptions
+        </Text>
+      </View>
 
       <ScrollView
         className="flex-1"
@@ -141,18 +139,11 @@ export default function SubscriptionScreen() {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            tintColor="#101B53"
-            colors={["#101B53"]}
+            tintColor={COLORS.primary.navy}
+            colors={[COLORS.primary.navy]}
           />
         }
       >
-        {/* Page Title */}
-        <View className="px-4 pt-4 pb-2">
-          <Text className="font-sofia-bold text-2xl text-primary-navy">
-            My Subscriptions
-          </Text>
-        </View>
-
         {/* Active Subscription Card */}
         {subscription && (
           <SubscriptionCard
@@ -164,15 +155,14 @@ export default function SubscriptionScreen() {
 
         {/* Cancel Subscription Button */}
         {subscription && (
-          <TouchableOpacity
-            className="bg-white mx-4 mt-4 rounded-2xl py-3 items-center border-2 border-functional-error/20"
-            onPress={handleCancelSubscription}
-            activeOpacity={0.7}
-          >
-            <Text className="font-sofia-bold text-sm text-functional-error">
-              Cancel Subscription
-            </Text>
-          </TouchableOpacity>
+          <View className="px-4 mt-4">
+            <Button
+              title="Cancel Subscription"
+              onPress={handleCancelSubscription}
+              variant="outline"
+              size="medium"
+            />
+          </View>
         )}
       </ScrollView>
 

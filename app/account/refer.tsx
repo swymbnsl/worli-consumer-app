@@ -110,7 +110,7 @@ export default function ReferScreen() {
         <View className="bg-white rounded-2xl p-6 mb-8 shadow-md">
           <View className="flex-row items-center mb-4">
             <View className="w-11 h-11 rounded-xl bg-secondary-sage bg-opacity-10 items-center justify-center mr-3">
-              <Users size={22} color="#638C5F" />
+              <Users size={22} color={COLORS.functional.success} />
             </View>
             <Text className="font-sofia-bold text-lg text-primary-navy">
               Your Referrals

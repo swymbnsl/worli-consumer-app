@@ -1,7 +1,8 @@
 import AccountSubHeader from "@/components/account/AccountSubHeader"
 import { PRODUCT } from "@/constants/product"
+import { COLORS } from "@/constants/theme"
 import { useAuth } from "@/hooks/useAuth"
-import { supabase } from "@/lib/supabase"
+import { fetchOrderById, fetchProductSummary } from "@/lib/supabase-service"
 import { Order, Product as ProductType } from "@/types/database.types"
 import { formatFullDate } from "@/utils/dateUtils"
 import { formatCurrency } from "@/utils/formatters"
@@ -26,26 +27,14 @@ export default function OrderDetailScreen() {
     if (!user || !id) return
 
     try {
-      const { data, error } = await supabase
-        .from("orders")
-        .select("*")
-        .eq("id", id)
-        .eq("user_id", user.id)
-        .single()
-
-      if (error) throw error
+      const data = await fetchOrderById(id as string, user.id)
       setOrder(data)
 
       // fetch corresponding product image/info if product_id exists
       if (data?.product_id) {
         try {
-          const { data: prodData, error: prodErr } = await supabase
-            .from("products")
-            .select("id,name,price,image_url,volume")
-            .eq("id", data.product_id)
-            .single()
-
-          if (!prodErr && prodData) setProduct(prodData)
+          const prodData = await fetchProductSummary(data.product_id)
+          if (prodData) setProduct(prodData as ProductType)
         } catch (e) {
           // ignore product fetch errors but continue
           console.warn("Failed to fetch product for order", e)
@@ -154,7 +143,8 @@ export default function OrderDetailScreen() {
                 {product?.name ?? PRODUCT.name}
               </Text>
               <Text className="font-comfortaa text-sm text-neutral-gray mb-2">
-                {product?.volume ?? PRODUCT.size} • {order.quantity || 1} × {formatCurrency(product?.price ?? PRODUCT.price)}
+                {product?.volume ?? PRODUCT.size} • {order.quantity || 1} ×{" "}
+                {formatCurrency(product?.price ?? PRODUCT.price)}
               </Text>
             </View>
           </View>
@@ -189,7 +179,7 @@ export default function OrderDetailScreen() {
           {/* Delivery Date */}
           <View className="flex-row items-start mb-4">
             <View className="w-10 h-10 rounded-full bg-secondary-skyBlue/20 items-center justify-center mr-3">
-              <Calendar size={20} color="#101B53" />
+              <Calendar size={20} color={COLORS.primary.navy} />
             </View>
             <View className="flex-1">
               <Text className="font-comfortaa text-xs text-neutral-gray mb-1">
@@ -210,7 +200,7 @@ export default function OrderDetailScreen() {
           {order.address_id && (
             <View className="flex-row items-start">
               <View className="w-10 h-10 rounded-full bg-secondary-skyBlue/20 items-center justify-center mr-3">
-                <MapPin size={20} color="#101B53" />
+                <MapPin size={20} color={COLORS.primary.navy} />
               </View>
               <View className="flex-1">
                 <Text className="font-comfortaa text-xs text-neutral-gray mb-1">

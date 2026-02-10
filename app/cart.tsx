@@ -1,10 +1,12 @@
 import DatePickerModal from "@/components/cart/DatePickerModal"
+import Button from "@/components/ui/Button"
+import PageHeader from "@/components/ui/PageHeader"
 import { PRODUCT } from "@/constants/product"
-import { BORDER_RADIUS, COLORS, SHADOWS, SPACING } from "@/constants/theme"
+import { COLORS } from "@/constants/theme"
 import { useAuth } from "@/hooks/useAuth"
 import { useCart } from "@/hooks/useCart"
 import { useWallet } from "@/hooks/useWallet"
-import { supabase } from "@/lib/supabase"
+import { createOrder, fetchUserAddresses } from "@/lib/supabase-service"
 import { Address } from "@/types/database.types"
 import { formatFullDate } from "@/utils/dateUtils"
 import { formatCurrency } from "@/utils/formatters"
@@ -12,7 +14,6 @@ import { useRouter } from "expo-router"
 import {
   AlertCircle,
   Calendar,
-  ChevronLeft,
   Edit2,
   MapPin,
   Minus,
@@ -32,22 +33,14 @@ export default function CartScreen() {
   const [datePickerVisible, setDatePickerVisible] = useState(false)
 
   useEffect(() => {
-    fetchAddresses()
-    // console.log(wallet)
+    loadAddresses()
   }, [user])
 
-  const fetchAddresses = async () => {
+  const loadAddresses = async () => {
     if (!user) return
-
     try {
-      const { data, error } = await supabase
-        .from("addresses")
-        .select("*")
-        .eq("user_id", user.id)
-        .order("is_default", { ascending: false })
-
-      if (error) throw error
-      setAddresses(data || [])
+      const data = await fetchUserAddresses(user.id)
+      setAddresses(data)
     } catch (error) {
       console.error("Error fetching addresses:", error)
     }
@@ -59,8 +52,6 @@ export default function CartScreen() {
   const canDeliver = wallet && walletBalance >= totalCost
 
   const handlePlaceOrder = async () => {
-    console.log("hie")
-    console.log(user, wallet, defaultAddress)
     if (!user || !wallet || !defaultAddress) return
 
     if (!canDeliver) {
@@ -85,26 +76,17 @@ export default function CartScreen() {
           onPress: async () => {
             setLoading(true)
             try {
-              // Create order number
               const orderNumber = `ORD${Date.now()}`
 
-              // Create order
-              const { error: orderError } = await supabase
-                .from("orders")
-                .insert([
-                  {
-                    order_number: orderNumber,
-                    user_id: user.id,
-                    delivery_date: cart.date,
-                    quantity: cart.quantity,
-                    amount: totalCost,
-                    status: "pending",
-                  },
-                ])
+              await createOrder({
+                order_number: orderNumber,
+                user_id: user.id,
+                delivery_date: cart.date,
+                quantity: cart.quantity,
+                amount: totalCost,
+                status: "pending",
+              })
 
-              if (orderError) throw orderError
-
-              // Deduct from wallet
               const success = await deductFromWallet(
                 totalCost,
                 `Order #${orderNumber}`,
@@ -137,265 +119,86 @@ export default function CartScreen() {
   }
 
   return (
-    <View style={{ flex: 1, backgroundColor: COLORS.background }}>
+    <View className="flex-1 bg-neutral-lightCream">
       {/* Header */}
-      <View
-        style={{
-          backgroundColor: COLORS.primary.navy,
-          paddingHorizontal: SPACING.xxl,
-          paddingTop: 56,
-          paddingBottom: SPACING.xxxl,
-          flexDirection: "row",
-          alignItems: "center",
-        }}
-      >
-        <TouchableOpacity
-          onPress={() => router.back()}
-          style={{ marginRight: 16 }}
-        >
-          <ChevronLeft size={24} color={COLORS.white} />
-        </TouchableOpacity>
-        <View>
-          <Text
-            style={{
-              color: COLORS.text.bright,
-              fontSize: 13,
-              letterSpacing: 1,
-              marginBottom: 4,
-            }}
-          >
-            CHECKOUT
-          </Text>
-          <Text
-            style={{ color: COLORS.white, fontSize: 24, fontWeight: "700" }}
-          >
-            Your Cart
-          </Text>
-        </View>
-      </View>
+      <PageHeader title="Your Cart" subtitle="CHECKOUT" />
 
       <ScrollView
-        style={{
-          flex: 1,
-          paddingHorizontal: SPACING.xxl,
-          paddingTop: SPACING.xxl,
-        }}
+        className="flex-1 px-5 pt-5"
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: 40 }}
       >
         {/* Product Card */}
-        <View
-          style={{
-            backgroundColor: COLORS.white,
-            borderRadius: BORDER_RADIUS.lg,
-            padding: 28,
-            marginBottom: 20,
-            ...SHADOWS.md,
-          }}
-        >
-          <View
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              marginBottom: SPACING.xxl,
-            }}
-          >
-            <View
-              style={{
-                width: 80,
-                height: 80,
-                borderRadius: BORDER_RADIUS.md,
-                backgroundColor: "#FFF0D2",
-                alignItems: "center",
-                justifyContent: "center",
-                marginRight: 20,
-              }}
-            >
-              <Text style={{ fontSize: 48 }}>{PRODUCT.image}</Text>
+        <View className="bg-white rounded-2xl p-6 mb-5 shadow-md">
+          <View className="flex-row items-center mb-5">
+            <View className="w-20 h-20 rounded-xl bg-primary-cream items-center justify-center mr-5">
+              <Text className="text-5xl">{PRODUCT.image}</Text>
             </View>
-            <View style={{ flex: 1 }}>
-              <Text
-                style={{
-                  fontSize: 18,
-                  fontWeight: "700",
-                  color: COLORS.primary.navy,
-                  marginBottom: 4,
-                }}
-              >
+            <View className="flex-1">
+              <Text className="font-sofia-bold text-lg text-primary-navy mb-1">
                 {PRODUCT.name}
               </Text>
-              <Text
-                style={{
-                  fontSize: 14,
-                  color: COLORS.text.secondary,
-                  marginBottom: 8,
-                }}
-              >
+              <Text className="font-comfortaa text-sm text-neutral-gray mb-2">
                 {PRODUCT.size}
               </Text>
-              <Text
-                style={{
-                  fontSize: 22,
-                  fontWeight: "700",
-                  color: COLORS.primary.orange,
-                }}
-              >
+              <Text className="font-sofia-bold text-xl text-primary-orange">
                 {formatCurrency(PRODUCT.price)}
               </Text>
             </View>
           </View>
 
           {/* Quantity Selector */}
-          <View
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              justifyContent: "space-between",
-              backgroundColor: COLORS.background,
-              borderRadius: BORDER_RADIUS.sm,
-              padding: 20,
-            }}
-          >
-            <Text
-              style={{
-                color: COLORS.primary.navy,
-                fontWeight: "600",
-                fontSize: 15,
-              }}
-            >
+          <View className="flex-row items-center justify-between bg-neutral-lightCream rounded-xl p-4">
+            <Text className="font-comfortaa-bold text-base text-primary-navy">
               Quantity
             </Text>
-            <View style={{ flexDirection: "row", alignItems: "center" }}>
+            <View className="flex-row items-center">
               <TouchableOpacity
-                style={{
-                  width: 40,
-                  height: 40,
-                  borderRadius: BORDER_RADIUS.md,
-                  backgroundColor: COLORS.white,
-                  alignItems: "center",
-                  justifyContent: "center",
-                  ...SHADOWS.sm,
-                }}
+                className="w-10 h-10 rounded-xl bg-white items-center justify-center shadow-sm"
                 onPress={() =>
                   cart.quantity > 1 && updateQuantity(cart.quantity - 1)
                 }
               >
                 <Minus size={20} color={COLORS.primary.navy} />
               </TouchableOpacity>
-              <Text
-                style={{
-                  marginHorizontal: 24,
-                  fontSize: 20,
-                  fontWeight: "700",
-                  color: COLORS.primary.navy,
-                }}
-              >
+              <Text className="mx-6 font-sofia-bold text-xl text-primary-navy">
                 {cart.quantity}
               </Text>
               <TouchableOpacity
-                style={{
-                  width: 40,
-                  height: 40,
-                  borderRadius: BORDER_RADIUS.md,
-                  backgroundColor: COLORS.primary.navy,
-                  alignItems: "center",
-                  justifyContent: "center",
-                  ...SHADOWS.primary,
-                }}
+                className="w-10 h-10 rounded-xl bg-primary-navy items-center justify-center shadow-md"
                 onPress={() => updateQuantity(cart.quantity + 1)}
               >
-                <Plus size={20} color={COLORS.white} />
+                <Plus size={20} color={COLORS.neutral.white} />
               </TouchableOpacity>
             </View>
           </View>
         </View>
 
         {/* Delivery Date Card */}
-        <View
-          style={{
-            backgroundColor: COLORS.white,
-            borderRadius: BORDER_RADIUS.md,
-            padding: SPACING.xxl,
-            marginBottom: 20,
-            ...SHADOWS.md,
-          }}
-        >
-          <View
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              justifyContent: "space-between",
-              marginBottom: 16,
-            }}
-          >
-            <Text
-              style={{
-                fontWeight: "700",
-                fontSize: 16,
-                color: COLORS.primary.navy,
-              }}
-            >
+        <View className="bg-white rounded-2xl p-5 mb-5 shadow-md">
+          <View className="flex-row items-center justify-between mb-4">
+            <Text className="font-sofia-bold text-base text-primary-navy">
               Delivery Date
             </Text>
             <TouchableOpacity onPress={() => setDatePickerVisible(true)}>
               <Calendar size={20} color={COLORS.primary.orange} />
             </TouchableOpacity>
           </View>
-          <Text
-            style={{
-              fontSize: 15,
-              color: COLORS.primary.navy,
-              marginBottom: 12,
-            }}
-          >
+          <Text className="font-comfortaa text-base text-primary-navy mb-3">
             {formatFullDate(cart.date)}
           </Text>
-          <View
-            style={{
-              backgroundColor: "#FFF0D2",
-              borderRadius: BORDER_RADIUS.xs,
-              padding: 12,
-              flexDirection: "row",
-              alignItems: "center",
-            }}
-          >
+          <View className="bg-primary-cream rounded-lg p-3 flex-row items-center">
             <AlertCircle size={16} color={COLORS.primary.orange} />
-            <Text
-              style={{
-                fontSize: 12,
-                color: COLORS.text.secondary,
-                marginLeft: 8,
-                flex: 1,
-              }}
-            >
+            <Text className="font-comfortaa text-xs text-neutral-darkGray ml-2 flex-1">
               Modify before 7 PM for next day delivery
             </Text>
           </View>
         </View>
 
         {/* Delivery Address Card */}
-        <View
-          style={{
-            backgroundColor: COLORS.white,
-            borderRadius: BORDER_RADIUS.md,
-            padding: SPACING.xxl,
-            marginBottom: 20,
-            ...SHADOWS.md,
-          }}
-        >
-          <View
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              justifyContent: "space-between",
-              marginBottom: 16,
-            }}
-          >
-            <Text
-              style={{
-                fontWeight: "700",
-                fontSize: 16,
-                color: COLORS.primary.navy,
-              }}
-            >
+        <View className="bg-white rounded-2xl p-5 mb-5 shadow-md">
+          <View className="flex-row items-center justify-between mb-4">
+            <Text className="font-sofia-bold text-base text-primary-navy">
               Delivery Address
             </Text>
             {/* @ts-ignore */}
@@ -405,70 +208,27 @@ export default function CartScreen() {
           </View>
           {defaultAddress ? (
             <>
-              <View
-                style={{
-                  backgroundColor: "#FFF0D2",
-                  paddingHorizontal: 12,
-                  paddingVertical: 6,
-                  borderRadius: BORDER_RADIUS.xs,
-                  alignSelf: "flex-start",
-                  marginBottom: 12,
-                }}
-              >
-                <Text
-                  style={{
-                    color: COLORS.primary.orange,
-                    fontSize: 11,
-                    fontWeight: "700",
-                    letterSpacing: 0.3,
-                  }}
-                >
+              <View className="bg-primary-cream px-3 py-1.5 rounded self-start mb-3">
+                <Text className="font-sofia-bold text-xs text-primary-orange tracking-wide">
                   {defaultAddress.is_default ? "Default" : "Address"}
                 </Text>
               </View>
-              <Text
-                style={{
-                  color: COLORS.primary.navy,
-                  fontSize: 14,
-                  marginBottom: 4,
-                }}
-              >
+              <Text className="font-comfortaa text-sm text-primary-navy mb-1">
                 {defaultAddress.address_line1}
               </Text>
               {defaultAddress.address_line2 && (
-                <Text
-                  style={{
-                    color: COLORS.primary.navy,
-                    fontSize: 14,
-                    marginBottom: 4,
-                  }}
-                >
+                <Text className="font-comfortaa text-sm text-primary-navy mb-1">
                   {defaultAddress.address_line2}
                 </Text>
               )}
-              <Text style={{ color: COLORS.text.secondary, fontSize: 14 }}>
+              <Text className="font-comfortaa text-sm text-neutral-gray">
                 {defaultAddress.city}, {defaultAddress.pincode}
               </Text>
             </>
           ) : (
-            <View
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                padding: 12,
-                backgroundColor: "#FFE0E0",
-                borderRadius: BORDER_RADIUS.xs,
-              }}
-            >
-              <MapPin size={16} color={COLORS.error} />
-              <Text
-                style={{
-                  fontSize: 13,
-                  color: COLORS.error,
-                  marginLeft: 8,
-                  flex: 1,
-                }}
-              >
+            <View className="flex-row items-center p-3 bg-functional-error/10 rounded-lg">
+              <MapPin size={16} color={COLORS.functional.error} />
+              <Text className="font-comfortaa text-sm text-functional-error ml-2 flex-1">
                 No address added. Please add a delivery address.
               </Text>
             </View>
@@ -476,71 +236,24 @@ export default function CartScreen() {
         </View>
 
         {/* Payment Summary Card */}
-        <View
-          style={{
-            backgroundColor: COLORS.white,
-            borderRadius: BORDER_RADIUS.md,
-            padding: SPACING.xxl,
-            marginBottom: 20,
-            ...SHADOWS.md,
-          }}
-        >
-          <Text
-            style={{
-              fontWeight: "700",
-              fontSize: 16,
-              color: COLORS.primary.navy,
-              marginBottom: 20,
-            }}
-          >
+        <View className="bg-white rounded-2xl p-5 mb-5 shadow-md">
+          <Text className="font-sofia-bold text-base text-primary-navy mb-5">
             Payment Summary
           </Text>
-          <View
-            style={{
-              flexDirection: "row",
-              justifyContent: "space-between",
-              marginBottom: 16,
-            }}
-          >
-            <Text style={{ color: COLORS.text.secondary, fontSize: 15 }}>
+          <View className="flex-row justify-between mb-4">
+            <Text className="font-comfortaa text-base text-neutral-gray">
               Item Total
             </Text>
-            <Text
-              style={{
-                fontWeight: "600",
-                color: COLORS.primary.navy,
-                fontSize: 15,
-              }}
-            >
+            <Text className="font-comfortaa-bold text-base text-primary-navy">
               {formatCurrency(totalCost)}
             </Text>
           </View>
-          <View
-            style={{
-              height: 1,
-              backgroundColor: COLORS.border,
-              marginBottom: 16,
-            }}
-          />
-          <View
-            style={{ flexDirection: "row", justifyContent: "space-between" }}
-          >
-            <Text
-              style={{
-                fontWeight: "700",
-                fontSize: 18,
-                color: COLORS.primary.navy,
-              }}
-            >
+          <View className="h-px bg-neutral-lightGray mb-4" />
+          <View className="flex-row justify-between">
+            <Text className="font-sofia-bold text-lg text-primary-navy">
               Total Amount
             </Text>
-            <Text
-              style={{
-                fontWeight: "700",
-                fontSize: 20,
-                color: COLORS.primary.orange,
-              }}
-            >
+            <Text className="font-sofia-bold text-xl text-primary-orange">
               {formatCurrency(totalCost)}
             </Text>
           </View>
@@ -548,46 +261,27 @@ export default function CartScreen() {
 
         {/* Wallet Balance Card */}
         <View
-          style={{
-            backgroundColor: canDeliver ? "#E8F5E9" : "#FFE0E0",
-            borderRadius: BORDER_RADIUS.md,
-            padding: 20,
-            marginBottom: 20,
-            borderWidth: 1,
-            borderColor: canDeliver ? COLORS.accent : COLORS.error,
-            flexDirection: "row",
-            alignItems: "center",
-          }}
+          className={`rounded-2xl p-5 mb-5 flex-row items-center border ${
+            canDeliver
+              ? "bg-functional-success/10 border-functional-success"
+              : "bg-functional-error/10 border-functional-error"
+          }`}
         >
           <View
-            style={{
-              width: 44,
-              height: 44,
-              borderRadius: BORDER_RADIUS.lg,
-              backgroundColor: canDeliver ? COLORS.accent : COLORS.error,
-              alignItems: "center",
-              justifyContent: "center",
-              marginRight: 16,
-            }}
+            className={`w-11 h-11 rounded-xl items-center justify-center mr-4 ${
+              canDeliver ? "bg-functional-success" : "bg-functional-error"
+            }`}
           >
-            <Wallet size={22} color={COLORS.white} />
+            <Wallet size={22} color={COLORS.neutral.white} />
           </View>
-          <View style={{ flex: 1 }}>
-            <Text
-              style={{
-                fontSize: 13,
-                color: COLORS.text.secondary,
-                marginBottom: 4,
-              }}
-            >
+          <View className="flex-1">
+            <Text className="font-comfortaa text-sm text-neutral-gray mb-1">
               Wallet Balance
             </Text>
             <Text
-              style={{
-                fontSize: 18,
-                fontWeight: "700",
-                color: canDeliver ? COLORS.accent : COLORS.error,
-              }}
+              className={`font-sofia-bold text-lg ${
+                canDeliver ? "text-functional-success" : "text-functional-error"
+              }`}
             >
               {formatCurrency(wallet?.balance || 0)}
             </Text>
@@ -596,36 +290,14 @@ export default function CartScreen() {
 
         {/* Insufficient Balance Alert */}
         {!canDeliver && wallet && (
-          <View
-            style={{
-              backgroundColor: "#FFE0E0",
-              borderRadius: BORDER_RADIUS.md,
-              padding: 20,
-              marginBottom: 20,
-              borderWidth: 1,
-              borderColor: COLORS.error,
-            }}
-          >
-            <View style={{ flexDirection: "row", alignItems: "flex-start" }}>
-              <AlertCircle size={20} color={COLORS.error} />
-              <View style={{ marginLeft: 12, flex: 1 }}>
-                <Text
-                  style={{
-                    color: COLORS.error,
-                    fontWeight: "700",
-                    fontSize: 15,
-                    marginBottom: 4,
-                  }}
-                >
+          <View className="bg-functional-error/10 rounded-2xl p-5 mb-5 border border-functional-error">
+            <View className="flex-row items-start">
+              <AlertCircle size={20} color={COLORS.functional.error} />
+              <View className="ml-3 flex-1">
+                <Text className="font-sofia-bold text-base text-functional-error mb-1">
                   Insufficient Balance
                 </Text>
-                <Text
-                  style={{
-                    color: COLORS.text.secondary,
-                    fontSize: 13,
-                    lineHeight: 18,
-                  }}
-                >
+                <Text className="font-comfortaa text-sm text-neutral-darkGray leading-5">
                   Please add {formatCurrency(totalCost - walletBalance)} to your
                   wallet to complete this order.
                 </Text>
@@ -635,35 +307,22 @@ export default function CartScreen() {
         )}
 
         {/* Place Order Button */}
-        <TouchableOpacity
-          style={{
-            backgroundColor:
-              canDeliver && !loading
-                ? COLORS.primary.orange
-                : COLORS.text.secondary,
-            borderRadius: BORDER_RADIUS.sm,
-            paddingVertical: 20,
-            alignItems: "center",
-            marginBottom: SPACING.xxxl,
-            ...SHADOWS.primary,
-          }}
-          disabled={!canDeliver || loading || !defaultAddress}
-          onPress={handlePlaceOrder}
-        >
-          <Text
-            style={{
-              color: COLORS.white,
-              fontWeight: "700",
-              fontSize: 18,
-            }}
-          >
-            {loading
-              ? "Placing Order..."
-              : canDeliver
-                ? "Place Order"
-                : "Add Money to Wallet"}
-          </Text>
-        </TouchableOpacity>
+        <View className="mb-8">
+          <Button
+            title={
+              loading
+                ? "Placing Order..."
+                : canDeliver
+                  ? "Place Order"
+                  : "Add Money to Wallet"
+            }
+            onPress={handlePlaceOrder}
+            variant="primary"
+            size="large"
+            isLoading={loading}
+            disabled={!canDeliver || loading || !defaultAddress}
+          />
+        </View>
       </ScrollView>
 
       {/* Date Picker Modal */}

@@ -8,7 +8,12 @@ import {
 import Header from "@/components/ui/Header"
 import { COLORS } from "@/constants/theme"
 import { useAuth } from "@/hooks/useAuth"
-import { supabase } from "@/lib/supabase"
+import {
+  fetchActiveOffers,
+  fetchActiveProducts,
+  fetchActiveSubscriptions,
+  fetchHomeOrders,
+} from "@/lib/supabase-service"
 import { Offer, Order, Product, Subscription } from "@/types/database.types"
 import { useRouter } from "expo-router"
 import React, { useCallback, useEffect, useState } from "react"
@@ -40,60 +45,18 @@ export default function HomeScreen() {
   // Fetch all data
   const fetchData = useCallback(async () => {
     try {
-      // Fetch orders (last 7 days + future 30 days)
-      const sevenDaysAgo = new Date()
-      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
-
-      const ordersPromise = user
-        ? supabase
-            .from("orders")
-            .select("*")
-            .eq("user_id", user.id)
-            .gte("delivery_date", sevenDaysAgo.toISOString().split("T")[0])
-            .order("delivery_date", { ascending: true })
-        : Promise.resolve({ data: [], error: null })
-
-      // Fetch active subscriptions
-      const subscriptionsPromise = user
-        ? supabase
-            .from("subscriptions")
-            .select("*")
-            .eq("user_id", user.id)
-            .eq("status", "active")
-        : Promise.resolve({ data: [], error: null })
-
-      // Fetch active products
-      const productsPromise = supabase
-        .from("products")
-        .select("*")
-        .eq("is_active", true)
-        .order("name", { ascending: true })
-
-      // Fetch active offers
-      const offersPromise = supabase
-        .from("offers")
-        .select("*")
-        .eq("is_active", true)
-        .order("display_order", { ascending: true })
-
-      // Execute all in parallel
-      const [ordersResult, subscriptionsResult, productsResult, offersResult] =
+      const [ordersData, subscriptionsData, productsData, offersData] =
         await Promise.all([
-          ordersPromise,
-          subscriptionsPromise,
-          productsPromise,
-          offersPromise,
+          user ? fetchHomeOrders(user.id) : Promise.resolve([]),
+          user ? fetchActiveSubscriptions(user.id) : Promise.resolve([]),
+          fetchActiveProducts(),
+          fetchActiveOffers(),
         ])
 
-      if (ordersResult.error) throw ordersResult.error
-      if (subscriptionsResult.error) throw subscriptionsResult.error
-      if (productsResult.error) throw productsResult.error
-      if (offersResult.error) throw offersResult.error
-
-      setOrders(ordersResult.data || [])
-      setSubscriptions(subscriptionsResult.data || [])
-      setProducts(productsResult.data || [])
-      setOffers(offersResult.data || [])
+      setOrders(ordersData)
+      setSubscriptions(subscriptionsData)
+      setProducts(productsData)
+      setOffers(offersData)
     } catch (error) {
       console.error("Error fetching home data:", error)
     } finally {

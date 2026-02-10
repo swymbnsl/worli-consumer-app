@@ -1,11 +1,11 @@
-import Header from "@/components/ui/Header"
 import LowBalanceNotification from "@/components/wallet/LowBalanceNotification"
 import RechargeModal from "@/components/wallet/RechargeModal"
 import TransactionList from "@/components/wallet/TransactionList"
 import WalletBalanceCard from "@/components/wallet/WalletBalanceCard"
+import { COLORS } from "@/constants/theme"
 import { useWallet } from "@/hooks/useWallet"
 import React, { useState } from "react"
-import { RefreshControl, ScrollView, View } from "react-native"
+import { RefreshControl, ScrollView, Text, View } from "react-native"
 
 export default function WalletScreen() {
   const { wallet, transactions, loading, refreshWallet } = useWallet()
@@ -19,7 +19,10 @@ export default function WalletScreen() {
 
   return (
     <View className="flex-1 bg-neutral-lightCream">
-      <Header />
+      {/* Page Title */}
+      <View className="bg-primary-navy px-5 pt-14 pb-5">
+        <Text className="font-sofia-bold text-2xl text-white">My Wallet</Text>
+      </View>
 
       <ScrollView
         className="flex-1"
@@ -29,7 +32,7 @@ export default function WalletScreen() {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            tintColor="#101B53"
+            tintColor={COLORS.primary.navy}
           />
         }
       >

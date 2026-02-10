@@ -1,5 +1,4 @@
-import { BORDER_RADIUS, COLORS, SHADOWS } from "@/constants/theme"
-import { supabase } from "@/lib/supabase"
+import { fetchProductSummary } from "@/lib/supabase-service"
 import { Order } from "@/types/database.types"
 import { formatFullDate } from "@/utils/dateUtils"
 import { formatCurrency } from "@/utils/formatters"
@@ -12,111 +11,70 @@ interface OrderCardProps {
 }
 
 export default function OrderCard({ order, onPress }: OrderCardProps) {
-  const [productName, setProductName] = useState<string>('Order')
+  const [productName, setProductName] = useState<string>("Order")
 
   useEffect(() => {
-    const fetchProductName = async () => {
+    const loadProductName = async () => {
       if (order.product_id) {
-        const { data, error } = await supabase
-          .from('products')
-          .select('name')
-          .eq('id', order.product_id)
-          .single()
-        
-        if (data && !error) {
-          setProductName(data.name)
+        try {
+          const product = await fetchProductSummary(order.product_id)
+          if (product) setProductName(product.name)
+        } catch {
+          // ignore
         }
       }
     }
-    fetchProductName()
+    loadProductName()
   }, [order.product_id])
 
-  const getStatusColor = () => {
+  const getStatusClasses = () => {
     switch (order.status) {
       case "delivered":
-        return { bg: "#E8F5E9", text: COLORS.accent }
+        return {
+          bg: "bg-functional-success/10",
+          text: "text-functional-success",
+        }
       case "pending":
-        return { bg: "#FFF0D2", text: COLORS.primary }
+        return { bg: "bg-primary-cream", text: "text-primary-orange" }
       case "cancelled":
-        return { bg: "#FFE0E0", text: COLORS.error }
+        return { bg: "bg-functional-error/10", text: "text-functional-error" }
       default:
-        return { bg: COLORS.border, text: COLORS.text.secondary }
+        return { bg: "bg-neutral-lightGray", text: "text-neutral-darkGray" }
     }
   }
 
-  const statusColors = getStatusColor()
+  const statusClasses = getStatusClasses()
 
   return (
     <TouchableOpacity
-      style={{
-        backgroundColor: COLORS.white,
-        borderRadius: BORDER_RADIUS.md,
-        padding: 20,
-        marginBottom: 16,
-        ...SHADOWS.md,
-      }}
+      className="bg-white rounded-2xl p-5 mb-4 shadow-md"
       onPress={onPress}
+      activeOpacity={0.7}
     >
-      <View
-        style={{
-          flexDirection: "row",
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: 12,
-        }}
-      >
-        <Text
-          style={{ fontWeight: "700", fontSize: 16, color: COLORS.secondary }}
-        >
+      <View className="flex-row justify-between items-center mb-3">
+        <Text className="font-sofia-bold text-base text-primary-navy">
           {productName}
         </Text>
-        <View
-          style={{
-            backgroundColor: statusColors.bg,
-            paddingHorizontal: 12,
-            paddingVertical: 4,
-            borderRadius: BORDER_RADIUS.xs,
-          }}
-        >
+        <View className={`${statusClasses.bg} px-3 py-1 rounded-md`}>
           <Text
-            style={{
-              color: statusColors.text,
-              fontSize: 11,
-              fontWeight: "700",
-              letterSpacing: 0.3,
-              textTransform: "uppercase",
-            }}
+            className={`${statusClasses.text} font-sofia-bold text-xs uppercase tracking-wide`}
           >
             {order.status}
           </Text>
         </View>
       </View>
 
-      <View
-        style={{
-          flexDirection: "row",
-          justifyContent: "space-between",
-          marginBottom: 8,
-        }}
-      >
-        <Text style={{ color: COLORS.text.secondary, fontSize: 13 }}>
+      <View className="flex-row justify-between mb-2">
+        <Text className="font-comfortaa text-sm text-neutral-gray">
           {formatFullDate(order.delivery_date)}
         </Text>
-        <Text
-          style={{ fontWeight: "700", color: COLORS.secondary, fontSize: 15 }}
-        >
+        <Text className="font-sofia-bold text-base text-primary-navy">
           {formatCurrency(order.amount || 0)}
         </Text>
       </View>
 
-      <View
-        style={{
-          flexDirection: "row",
-          justifyContent: "space-between",
-          alignItems: "center",
-        }}
-      >
-        <Text style={{ color: COLORS.text.secondary, fontSize: 13 }}>
+      <View className="flex-row justify-between items-center">
+        <Text className="font-comfortaa text-sm text-neutral-gray">
           {order.quantity || 0} bottle{(order.quantity || 0) > 1 ? "s" : ""}
         </Text>
       </View>

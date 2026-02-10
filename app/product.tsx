@@ -1,19 +1,14 @@
-import Header from "@/components/ui/Header"
+import Button from "@/components/ui/Button"
+import PageHeader from "@/components/ui/PageHeader"
 import { COLORS } from "@/constants/theme"
-import { supabase } from "@/lib/supabase"
+import { fetchProductById } from "@/lib/supabase-service"
 import { Product } from "@/types/database.types"
 import { formatCurrency } from "@/utils/formatters"
 import { Image } from "expo-image"
 import { useLocalSearchParams, useRouter } from "expo-router"
 import { CheckCircle } from "lucide-react-native"
 import React, { useEffect, useState } from "react"
-import {
-  ActivityIndicator,
-  ScrollView,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native"
+import { ActivityIndicator, ScrollView, Text, View } from "react-native"
 import Animated, { FadeInDown } from "react-native-reanimated"
 
 // Map product names to emojis for fallback
@@ -90,13 +85,7 @@ export default function ProductScreen() {
   const fetchProduct = async () => {
     try {
       setLoading(true)
-      const { data, error } = await supabase
-        .from("products")
-        .select("*")
-        .eq("id", productId)
-        .single()
-
-      if (error) throw error
+      const data = await fetchProductById(productId as string)
       setProduct(data)
     } catch (error) {
       console.error("Error fetching product:", error)
@@ -108,7 +97,7 @@ export default function ProductScreen() {
   if (loading) {
     return (
       <View className="flex-1 bg-neutral-lightCream">
-        <Header />
+        <PageHeader title="Product Details" />
         <View className="flex-1 items-center justify-center">
           <ActivityIndicator size="large" color={COLORS.primary.navy} />
         </View>
@@ -119,18 +108,19 @@ export default function ProductScreen() {
   if (!product) {
     return (
       <View className="flex-1 bg-neutral-lightCream">
-        <Header />
+        <PageHeader title="Product Details" />
         <View className="flex-1 items-center justify-center px-8">
           <Text className="text-4xl mb-4">😕</Text>
-          <Text className="font-sofia-bold text-xl text-primary-navy text-center mb-4">
+          <Text className="font-sofia-bold text-xl text-primary-navy text-center mb-6">
             Product Not Found
           </Text>
-          <TouchableOpacity
-            className="bg-primary-orange px-6 py-3 rounded-xl"
+          <Button
+            title="Go Back"
             onPress={() => router.back()}
-          >
-            <Text className="font-sofia-bold text-white">Go Back</Text>
-          </TouchableOpacity>
+            variant="primary"
+            size="medium"
+            fullWidth={false}
+          />
         </View>
       </View>
     )
@@ -141,7 +131,7 @@ export default function ProductScreen() {
   return (
     <View className="flex-1 bg-neutral-lightCream">
       {/* Header */}
-      <Header />
+      <PageHeader title={product.name} subtitle="PRODUCT DETAILS" />
 
       <ScrollView
         className="flex-1"
@@ -172,15 +162,15 @@ export default function ProductScreen() {
           entering={FadeInDown.duration(400).delay(100)}
           className="bg-white px-6 pt-8 pb-10"
         >
-          <Text className="text-3xl font-sofia-bold text-primary-navy mb-2">
+          <Text className="text-2xl font-sofia-bold text-primary-navy mb-2">
             {product.name}
           </Text>
           {product.volume && (
-            <Text className="text-base font-comfortaa text-neutral-gray mb-5">
+            <Text className="text-sm font-comfortaa text-neutral-gray mb-5">
               {product.volume}
             </Text>
           )}
-          <Text className="text-4xl font-sofia-bold text-primary-orange mb-7">
+          <Text className="text-2xl font-sofia-bold text-primary-orange mb-7">
             {formatCurrency(product.price)}
           </Text>
 
@@ -258,19 +248,17 @@ export default function ProductScreen() {
 
         {/* Add to Cart Button */}
         <View className="px-5 py-8">
-          <TouchableOpacity
-            className="bg-primary-orange rounded-xl py-5 items-center shadow-lg active:opacity-90"
+          <Button
+            title="Add to Cart"
             onPress={() =>
               router.push({
                 pathname: "/cart",
                 params: { productId: product.id },
               })
             }
-          >
-            <Text className="font-sofia-bold text-white text-lg">
-              Add to Cart
-            </Text>
-          </TouchableOpacity>
+            variant="primary"
+            size="large"
+          />
         </View>
       </ScrollView>
     </View>

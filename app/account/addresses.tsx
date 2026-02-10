@@ -1,19 +1,16 @@
 import AddEditAddressModal from "@/components/addresses/AddEditAddressModal"
 import AddressCard from "@/components/addresses/AddressCard"
+import Button from "@/components/ui/Button"
 import { COLORS } from "@/constants/theme"
 import { useAuth } from "@/hooks/useAuth"
-import { supabase } from "@/lib/supabase"
-import { Address } from "@/types/database.types"
-import { Plus } from "lucide-react-native"
-import React, { useEffect, useState } from "react"
 import {
-  Alert,
-  RefreshControl,
-  ScrollView,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native"
+  deleteAddress as deleteAddr,
+  fetchUserAddresses,
+  setDefaultAddress,
+} from "@/lib/supabase-service"
+import { Address } from "@/types/database.types"
+import React, { useEffect, useState } from "react"
+import { Alert, RefreshControl, ScrollView, Text, View } from "react-native"
 
 export default function AddressesScreen() {
   const { user } = useAuth()
@@ -31,14 +28,8 @@ export default function AddressesScreen() {
     if (!user) return
 
     try {
-      const { data, error } = await supabase
-        .from("addresses")
-        .select("*")
-        .eq("user_id", user.id)
-        .order("is_default", { ascending: false })
-
-      if (error) throw error
-      setAddresses(data || [])
+      const data = await fetchUserAddresses(user.id)
+      setAddresses(data)
     } catch (error) {
       console.error("Error fetching addresses:", error)
     } finally {
@@ -64,13 +55,7 @@ export default function AddressesScreen() {
 
   const handleDeleteAddress = async (addressId: string) => {
     try {
-      const { error } = await supabase
-        .from("addresses")
-        .delete()
-        .eq("id", addressId)
-
-      if (error) throw error
-
+      await deleteAddr(addressId)
       Alert.alert("Success", "Address deleted successfully")
       fetchAddresses()
     } catch (error) {
@@ -83,20 +68,7 @@ export default function AddressesScreen() {
     if (!user) return
 
     try {
-      // First, set all addresses to non-default
-      await supabase
-        .from("addresses")
-        .update({ is_default: false })
-        .eq("user_id", user.id)
-
-      // Then set the selected address as default
-      const { error } = await supabase
-        .from("addresses")
-        .update({ is_default: true })
-        .eq("id", addressId)
-
-      if (error) throw error
-
+      await setDefaultAddress(user.id, addressId)
       fetchAddresses()
     } catch (error) {
       console.error("Error setting default:", error)
@@ -142,15 +114,14 @@ export default function AddressesScreen() {
         )}
 
         {/* Add New Address Button */}
-        <TouchableOpacity
-          className="bg-primary-navy rounded-2xl py-4 px-6 items-center mb-8 flex-row justify-center shadow-md active:opacity-90"
-          onPress={handleAddAddress}
-        >
-          <Plus size={20} color={COLORS.neutral.white} />
-          <Text className="font-sofia-bold text-base text-white ml-2">
-            Add New Address
-          </Text>
-        </TouchableOpacity>
+        <View className="mb-8">
+          <Button
+            title="Add New Address"
+            onPress={handleAddAddress}
+            variant="navy"
+            size="medium"
+          />
+        </View>
       </ScrollView>
 
       {/* Add/Edit Address Modal */}

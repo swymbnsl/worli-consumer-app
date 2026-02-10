@@ -1,3 +1,4 @@
+import { COLORS } from "@/constants/theme"
 import { useAuth } from "@/hooks/useAuth"
 import { CheckCircle } from "lucide-react-native"
 import React from "react"
@@ -38,7 +39,7 @@ export default function LanguageScreen() {
               </Text>
             </View>
             {userPreference?.language === lang.id && (
-              <CheckCircle size={28} color="#EF6600" />
+              <CheckCircle size={28} color={COLORS.primary.orange} />
             )}
           </TouchableOpacity>
         ))}

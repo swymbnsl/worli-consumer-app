@@ -1,6 +1,5 @@
 import MenuList from "@/components/account/MenuList"
 import ProfileHeader from "@/components/account/ProfileHeader"
-import Header from "@/components/ui/Header"
 import { COLORS } from "@/constants/theme"
 import { useAuth } from "@/hooks/useAuth"
 import { useRouter } from "expo-router"
@@ -113,8 +112,10 @@ export default function AccountScreen() {
 
   return (
     <View className="flex-1 bg-neutral-lightCream">
-      {/* Header */}
-      <Header />
+      {/* Page Title */}
+      <View className="bg-primary-navy px-5 pt-14 pb-5">
+        <Text className="font-sofia-bold text-2xl text-white">My Account</Text>
+      </View>
 
       <ScrollView
         showsVerticalScrollIndicator={false}

@@ -1,10 +1,9 @@
 import FullCalendar from "@/components/orders/FullCalendar"
 import OrderCard from "@/components/orders/OrderCard"
 import Button from "@/components/ui/Button"
-import Header from "@/components/ui/Header"
 import { COLORS } from "@/constants/theme"
 import { useAuth } from "@/hooks/useAuth"
-import { supabase } from "@/lib/supabase"
+import { fetchAllOrders } from "@/lib/supabase-service"
 import { Order } from "@/types/database.types"
 import { formatFullDate } from "@/utils/dateUtils"
 import { useRouter } from "expo-router"
@@ -29,14 +28,8 @@ export default function OrdersScreen() {
     if (!user) return
 
     try {
-      const { data, error } = await supabase
-        .from("orders")
-        .select("*")
-        .eq("user_id", user.id)
-        .order("delivery_date", { ascending: false })
-
-      if (error) throw error
-      setOrders(data || [])
+      const data = await fetchAllOrders(user.id)
+      setOrders(data)
     } catch (error) {
       console.error("Error fetching orders:", error)
     } finally {
@@ -59,7 +52,10 @@ export default function OrdersScreen() {
 
   return (
     <View className="flex-1 bg-neutral-lightCream">
-      <Header />
+      {/* Page Title */}
+      <View className="bg-primary-navy px-5 pt-14 pb-5">
+        <Text className="font-sofia-bold text-2xl text-white">My Orders</Text>
+      </View>
 
       <ScrollView
         className="flex-1 px-4 pt-4"
@@ -69,7 +65,7 @@ export default function OrdersScreen() {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            tintColor={COLORS.secondary}
+            tintColor={COLORS.primary.navy}
           />
         }
       >
