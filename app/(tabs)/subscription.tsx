@@ -6,7 +6,7 @@ import { COLORS } from "@/constants/theme"
 import { useAuth } from "@/hooks/useAuth"
 import {
   cancelSubscription as cancelSub,
-  fetchActiveSubscription,
+  fetchActiveSubscriptions,
 } from "@/lib/supabase-service"
 import { Subscription } from "@/types/database.types"
 import { useRouter } from "expo-router"
@@ -17,24 +17,26 @@ import { Alert, RefreshControl, ScrollView, Text, View } from "react-native"
 export default function SubscriptionScreen() {
   const { user } = useAuth()
   const router = useRouter()
-  const [subscription, setSubscription] = useState<Subscription | null>(null)
+  const [subscriptions, setSubscriptions] = useState<Subscription[]>([])
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [pauseModalVisible, setPauseModalVisible] = useState(false)
   const [editModalVisible, setEditModalVisible] = useState(false)
+  const [selectedSubscription, setSelectedSubscription] =
+    useState<Subscription | null>(null)
 
   useEffect(() => {
-    fetchSubscription()
+    fetchSubscriptions()
   }, [user])
 
-  const fetchSubscription = async () => {
+  const fetchSubscriptions = async () => {
     if (!user) return
 
     try {
-      const data = await fetchActiveSubscription(user.id)
-      setSubscription(data)
+      const data = await fetchActiveSubscriptions(user.id)
+      setSubscriptions(data)
     } catch (error) {
-      console.error("Error fetching subscription:", error)
+      console.error("Error fetching subscriptions:", error)
     } finally {
       setLoading(false)
       setRefreshing(false)
@@ -43,21 +45,29 @@ export default function SubscriptionScreen() {
 
   const onRefresh = () => {
     setRefreshing(true)
-    fetchSubscription()
+    fetchSubscriptions()
   }
 
-  const handleCancelSubscription = () => {
+  const handleEditSubscription = (subscription: Subscription) => {
+    setSelectedSubscription(subscription)
+    setEditModalVisible(true)
+  }
+
+  const handlePauseSubscription = (subscription: Subscription) => {
+    setSelectedSubscription(subscription)
+    setPauseModalVisible(true)
+  }
+
+  const handleCancelSubscription = (subscription: Subscription) => {
     Alert.alert(
       "Cancel Subscription",
-      "Are you sure you want to cancel your subscription? This action cannot be undone.",
+      "Are you sure you want to cancel this subscription? This action cannot be undone.",
       [
         { text: "Keep Subscription", style: "cancel" },
         {
           text: "Cancel Subscription",
           style: "destructive",
           onPress: async () => {
-            if (!subscription) return
-
             try {
               await cancelSub(subscription.id)
 
@@ -65,7 +75,7 @@ export default function SubscriptionScreen() {
                 "Subscription Cancelled",
                 "Your subscription has been cancelled successfully.",
               )
-              fetchSubscription()
+              fetchSubscriptions()
             } catch (error) {
               console.error("Error cancelling subscription:", error)
               Alert.alert(
@@ -79,7 +89,7 @@ export default function SubscriptionScreen() {
     )
   }
 
-  if (!subscription && !loading) {
+  if (subscriptions.length === 0 && !loading) {
     return (
       <View className="flex-1 bg-white">
         {/* Page Title */}
@@ -129,6 +139,12 @@ export default function SubscriptionScreen() {
         <Text className="font-sofia-bold text-2xl text-white">
           My Subscriptions
         </Text>
+        {subscriptions.length > 0 && (
+          <Text className="font-comfortaa text-sm text-primary-cream mt-1">
+            {subscriptions.length} active{" "}
+            {subscriptions.length === 1 ? "subscription" : "subscriptions"}
+          </Text>
+        )}
       </View>
 
       <ScrollView
@@ -144,45 +160,41 @@ export default function SubscriptionScreen() {
           />
         }
       >
-        {/* Active Subscription Card */}
-        {subscription && (
+        {/* Active Subscriptions */}
+        {subscriptions.map((subscription) => (
           <SubscriptionCard
+            key={subscription.id}
             subscription={subscription}
-            onEdit={() => setEditModalVisible(true)}
-            onPause={() => setPauseModalVisible(true)}
+            onEdit={() => handleEditSubscription(subscription)}
+            onPause={() => handlePauseSubscription(subscription)}
+            onCancel={() => handleCancelSubscription(subscription)}
           />
-        )}
-
-        {/* Cancel Subscription Button */}
-        {subscription && (
-          <View className="px-4 mt-4">
-            <Button
-              title="Cancel Subscription"
-              onPress={handleCancelSubscription}
-              variant="outline"
-              size="medium"
-            />
-          </View>
-        )}
+        ))}
       </ScrollView>
 
       {/* Pause Modal */}
-      {subscription && (
+      {selectedSubscription && (
         <PauseModal
           visible={pauseModalVisible}
-          onClose={() => setPauseModalVisible(false)}
-          subscription={subscription}
-          onUpdate={fetchSubscription}
+          onClose={() => {
+            setPauseModalVisible(false)
+            setSelectedSubscription(null)
+          }}
+          subscription={selectedSubscription}
+          onUpdate={fetchSubscriptions}
         />
       )}
 
       {/* Edit Modal */}
-      {subscription && (
+      {selectedSubscription && (
         <EditModal
           visible={editModalVisible}
-          onClose={() => setEditModalVisible(false)}
-          subscription={subscription}
-          onUpdate={fetchSubscription}
+          onClose={() => {
+            setEditModalVisible(false)
+            setSelectedSubscription(null)
+          }}
+          subscription={selectedSubscription}
+          onUpdate={fetchSubscriptions}
         />
       )}
     </View>

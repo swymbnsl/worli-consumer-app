@@ -10,6 +10,7 @@ import {
   Order,
   Product,
   Subscription,
+  SubscriptionInsert,
 } from "@/types/database.types"
 
 // ─── Orders ────────────────────────────────────────────────────────────────────
@@ -194,6 +195,37 @@ export async function cancelSubscription(
     .eq("id", subscriptionId)
 
   if (error) throw error
+}
+
+/**
+ * Create a single subscription.
+ */
+export async function createSubscription(
+  subscription: SubscriptionInsert,
+): Promise<Subscription> {
+  const { data, error } = await supabase
+    .from("subscriptions")
+    .insert([subscription])
+    .select()
+    .single()
+
+  if (error) throw error
+  return data
+}
+
+/**
+ * Create multiple subscriptions in a batch.
+ */
+export async function createSubscriptions(
+  subscriptions: SubscriptionInsert[],
+): Promise<Subscription[]> {
+  const { data, error } = await supabase
+    .from("subscriptions")
+    .insert(subscriptions)
+    .select()
+
+  if (error) throw error
+  return data || []
 }
 
 // ─── Addresses ─────────────────────────────────────────────────────────────────

@@ -1,7 +1,7 @@
+import ProductImage from "@/components/common/ProductImage"
 import { COLORS } from "@/constants/theme"
 import { Product } from "@/types/database.types"
 import { formatCurrency } from "@/utils/formatters"
-import { Image } from "expo-image"
 import { useRouter } from "expo-router"
 import { Plus } from "lucide-react-native"
 import React from "react"
@@ -14,7 +14,6 @@ interface Category {
   name: string
   image_url: string | null
   productCount: number
-  emoji: string
   price: number
   product: Product
 }
@@ -22,29 +21,7 @@ interface Category {
 interface CategoriesGridProps {
   products: Product[]
   isLoading?: boolean
-}
-
-// Map product names to emojis for fallback
-const productEmojis: Record<string, string> = {
-  milk: "🥛",
-  "high protein": "💪",
-  curd: "🥣",
-  paneer: "🧀",
-  ghee: "🍯",
-  butter: "🧈",
-  yogurt: "🥛",
-  cream: "🍦",
-  default: "🥛",
-}
-
-const getProductEmoji = (name: string): string => {
-  const lowerName = name.toLowerCase()
-  for (const [key, emoji] of Object.entries(productEmojis)) {
-    if (lowerName.includes(key)) {
-      return emoji
-    }
-  }
-  return productEmojis.default
+  onAddProduct?: (product: Product) => void
 }
 
 // Group products by category (using name patterns for now)
@@ -61,7 +38,6 @@ const groupProductsIntoCategories = (products: Product[]): Category[] => {
         name: product.name,
         image_url: product.image_url,
         productCount: 1,
-        emoji: getProductEmoji(product.name),
         price: product.price,
         product: product,
       })
@@ -74,6 +50,7 @@ const groupProductsIntoCategories = (products: Product[]): Category[] => {
 export default function CategoriesGrid({
   products,
   isLoading = false,
+  onAddProduct,
 }: CategoriesGridProps) {
   const router = useRouter()
   const categories = groupProductsIntoCategories(products)
@@ -89,11 +66,9 @@ export default function CategoriesGrid({
   const handleAddToCart = (e: any, product: Product) => {
     e.stopPropagation() // Prevent navigation when clicking add button
 
-    // Navigate to cart with product pre-selected
-    router.push({
-      pathname: "/cart",
-      params: { productId: product.id },
-    })
+    if (onAddProduct) {
+      onAddProduct(product)
+    }
   }
 
   if (isLoading) {
@@ -130,16 +105,11 @@ export default function CategoriesGrid({
           >
             {/* Product Image */}
             <View className="bg-neutral-lightCream/50 rounded-3xl p-4 mb-3 items-center justify-center h-24">
-              {category.image_url ? (
-                <Image
-                  source={{ uri: category.image_url }}
-                  style={{ width: 90, height: 90 }}
-                  contentFit="contain"
-                  transition={200}
-                />
-              ) : (
-                <Text className="text-4xl">{category.emoji}</Text>
-              )}
+              <ProductImage
+                imageUrl={category.image_url}
+                size="large"
+                containerClassName="bg-transparent"
+              />
             </View>
 
             {/* Category Name */}

@@ -1,38 +1,18 @@
+import ProductImage from "@/components/common/ProductImage"
+import SubscriptionBottomSheet, {
+  SubscriptionBottomSheetRef,
+} from "@/components/cart/SubscriptionBottomSheet"
 import Button from "@/components/ui/Button"
 import PageHeader from "@/components/ui/PageHeader"
 import { COLORS } from "@/constants/theme"
 import { fetchProductById } from "@/lib/supabase-service"
 import { Product } from "@/types/database.types"
 import { formatCurrency } from "@/utils/formatters"
-import { Image } from "expo-image"
 import { useLocalSearchParams, useRouter } from "expo-router"
 import { CheckCircle } from "lucide-react-native"
-import React, { useEffect, useState } from "react"
+import React, { useEffect, useRef, useState } from "react"
 import { ActivityIndicator, ScrollView, Text, View } from "react-native"
 import Animated, { FadeInDown } from "react-native-reanimated"
-
-// Map product names to emojis for fallback
-const productEmojis: Record<string, string> = {
-  milk: "🥛",
-  "high protein": "💪",
-  curd: "🥣",
-  paneer: "🧀",
-  ghee: "🍯",
-  butter: "🧈",
-  yogurt: "🥛",
-  cream: "🍦",
-  default: "🥛",
-}
-
-const getProductEmoji = (name: string): string => {
-  const lowerName = name.toLowerCase()
-  for (const [key, emoji] of Object.entries(productEmojis)) {
-    if (lowerName.includes(key)) {
-      return emoji
-    }
-  }
-  return productEmojis.default
-}
 
 const defaultFeatures = [
   "100% Pure & Fresh",
@@ -75,6 +55,7 @@ export default function ProductScreen() {
   const { productId } = useLocalSearchParams()
   const [product, setProduct] = useState<Product | null>(null)
   const [loading, setLoading] = useState(true)
+  const subscriptionSheetRef = useRef<SubscriptionBottomSheetRef>(null)
 
   useEffect(() => {
     if (productId) {
@@ -126,8 +107,6 @@ export default function ProductScreen() {
     )
   }
 
-  const emoji = getProductEmoji(product.name)
-
   return (
     <View className="flex-1 bg-neutral-lightCream">
       {/* Header */}
@@ -143,18 +122,11 @@ export default function ProductScreen() {
           entering={FadeInDown.duration(400)}
           className="bg-white items-center py-16"
         >
-          <View className="w-52 h-52 rounded-3xl bg-primary-cream items-center justify-center shadow-lg">
-            {product.image_url ? (
-              <Image
-                source={{ uri: product.image_url }}
-                style={{ width: 180, height: 180 }}
-                contentFit="contain"
-                transition={200}
-              />
-            ) : (
-              <Text className="text-[120px]">{emoji}</Text>
-            )}
-          </View>
+          <ProductImage
+            imageUrl={product.image_url}
+            size="large"
+            containerClassName="shadow-lg"
+          />
         </Animated.View>
 
         {/* Product Details Section */}
@@ -249,18 +221,16 @@ export default function ProductScreen() {
         {/* Add to Cart Button */}
         <View className="px-5 py-8">
           <Button
-            title="Add to Cart"
-            onPress={() =>
-              router.push({
-                pathname: "/cart",
-                params: { productId: product.id },
-              })
-            }
+            title="Subscribe"
+            onPress={() => subscriptionSheetRef.current?.open(product)}
             variant="primary"
             size="large"
           />
         </View>
       </ScrollView>
+
+      {/* Subscription Bottom Sheet */}
+      <SubscriptionBottomSheet ref={subscriptionSheetRef} />
     </View>
   )
 }

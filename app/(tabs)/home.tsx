@@ -1,3 +1,6 @@
+import SubscriptionBottomSheet, {
+  SubscriptionBottomSheetRef,
+} from "@/components/cart/SubscriptionBottomSheet"
 import {
   CalendarLegend,
   CategoriesGrid,
@@ -8,6 +11,7 @@ import {
 import Header from "@/components/ui/Header"
 import { COLORS } from "@/constants/theme"
 import { useAuth } from "@/hooks/useAuth"
+import { useCart } from "@/hooks/useCart"
 import {
   fetchActiveOffers,
   fetchActiveProducts,
@@ -16,13 +20,22 @@ import {
 } from "@/lib/supabase-service"
 import { Offer, Order, Product, Subscription } from "@/types/database.types"
 import { useRouter } from "expo-router"
-import React, { useCallback, useEffect, useState } from "react"
-import { RefreshControl, ScrollView, Text, View } from "react-native"
+import { ShoppingCart } from "lucide-react-native"
+import React, { useCallback, useEffect, useRef, useState } from "react"
+import {
+  RefreshControl,
+  ScrollView,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native"
 import Animated, { FadeInDown } from "react-native-reanimated"
 
 export default function HomeScreen() {
   const { user } = useAuth()
   const router = useRouter()
+  const { itemCount } = useCart()
+  const subscriptionSheetRef = useRef<SubscriptionBottomSheetRef>(null)
 
   // State
   const [orders, setOrders] = useState<Order[]>([])
@@ -93,6 +106,11 @@ export default function HomeScreen() {
     // router.push("/search")
   }
 
+  // Handle add product to subscription cart
+  const handleAddProduct = (product: Product) => {
+    subscriptionSheetRef.current?.open(product)
+  }
+
   return (
     <View className="flex-1 bg-white">
       {/* Header with Logo and Location */}
@@ -148,9 +166,40 @@ export default function HomeScreen() {
             </Text>
           </Animated.View>
 
-          <CategoriesGrid products={products} isLoading={loading} />
+          <CategoriesGrid
+            products={products}
+            isLoading={loading}
+            onAddProduct={handleAddProduct}
+          />
         </View>
       </ScrollView>
+
+      {/* Floating Action Button — Cart */}
+      {itemCount > 0 && (
+        <TouchableOpacity
+          className="absolute bottom-24 right-5 w-14 h-14 rounded-full bg-primary-navy items-center justify-center"
+          style={{
+            shadowColor: "#000",
+            shadowOffset: { width: 0, height: 4 },
+            shadowOpacity: 0.25,
+            shadowRadius: 8,
+            elevation: 8,
+          }}
+          activeOpacity={0.8}
+          onPress={() => router.push("/cart")}
+        >
+          <ShoppingCart size={22} color={COLORS.neutral.white} />
+          {/* Badge */}
+          <View className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-primary-orange items-center justify-center">
+            <Text className="font-sofia-bold text-[10px] text-white">
+              {itemCount}
+            </Text>
+          </View>
+        </TouchableOpacity>
+      )}
+
+      {/* Subscription Bottom Sheet */}
+      <SubscriptionBottomSheet ref={subscriptionSheetRef} />
     </View>
   )
 }

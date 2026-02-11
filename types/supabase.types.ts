@@ -572,10 +572,12 @@ export type Database = {
         Row: {
           address_id: string | null
           created_at: string | null
+          custom_quantities: Json | null
           delivery_time: string | null
           end_date: string | null
           frequency: string | null
           id: string
+          interval_days: number | null
           product_id: string | null
           quantity: number | null
           start_date: string
@@ -586,10 +588,12 @@ export type Database = {
         Insert: {
           address_id?: string | null
           created_at?: string | null
+          custom_quantities?: Json | null
           delivery_time?: string | null
           end_date?: string | null
           frequency?: string | null
           id?: string
+          interval_days?: number | null
           product_id?: string | null
           quantity?: number | null
           start_date: string
@@ -600,10 +604,12 @@ export type Database = {
         Update: {
           address_id?: string | null
           created_at?: string | null
+          custom_quantities?: Json | null
           delivery_time?: string | null
           end_date?: string | null
           frequency?: string | null
           id?: string
+          interval_days?: number | null
           product_id?: string | null
           quantity?: number | null
           start_date?: string

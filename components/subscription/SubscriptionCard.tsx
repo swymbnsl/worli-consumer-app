@@ -1,18 +1,56 @@
-import { PRODUCT } from '@/constants/product';
-import { Subscription } from '@/types/database.types';
+import { supabase } from '@/lib/supabase';
+import { Product, Subscription } from '@/types/database.types';
 import { formatDate } from '@/utils/dateUtils';
 import { formatCurrency } from '@/utils/formatters';
-import { Calendar, Clock, Edit3, Package, PauseCircle } from 'lucide-react-native';
-import React from 'react';
-import { Text, TouchableOpacity, View } from 'react-native';
+import { Calendar, Clock, Edit3, Package, PauseCircle, Trash2 } from 'lucide-react-native';
+import React, { useEffect, useState } from 'react';
+import { ActivityIndicator, Text, TouchableOpacity, View } from 'react-native';
 
 interface SubscriptionCardProps {
   subscription: Subscription;
   onEdit: () => void;
   onPause: () => void;
+  onCancel?: () => void;
 }
 
-export default function SubscriptionCard({ subscription, onEdit, onPause }: SubscriptionCardProps) {
+export default function SubscriptionCard({ subscription, onEdit, onPause, onCancel }: SubscriptionCardProps) {
+  const [product, setProduct] = useState<Product | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchProduct = async () => {
+      if (!subscription.product_id) {
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const { data, error } = await supabase
+          .from('products')
+          .select('*')
+          .eq('id', subscription.product_id)
+          .single();
+
+        if (data && !error) {
+          setProduct(data);
+        }
+      } catch (error) {
+        console.error('Error fetching product:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProduct();
+  }, [subscription.product_id]);
+
+  if (loading) {
+    return (
+      <View className="mx-4 mt-4 bg-white rounded-2xl p-5 shadow-md items-center justify-center" style={{ height: 200 }}>
+        <ActivityIndicator size="large" color="#101B53" />
+      </View>
+    );
+  }
   return (
     <View className="mx-4 mt-4">
       {/* Active Status Badge */}
@@ -39,8 +77,13 @@ export default function SubscriptionCard({ subscription, onEdit, onPause }: Subs
               Product
             </Text>
             <Text className="font-sofia-bold text-base text-primary-navy">
-              {PRODUCT.name}
+              {product?.name || 'Product'}
             </Text>
+            {product?.volume && (
+              <Text className="font-comfortaa text-xs text-neutral-gray">
+                {product.volume}
+              </Text>
+            )}
           </View>
         </View>
 
@@ -48,16 +91,16 @@ export default function SubscriptionCard({ subscription, onEdit, onPause }: Subs
         <View className="space-y-3">
           <DetailRow 
             label="Daily Quantity" 
-            value={`${subscription.quantity} Bottles`}
+            value={`${subscription.quantity || 1} Bottles`}
           />
           <DetailRow 
             label="Frequency" 
-            value={subscription.frequency.charAt(0).toUpperCase() + subscription.frequency.slice(1)} 
+            value={(subscription.frequency || 'daily').charAt(0).toUpperCase() + (subscription.frequency || 'daily').slice(1)} 
           />
           <DetailRow 
             icon={<Calendar size={16} color="#638C5F" strokeWidth={2} />}
-            label="Next Delivery" 
-            value={subscription.next_delivery ? formatDate(subscription.next_delivery) : 'N/A'} 
+            label="Start Date" 
+            value={formatDate(subscription.start_date)} 
           />
           {subscription.delivery_time && (
             <DetailRow 
@@ -74,7 +117,7 @@ export default function SubscriptionCard({ subscription, onEdit, onPause }: Subs
                 Daily Cost
               </Text>
               <Text className="font-sofia-bold text-xl text-primary-navy">
-                {formatCurrency(PRODUCT.price * subscription.quantity)}
+                {formatCurrency((product?.price || 0) * (subscription.quantity || 1))}
               </Text>
             </View>
           </View>
@@ -82,7 +125,7 @@ export default function SubscriptionCard({ subscription, onEdit, onPause }: Subs
       </View>
 
       {/* Action Buttons */}
-      <View className="flex-row gap-3">
+      <View className="flex-row gap-3 mb-3">
         <TouchableOpacity
           className="flex-1 bg-primary-navy py-3 rounded-2xl items-center justify-center shadow-sm flex-row"
           onPress={onEdit}
@@ -105,6 +148,20 @@ export default function SubscriptionCard({ subscription, onEdit, onPause }: Subs
           </Text>
         </TouchableOpacity>
       </View>
+
+      {/* Cancel Button */}
+      {onCancel && (
+        <TouchableOpacity
+          className="bg-white py-3 rounded-2xl items-center justify-center border border-functional-error shadow-sm flex-row"
+          onPress={onCancel}
+          activeOpacity={0.8}
+        >
+          <Trash2 size={16} color="#E53E3E" strokeWidth={2} />
+          <Text className="font-sofia-bold text-sm text-functional-error ml-2">
+            Cancel Subscription
+          </Text>
+        </TouchableOpacity>
+      )}
     </View>
   );
 }
