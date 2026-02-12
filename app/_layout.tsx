@@ -1,6 +1,7 @@
 import { AuthProvider } from "@/context/AuthContext"
 import { CartProvider } from "@/context/CartContext"
 import { WalletProvider } from "@/context/WalletContext"
+import { BottomSheetModalProvider } from "@gorhom/bottom-sheet"
 import { useFonts } from "expo-font"
 import { Stack } from "expo-router"
 import * as SplashScreen from "expo-splash-screen"
@@ -44,34 +45,42 @@ export default function RootLayout() {
           <AuthProvider>
             <WalletProvider>
               <CartProvider>
-                <Stack screenOptions={{ headerShown: false }}>
-                  <Stack.Screen name="index" options={{ headerShown: false }} />
-                  <Stack.Screen
-                    name="onboarding"
-                    options={{ headerShown: false }}
-                  />
-                  <Stack.Screen
-                    name="(auth)"
-                    options={{ headerShown: false }}
-                  />
-                  <Stack.Screen
-                    name="complete-profile"
-                    options={{ headerShown: false }}
-                  />
-                  <Stack.Screen
-                    name="(tabs)"
-                    options={{ headerShown: false }}
-                  />
-                  <Stack.Screen name="cart" options={{ headerShown: false }} />
-                  <Stack.Screen
-                    name="product"
-                    options={{ headerShown: false }}
-                  />
-                  <Stack.Screen
-                    name="order-detail"
-                    options={{ headerShown: false }}
-                  />
-                </Stack>
+                <BottomSheetModalProvider>
+                  <Stack screenOptions={{ headerShown: false }}>
+                    <Stack.Screen
+                      name="index"
+                      options={{ headerShown: false }}
+                    />
+                    <Stack.Screen
+                      name="onboarding"
+                      options={{ headerShown: false }}
+                    />
+                    <Stack.Screen
+                      name="(auth)"
+                      options={{ headerShown: false }}
+                    />
+                    <Stack.Screen
+                      name="complete-profile"
+                      options={{ headerShown: false }}
+                    />
+                    <Stack.Screen
+                      name="(tabs)"
+                      options={{ headerShown: false }}
+                    />
+                    <Stack.Screen
+                      name="cart"
+                      options={{ headerShown: false }}
+                    />
+                    <Stack.Screen
+                      name="product"
+                      options={{ headerShown: false }}
+                    />
+                    <Stack.Screen
+                      name="order-detail"
+                      options={{ headerShown: false }}
+                    />
+                  </Stack>
+                </BottomSheetModalProvider>
               </CartProvider>
             </WalletProvider>
           </AuthProvider>

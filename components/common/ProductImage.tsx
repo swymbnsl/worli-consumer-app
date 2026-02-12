@@ -15,14 +15,20 @@ export default function ProductImage({
 }: ProductImageProps) {
   const sizeClasses = {
     small: "w-12 h-12",
-    medium: "w-14 h-14",
+    medium: "w-16 h-16",
     large: "w-52 h-52",
   }
 
   const imageSizes = {
     small: { width: 35, height: 35 },
-    medium: { width: 40, height: 40 },
+    medium: { width: 55, height: 55 },
     large: { width: 180, height: 180 },
+  }
+
+  const fallbackTextSize = {
+    small: "text-xl",
+    medium: "text-3xl",
+    large: "text-[120px]",
   }
 
   return (
@@ -37,7 +43,9 @@ export default function ProductImage({
           transition={200}
         />
       ) : (
-        <Text className="text-2xl text-neutral-gray">📦</Text>
+        <Text className={`${fallbackTextSize[size]} text-neutral-gray`}>
+          📦
+        </Text>
       )}
     </View>
   )

@@ -1,55 +1,70 @@
-import { supabase } from '@/lib/supabase';
-import { Product, Subscription } from '@/types/database.types';
-import { formatDate } from '@/utils/dateUtils';
-import { formatCurrency } from '@/utils/formatters';
-import { Calendar, Clock, Edit3, Package, PauseCircle, Trash2 } from 'lucide-react-native';
-import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Text, TouchableOpacity, View } from 'react-native';
+import { supabase } from "@/lib/supabase"
+import { Product, Subscription } from "@/types/database.types"
+import { formatDate } from "@/utils/dateUtils"
+import { formatCurrency } from "@/utils/formatters"
+import {
+  Calendar,
+  Clock,
+  Edit3,
+  Package,
+  PauseCircle,
+  Trash2,
+} from "lucide-react-native"
+import React, { useEffect, useState } from "react"
+import { ActivityIndicator, Text, TouchableOpacity, View } from "react-native"
 
 interface SubscriptionCardProps {
-  subscription: Subscription;
-  onEdit: () => void;
-  onPause: () => void;
-  onCancel?: () => void;
+  subscription: Subscription
+  onEdit: () => void
+  onPause: () => void
+  onCancel?: () => void
 }
 
-export default function SubscriptionCard({ subscription, onEdit, onPause, onCancel }: SubscriptionCardProps) {
-  const [product, setProduct] = useState<Product | null>(null);
-  const [loading, setLoading] = useState(true);
+export default function SubscriptionCard({
+  subscription,
+  onEdit,
+  onPause,
+  onCancel,
+}: SubscriptionCardProps) {
+  const [product, setProduct] = useState<Product | null>(null)
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     const fetchProduct = async () => {
       if (!subscription.product_id) {
-        setLoading(false);
-        return;
+        setLoading(false)
+        return
       }
 
       try {
         const { data, error } = await supabase
-          .from('products')
-          .select('*')
-          .eq('id', subscription.product_id)
-          .single();
+          .from("products")
+          .select("*")
+          .eq("id", subscription.product_id)
+          .single()
 
         if (data && !error) {
-          setProduct(data);
+          setProduct(data)
         }
       } catch (error) {
-        console.error('Error fetching product:', error);
+        console.error("Error fetching product:", error)
       } finally {
-        setLoading(false);
+        setLoading(false)
       }
-    };
+    }
 
-    fetchProduct();
-  }, [subscription.product_id]);
+    fetchProduct()
+  }, [subscription.product_id])
 
   if (loading) {
     return (
-      <View className="mx-4 mt-4 bg-white rounded-2xl p-5 shadow-md items-center justify-center" style={{ height: 200 }}>
+      <View
+        className="mx-4 mt-4 bg-white rounded-2xl p-5 shadow-md items-center justify-center"
+        style={{ height: 200 }}
+      >
         <ActivityIndicator size="large" color="#101B53" />
       </View>
-    );
+    )
   }
   return (
     <View className="mx-4 mt-4">
@@ -77,7 +92,7 @@ export default function SubscriptionCard({ subscription, onEdit, onPause, onCanc
               Product
             </Text>
             <Text className="font-sofia-bold text-base text-primary-navy">
-              {product?.name || 'Product'}
+              {product?.name || "Product"}
             </Text>
             {product?.volume && (
               <Text className="font-comfortaa text-xs text-neutral-gray">
@@ -89,27 +104,30 @@ export default function SubscriptionCard({ subscription, onEdit, onPause, onCanc
 
         {/* Subscription Details */}
         <View className="space-y-3">
-          <DetailRow 
-            label="Daily Quantity" 
+          <DetailRow
+            label="Daily Quantity"
             value={`${subscription.quantity || 1} Bottles`}
           />
-          <DetailRow 
-            label="Frequency" 
-            value={(subscription.frequency || 'daily').charAt(0).toUpperCase() + (subscription.frequency || 'daily').slice(1)} 
+          <DetailRow
+            label="Frequency"
+            value={
+              (subscription.frequency || "daily").charAt(0).toUpperCase() +
+              (subscription.frequency || "daily").slice(1)
+            }
           />
-          <DetailRow 
+          <DetailRow
             icon={<Calendar size={16} color="#638C5F" strokeWidth={2} />}
-            label="Start Date" 
-            value={formatDate(subscription.start_date)} 
+            label="Start Date"
+            value={formatDate(subscription.start_date)}
           />
           {subscription.delivery_time && (
-            <DetailRow 
+            <DetailRow
               icon={<Clock size={16} color="#A1C3E3" strokeWidth={2} />}
-              label="Delivery Time" 
-              value={subscription.delivery_time} 
+              label="Delivery Time"
+              value={subscription.delivery_time}
             />
           )}
-          
+
           {/* Daily Cost - Highlighted */}
           <View className="bg-neutral-lightCream/50 rounded-xl p-4 mt-2">
             <View className="flex-row justify-between items-center">
@@ -117,7 +135,9 @@ export default function SubscriptionCard({ subscription, onEdit, onPause, onCanc
                 Daily Cost
               </Text>
               <Text className="font-sofia-bold text-xl text-primary-navy">
-                {formatCurrency((product?.price || 0) * (subscription.quantity || 1))}
+                {formatCurrency(
+                  (product?.price || 0) * (subscription.quantity || 1),
+                )}
               </Text>
             </View>
           </View>
@@ -136,7 +156,7 @@ export default function SubscriptionCard({ subscription, onEdit, onPause, onCanc
             Edit Plan
           </Text>
         </TouchableOpacity>
-        
+
         <TouchableOpacity
           className="flex-1 bg-white py-3 rounded-2xl items-center justify-center border-2 border-secondary-sage shadow-sm flex-row"
           onPress={onPause}
@@ -163,18 +183,18 @@ export default function SubscriptionCard({ subscription, onEdit, onPause, onCanc
         </TouchableOpacity>
       )}
     </View>
-  );
+  )
 }
 
 // Helper Component
-function DetailRow({ 
-  label, 
+function DetailRow({
+  label,
   value,
-  icon
-}: { 
-  label: string; 
-  value: string;
-  icon?: React.ReactNode;
+  icon,
+}: {
+  label: string
+  value: string
+  icon?: React.ReactNode
 }) {
   return (
     <View className="flex-row justify-between items-center py-2">
@@ -188,6 +208,5 @@ function DetailRow({
         {value}
       </Text>
     </View>
-  );
+  )
 }
-

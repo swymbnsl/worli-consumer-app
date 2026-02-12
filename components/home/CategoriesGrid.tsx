@@ -104,10 +104,10 @@ export default function CategoriesGrid({
             activeOpacity={0.8}
           >
             {/* Product Image */}
-            <View className="bg-neutral-lightCream/50 rounded-3xl p-4 mb-3 items-center justify-center h-24">
+            <View className="bg-neutral-lightCream/50 rounded-3xl mb-3 items-center justify-center h-24 overflow-hidden">
               <ProductImage
                 imageUrl={category.image_url}
-                size="large"
+                size="medium"
                 containerClassName="bg-transparent"
               />
             </View>

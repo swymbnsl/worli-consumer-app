@@ -9,8 +9,9 @@ import {
 import { useCart } from "@/hooks/useCart"
 import { Product } from "@/types/database.types"
 import { formatCurrency } from "@/utils/formatters"
-import BottomSheet, {
+import {
   BottomSheetBackdrop,
+  BottomSheetModal,
   BottomSheetScrollView,
 } from "@gorhom/bottom-sheet"
 import { Calendar, Minus, Plus } from "lucide-react-native"
@@ -69,7 +70,7 @@ const SubscriptionBottomSheet = forwardRef<
   SubscriptionBottomSheetRef,
   SubscriptionBottomSheetProps
 >((props, ref) => {
-  const bottomSheetRef = useRef<BottomSheet>(null)
+  const bottomSheetRef = useRef<BottomSheetModal>(null)
   const { addItem, updateItem } = useCart()
 
   // State
@@ -131,10 +132,10 @@ const SubscriptionBottomSheet = forwardRef<
         })
       }
       setShowDatePicker(false)
-      bottomSheetRef.current?.snapToIndex(0)
+      bottomSheetRef.current?.present()
     },
     close: () => {
-      bottomSheetRef.current?.close()
+      bottomSheetRef.current?.dismiss()
     },
   }))
 
@@ -159,7 +160,7 @@ const SubscriptionBottomSheet = forwardRef<
     // If editing an existing subscription via callback (not cart)
     if (props.onEditSubscription && editingItem) {
       await props.onEditSubscription(payload)
-      bottomSheetRef.current?.close()
+      bottomSheetRef.current?.dismiss()
       return
     }
 
@@ -170,7 +171,7 @@ const SubscriptionBottomSheet = forwardRef<
       addItem(payload)
     }
 
-    bottomSheetRef.current?.close()
+    bottomSheetRef.current?.dismiss()
   }
 
   const updateCustomQty = (day: number, delta: number) => {
@@ -193,12 +194,15 @@ const SubscriptionBottomSheet = forwardRef<
     [],
   )
 
-  if (!product) return null
+  const handleDismiss = useCallback(() => {
+    setProduct(null)
+    setEditingItem(null)
+  }, [])
 
   return (
-    <BottomSheet
+    <BottomSheetModal
       ref={bottomSheetRef}
-      index={-1}
+      index={0}
       snapPoints={snapPoints}
       enablePanDownToClose
       backdropComponent={renderBackdrop}
@@ -211,11 +215,14 @@ const SubscriptionBottomSheet = forwardRef<
         backgroundColor: COLORS.neutral.lightGray,
         width: 40,
       }}
+      android_keyboardInputMode="adjustResize"
+      onDismiss={handleDismiss}
     >
-      <BottomSheetScrollView
-        contentContainerStyle={{ padding: 20, paddingBottom: 40 }}
-        showsVerticalScrollIndicator={false}
-      >
+      {product && (
+        <BottomSheetScrollView
+          contentContainerStyle={{ padding: 20, paddingBottom: 40 }}
+          showsVerticalScrollIndicator={false}
+        >
         {/* ─── Product Info ──────────────────────────────────────── */}
         <View className="flex-row items-center mb-6">
           <ProductImage
@@ -441,7 +448,8 @@ const SubscriptionBottomSheet = forwardRef<
           size="large"
         />
       </BottomSheetScrollView>
-    </BottomSheet>
+      )}
+    </BottomSheetModal>
   )
 })
 

@@ -29,7 +29,9 @@ export default function FrequencyBadge({
   }
 
   return (
-    <View className={`bg-primary-cream px-3 py-1 rounded-full ${className || ""}`}>
+    <View
+      className={`bg-primary-cream px-3 py-1 rounded-full ${className || ""}`}
+    >
       <Text className="font-sofia-bold text-xs text-primary-navy">
         {getLabel()}
       </Text>

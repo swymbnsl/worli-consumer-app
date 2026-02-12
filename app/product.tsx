@@ -1,7 +1,7 @@
-import ProductImage from "@/components/common/ProductImage"
 import SubscriptionBottomSheet, {
   SubscriptionBottomSheetRef,
 } from "@/components/cart/SubscriptionBottomSheet"
+import ProductImage from "@/components/common/ProductImage"
 import Button from "@/components/ui/Button"
 import PageHeader from "@/components/ui/PageHeader"
 import { COLORS } from "@/constants/theme"
