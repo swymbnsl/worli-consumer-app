@@ -1,16 +1,33 @@
+import {
+  initiateWalletRecharge,
+  RazorpayPaymentResult,
+} from "@/lib/razorpay-service"
 import { supabase } from "@/lib/supabase"
 import { useUserStore } from "@/stores/user-store"
 import { Transaction, Wallet } from "@/types/database.types"
 import React, { createContext, useContext, useEffect, useState } from "react"
 import { AuthContext } from "./AuthContext"
 
+export interface PaymentDetails {
+  payment_id: string
+  order_id: string
+  signature: string
+  method?: string
+}
+
 interface WalletContextType {
   wallet: Wallet | null
   transactions: Transaction[]
   loading: boolean
   rechargeWallet: (amount: number) => Promise<boolean>
+  rechargeWithRazorpay: (amount: number) => Promise<RazorpayPaymentResult>
   deductFromWallet: (amount: number, description: string) => Promise<boolean>
   updateWalletSettings: (settings: Partial<Wallet>) => Promise<boolean>
+  setupAutoPay: (
+    rechargeAmount: number,
+    triggerAmount: number,
+  ) => Promise<boolean>
+  cancelAutoPay: () => Promise<boolean>
   refreshWallet: () => Promise<void>
 }
 
@@ -19,8 +36,13 @@ export const WalletContext = createContext<WalletContextType>({
   transactions: [],
   loading: true,
   rechargeWallet: async () => false,
+  rechargeWithRazorpay: async () => {
+    throw new Error("Not initialized")
+  },
   deductFromWallet: async () => false,
   updateWalletSettings: async () => false,
+  setupAutoPay: async () => false,
+  cancelAutoPay: async () => false,
   refreshWallet: async () => {},
 })
 
@@ -195,6 +217,84 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({
     await fetchTransactions()
   }
 
+  // ─────────────────────────────────────────
+  // Razorpay Recharge Flow
+  // ─────────────────────────────────────────
+  const rechargeWithRazorpay = async (
+    amount: number,
+  ): Promise<RazorpayPaymentResult> => {
+    if (!user) throw new Error("User not logged in")
+
+    const paymentResult = await initiateWalletRecharge(amount, user.id, {
+      name: user.full_name || undefined,
+      email: user.email || undefined,
+      phone: user.phone_number || undefined,
+    })
+
+    // Refresh wallet and transactions after successful payment
+    // (Edge function already updated the balance server-side)
+    await fetchWallet()
+    await fetchTransactions()
+
+    return paymentResult
+  }
+
+  // ─────────────────────────────────────────
+  // AutoPay Setup
+  // ─────────────────────────────────────────
+  const setupAutoPay = async (
+    rechargeAmount: number,
+    triggerAmount: number,
+  ): Promise<boolean> => {
+    if (!user) return false
+
+    try {
+      // Save autopay settings to wallet
+      const { error } = await supabase
+        .from("wallets")
+        .update({
+          auto_recharge_enabled: true,
+          auto_recharge_amount: rechargeAmount,
+          auto_recharge_trigger_amount: triggerAmount,
+        })
+        .eq("user_id", user.id)
+
+      if (error) throw error
+
+      await fetchWallet()
+      return true
+    } catch (error) {
+      console.error("Setup AutoPay Error:", error)
+      return false
+    }
+  }
+
+  // ─────────────────────────────────────────
+  // Cancel AutoPay
+  // ─────────────────────────────────────────
+  const cancelAutoPay = async (): Promise<boolean> => {
+    if (!user) return false
+
+    try {
+      const { error } = await supabase
+        .from("wallets")
+        .update({
+          auto_recharge_enabled: false,
+          auto_recharge_amount: null,
+          auto_recharge_trigger_amount: null,
+        })
+        .eq("user_id", user.id)
+
+      if (error) throw error
+
+      await fetchWallet()
+      return true
+    } catch (error) {
+      console.error("Cancel AutoPay Error:", error)
+      return false
+    }
+  }
+
   return (
     <WalletContext.Provider
       value={{
@@ -202,8 +302,11 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({
         transactions,
         loading,
         rechargeWallet,
+        rechargeWithRazorpay,
         deductFromWallet,
         updateWalletSettings,
+        setupAutoPay,
+        cancelAutoPay,
         refreshWallet,
       }}
     >

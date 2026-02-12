@@ -113,6 +113,8 @@ CREATE TABLE wallets (
   auto_recharge_enabled BOOLEAN DEFAULT false,
   auto_recharge_amount DECIMAL(10, 2),
   auto_recharge_trigger_amount DECIMAL(10, 2),
+  razorpay_customer_id VARCHAR(255),
+  razorpay_subscription_id VARCHAR(255),
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   CONSTRAINT positive_balance CHECK (balance >= 0)

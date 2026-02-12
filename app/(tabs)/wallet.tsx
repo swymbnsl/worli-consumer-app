@@ -1,3 +1,4 @@
+import AutoPayCard from "@/components/wallet/AutoPayCard"
 import LowBalanceNotification from "@/components/wallet/LowBalanceNotification"
 import RechargeModal from "@/components/wallet/RechargeModal"
 import TransactionList from "@/components/wallet/TransactionList"
@@ -39,10 +40,13 @@ export default function WalletScreen() {
         {/* Wallet Balance Card */}
         <WalletBalanceCard balance={wallet?.balance || 0} />
 
-        {/* Recharge Section - Inline */}
+        {/* Recharge Section - Razorpay Integrated */}
         <RechargeModal />
 
-        {/* Low Balance Notification Settings - Inline */}
+        {/* AutoPay Settings */}
+        <AutoPayCard />
+
+        {/* Low Balance Notification Settings */}
         <LowBalanceNotification />
 
         {/* Transaction List */}

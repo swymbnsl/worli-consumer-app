@@ -23,7 +23,7 @@ export default function Header({
       </View>
 
       <TouchableOpacity
-        className="flex-row items-center gap-2 bg-secondary-skyBlue/20 rounded-full px-4 py-2 active:opacity-80"
+        className="flex-row items-center gap-1 px-4 py-2 active:opacity-80"
         onPress={onLocationPress}
       >
         <MapPin color="#101B53" size={16} />
