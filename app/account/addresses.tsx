@@ -9,11 +9,13 @@ import {
   setDefaultAddress,
 } from "@/lib/supabase-service"
 import { Address } from "@/types/database.types"
+import { useRouter } from "expo-router"
 import React, { useEffect, useState } from "react"
 import { Alert, RefreshControl, ScrollView, Text, View } from "react-native"
 
 export default function AddressesScreen() {
   const { user } = useAuth()
+  const router = useRouter()
   const [addresses, setAddresses] = useState<Address[]>([])
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
@@ -44,8 +46,7 @@ export default function AddressesScreen() {
   }
 
   const handleAddAddress = () => {
-    setEditingAddress(null)
-    setModalVisible(true)
+    router.push("/add-address")
   }
 
   const handleEditAddress = (address: Address) => {

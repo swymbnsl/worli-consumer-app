@@ -223,231 +223,231 @@ const SubscriptionBottomSheet = forwardRef<
           contentContainerStyle={{ padding: 20, paddingBottom: 40 }}
           showsVerticalScrollIndicator={false}
         >
-        {/* ─── Product Info ──────────────────────────────────────── */}
-        <View className="flex-row items-center mb-6">
-          <ProductImage
-            imageUrl={product.image_url}
-            size="medium"
-            containerClassName="mr-4"
-          />
-          <View className="flex-1">
-            <Text className="font-sofia-bold text-lg text-neutral-black">
-              {product.name}
-            </Text>
-            {product.volume && (
-              <Text className="font-comfortaa text-sm text-neutral-gray">
-                {product.volume}
+          {/* ─── Product Info ──────────────────────────────────────── */}
+          <View className="flex-row items-center mb-6">
+            <ProductImage
+              imageUrl={product.image_url}
+              size="medium"
+              containerClassName="mr-4"
+            />
+            <View className="flex-1">
+              <Text className="font-sofia-bold text-lg text-neutral-black">
+                {product.name}
               </Text>
-            )}
-            <Text className="font-sofia-bold text-base text-neutral-black mt-0.5">
-              {formatCurrency(product.price)}
-            </Text>
+              {product.volume && (
+                <Text className="font-comfortaa text-sm text-neutral-gray">
+                  {product.volume}
+                </Text>
+              )}
+              <Text className="font-sofia-bold text-base text-neutral-black mt-0.5">
+                {formatCurrency(product.price)}
+              </Text>
+            </View>
           </View>
-        </View>
 
-        {/* ─── Frequency Question ───────────────────────────────── */}
-        <Text className="font-sofia-bold text-base text-neutral-black mb-4">
-          How often do you want to receive this item?
-        </Text>
+          {/* ─── Frequency Question ───────────────────────────────── */}
+          <Text className="font-sofia-bold text-base text-neutral-black mb-4">
+            How often do you want to receive this item?
+          </Text>
 
-        {/* Frequency Tabs (horizontal pills) */}
-        <View className="flex-row flex-wrap mb-6 gap-2">
-          {FREQUENCY_TABS.map((tab) => {
-            const isSelected = frequency === tab.value
-            return (
-              <TouchableOpacity
-                key={tab.value}
-                className={`px-5 py-2.5 rounded-full border ${
-                  isSelected
-                    ? "bg-primary-navy border-primary-navy"
-                    : "bg-white border-neutral-lightGray"
-                }`}
-                onPress={() => setFrequency(tab.value)}
-                activeOpacity={0.7}
-              >
-                <Text
-                  className={`font-sofia-bold text-sm ${
-                    isSelected ? "text-white" : "text-neutral-black"
+          {/* Frequency Tabs (horizontal pills) */}
+          <View className="flex-row flex-wrap mb-6 gap-2">
+            {FREQUENCY_TABS.map((tab) => {
+              const isSelected = frequency === tab.value
+              return (
+                <TouchableOpacity
+                  key={tab.value}
+                  className={`px-5 py-2.5 rounded-full border ${
+                    isSelected
+                      ? "bg-primary-navy border-primary-navy"
+                      : "bg-white border-neutral-lightGray"
                   }`}
+                  onPress={() => setFrequency(tab.value)}
+                  activeOpacity={0.7}
                 >
-                  {tab.label}
-                </Text>
-              </TouchableOpacity>
-            )
-          })}
-        </View>
-
-        {/* ─── On Interval: Interval selector ───────────────────── */}
-        {frequency === "on_interval" && (
-          <View className="mb-6">
-            <Text className="font-sofia-bold text-base text-neutral-black mb-4">
-              Repeat Once In
-            </Text>
-            <View className="flex-row flex-wrap gap-2">
-              {INTERVAL_OPTIONS.map((days) => {
-                const isSelected = intervalDays === days
-                return (
-                  <TouchableOpacity
-                    key={days}
-                    className={`px-4 py-2 rounded-full border ${
-                      isSelected
-                        ? "bg-primary-navy border-primary-navy"
-                        : "bg-white border-neutral-lightGray"
+                  <Text
+                    className={`font-sofia-bold text-sm ${
+                      isSelected ? "text-white" : "text-neutral-black"
                     }`}
-                    onPress={() => setIntervalDays(days)}
                   >
-                    <Text
-                      className={`font-sofia-bold text-sm ${
-                        isSelected ? "text-white" : "text-neutral-black"
+                    {tab.label}
+                  </Text>
+                </TouchableOpacity>
+              )
+            })}
+          </View>
+
+          {/* ─── On Interval: Interval selector ───────────────────── */}
+          {frequency === "on_interval" && (
+            <View className="mb-6">
+              <Text className="font-sofia-bold text-base text-neutral-black mb-4">
+                Repeat Once In
+              </Text>
+              <View className="flex-row flex-wrap gap-2">
+                {INTERVAL_OPTIONS.map((days) => {
+                  const isSelected = intervalDays === days
+                  return (
+                    <TouchableOpacity
+                      key={days}
+                      className={`px-4 py-2 rounded-full border ${
+                        isSelected
+                          ? "bg-primary-navy border-primary-navy"
+                          : "bg-white border-neutral-lightGray"
                       }`}
+                      onPress={() => setIntervalDays(days)}
                     >
-                      {days} Days
-                    </Text>
-                  </TouchableOpacity>
-                )
-              })}
-            </View>
-          </View>
-        )}
-
-        {/* ─── Custom: Per-day quantity selectors ────────────────── */}
-        {frequency === "custom" && (
-          <View className="mb-6">
-            <Text className="font-sofia-bold text-base text-neutral-black mb-4">
-              Quantity
-            </Text>
-            <View className="flex-row justify-between">
-              {WEEKDAYS.map((day, idx) => {
-                const qty = customQuantities[idx] ?? 0
-                return (
-                  <View
-                    key={day}
-                    className="items-center border border-secondary-skyBlue rounded-lg overflow-hidden"
-                    style={{ width: "13%" }}
-                  >
-                    {/* Plus */}
-                    <TouchableOpacity
-                      className="w-full items-center py-1.5 border-b border-secondary-skyBlue"
-                      onPress={() => updateCustomQty(idx, 1)}
-                    >
-                      <Plus
-                        size={13}
-                        color={COLORS.secondary.skyBlue}
-                        strokeWidth={2.5}
-                      />
+                      <Text
+                        className={`font-sofia-bold text-sm ${
+                          isSelected ? "text-white" : "text-neutral-black"
+                        }`}
+                      >
+                        {days} Days
+                      </Text>
                     </TouchableOpacity>
-
-                    {/* Quantity */}
-                    <Text className="font-sofia-bold text-lg text-neutral-black py-1">
-                      {qty}
-                    </Text>
-
-                    {/* Day name */}
-                    <Text className="font-comfortaa text-[10px] text-neutral-gray pb-1">
-                      {day}
-                    </Text>
-
-                    {/* Minus */}
-                    <TouchableOpacity
-                      className="w-full items-center py-1.5 border-t border-secondary-skyBlue"
-                      onPress={() => updateCustomQty(idx, -1)}
-                    >
-                      <Minus
-                        size={13}
-                        color={COLORS.secondary.skyBlue}
-                        strokeWidth={2.5}
-                      />
-                    </TouchableOpacity>
-                  </View>
-                )
-              })}
-            </View>
-          </View>
-        )}
-
-        {/* ─── Date & Quantity Row ───────────────────────────────── */}
-        <View className="flex-row items-end mb-6">
-          {/* Date */}
-          <View className={frequency === "custom" ? "flex-1" : "flex-1 mr-8"}>
-            <Text className="font-sofia-bold text-base text-neutral-black mb-3">
-              {frequency === "buy_once"
-                ? "Delivery Date"
-                : "Delivery Start Date"}
-            </Text>
-            <TouchableOpacity
-              className="flex-row items-center border border-neutral-lightGray rounded-lg px-3 py-3"
-              onPress={() => setShowDatePicker(true)}
-            >
-              <Calendar size={18} color={COLORS.neutral.gray} />
-              <Text className="font-comfortaa-bold text-sm text-neutral-black ml-2">
-                {formatDateDisplay(startDate)}
-              </Text>
-            </TouchableOpacity>
-          </View>
-
-          {/* Quantity (not shown for custom mode — it's per-day above) */}
-          {frequency !== "custom" && (
-            <View>
-              <Text className="font-sofia-bold text-base text-neutral-black mb-3">
-                Quantity
-              </Text>
-              <View className="flex-row items-center">
-                <TouchableOpacity
-                  className="w-10 h-10 rounded-lg bg-primary-navy items-center justify-center"
-                  onPress={() => quantity > 1 && setQuantity(quantity - 1)}
-                >
-                  <Minus size={18} color={COLORS.neutral.white} />
-                </TouchableOpacity>
-                <Text className="mx-4 font-sofia-bold text-xl text-neutral-black min-w-[24px] text-center">
-                  {quantity}
-                </Text>
-                <TouchableOpacity
-                  className="w-10 h-10 rounded-lg bg-primary-navy items-center justify-center"
-                  onPress={() => quantity < 10 && setQuantity(quantity + 1)}
-                >
-                  <Plus size={18} color={COLORS.neutral.white} />
-                </TouchableOpacity>
+                  )
+                })}
               </View>
             </View>
           )}
-        </View>
 
-        {/* Date Picker (native modal) */}
-        {showDatePicker && (
-          <View className="mb-4">
-            {/* @ts-ignore - DateTimePicker from @react-native-community */}
-            <DateTimePickerFallback
-              startDate={startDate}
-              onSelect={(date: string) => {
-                setStartDate(date)
-                setShowDatePicker(false)
-              }}
-              onClose={() => setShowDatePicker(false)}
-            />
+          {/* ─── Custom: Per-day quantity selectors ────────────────── */}
+          {frequency === "custom" && (
+            <View className="mb-6">
+              <Text className="font-sofia-bold text-base text-neutral-black mb-4">
+                Quantity
+              </Text>
+              <View className="flex-row justify-between">
+                {WEEKDAYS.map((day, idx) => {
+                  const qty = customQuantities[idx] ?? 0
+                  return (
+                    <View
+                      key={day}
+                      className="items-center border border-secondary-skyBlue rounded-lg overflow-hidden"
+                      style={{ width: "13%" }}
+                    >
+                      {/* Plus */}
+                      <TouchableOpacity
+                        className="w-full items-center py-1.5 border-b border-secondary-skyBlue"
+                        onPress={() => updateCustomQty(idx, 1)}
+                      >
+                        <Plus
+                          size={13}
+                          color={COLORS.secondary.skyBlue}
+                          strokeWidth={2.5}
+                        />
+                      </TouchableOpacity>
+
+                      {/* Quantity */}
+                      <Text className="font-sofia-bold text-lg text-neutral-black py-1">
+                        {qty}
+                      </Text>
+
+                      {/* Day name */}
+                      <Text className="font-comfortaa text-[10px] text-neutral-gray pb-1">
+                        {day}
+                      </Text>
+
+                      {/* Minus */}
+                      <TouchableOpacity
+                        className="w-full items-center py-1.5 border-t border-secondary-skyBlue"
+                        onPress={() => updateCustomQty(idx, -1)}
+                      >
+                        <Minus
+                          size={13}
+                          color={COLORS.secondary.skyBlue}
+                          strokeWidth={2.5}
+                        />
+                      </TouchableOpacity>
+                    </View>
+                  )
+                })}
+              </View>
+            </View>
+          )}
+
+          {/* ─── Date & Quantity Row ───────────────────────────────── */}
+          <View className="flex-row items-end mb-6">
+            {/* Date */}
+            <View className={frequency === "custom" ? "flex-1" : "flex-1 mr-8"}>
+              <Text className="font-sofia-bold text-base text-neutral-black mb-3">
+                {frequency === "buy_once"
+                  ? "Delivery Date"
+                  : "Delivery Start Date"}
+              </Text>
+              <TouchableOpacity
+                className="flex-row items-center border border-neutral-lightGray rounded-lg px-3 py-3"
+                onPress={() => setShowDatePicker(true)}
+              >
+                <Calendar size={18} color={COLORS.neutral.gray} />
+                <Text className="font-comfortaa-bold text-sm text-neutral-black ml-2">
+                  {formatDateDisplay(startDate)}
+                </Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* Quantity (not shown for custom mode — it's per-day above) */}
+            {frequency !== "custom" && (
+              <View>
+                <Text className="font-sofia-bold text-base text-neutral-black mb-3">
+                  Quantity
+                </Text>
+                <View className="flex-row items-center">
+                  <TouchableOpacity
+                    className="w-10 h-10 rounded-lg bg-primary-navy items-center justify-center"
+                    onPress={() => quantity > 1 && setQuantity(quantity - 1)}
+                  >
+                    <Minus size={18} color={COLORS.neutral.white} />
+                  </TouchableOpacity>
+                  <Text className="mx-4 font-sofia-bold text-xl text-neutral-black min-w-[24px] text-center">
+                    {quantity}
+                  </Text>
+                  <TouchableOpacity
+                    className="w-10 h-10 rounded-lg bg-primary-navy items-center justify-center"
+                    onPress={() => quantity < 10 && setQuantity(quantity + 1)}
+                  >
+                    <Plus size={18} color={COLORS.neutral.white} />
+                  </TouchableOpacity>
+                </View>
+              </View>
+            )}
           </View>
-        )}
 
-        {/* ─── Info Text ────────────────────────────────────────── */}
-        <Text className="font-comfortaa text-sm text-neutral-darkGray mb-6">
-          Order by <Text className="font-sofia-bold">9 PM</Text> for delivery{" "}
-          <Text className="font-sofia-bold">next day</Text> by{" "}
-          <Text className="font-sofia-bold">07:00 AM</Text>
-        </Text>
+          {/* Date Picker (native modal) */}
+          {showDatePicker && (
+            <View className="mb-4">
+              {/* @ts-ignore - DateTimePicker from @react-native-community */}
+              <DateTimePickerFallback
+                startDate={startDate}
+                onSelect={(date: string) => {
+                  setStartDate(date)
+                  setShowDatePicker(false)
+                }}
+                onClose={() => setShowDatePicker(false)}
+              />
+            </View>
+          )}
 
-        {/* ─── Add To Cart Button ───────────────────────────────── */}
-        <Button
-          title={
-            props.onEditSubscription && editingItem
-              ? "Update Subscription"
-              : editingItem
-                ? "Update Cart"
-                : "Add To Cart"
-          }
-          onPress={handleAddToCart}
-          variant="navy"
-          size="large"
-        />
-      </BottomSheetScrollView>
+          {/* ─── Info Text ────────────────────────────────────────── */}
+          <Text className="font-comfortaa text-sm text-neutral-darkGray mb-6">
+            Order by <Text className="font-sofia-bold">9 PM</Text> for delivery{" "}
+            <Text className="font-sofia-bold">next day</Text> by{" "}
+            <Text className="font-sofia-bold">07:00 AM</Text>
+          </Text>
+
+          {/* ─── Add To Cart Button ───────────────────────────────── */}
+          <Button
+            title={
+              props.onEditSubscription && editingItem
+                ? "Update Subscription"
+                : editingItem
+                  ? "Update Cart"
+                  : "Add To Cart"
+            }
+            onPress={handleAddToCart}
+            variant="navy"
+            size="large"
+          />
+        </BottomSheetScrollView>
       )}
     </BottomSheetModal>
   )

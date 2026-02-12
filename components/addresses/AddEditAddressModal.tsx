@@ -1,25 +1,25 @@
-import { useAuth } from '@/hooks/useAuth';
-import { supabase } from '@/lib/supabase';
-import { Address } from '@/types/database.types';
-import { validatePincode } from '@/utils/validators';
-import React, { useEffect, useState } from 'react';
+import { useAuth } from "@/hooks/useAuth"
+import { supabase } from "@/lib/supabase"
+import { Address } from "@/types/database.types"
+import { validatePincode } from "@/utils/validators"
+import React, { useEffect, useState } from "react"
 import {
-    Alert,
-    KeyboardAvoidingView,
-    Modal,
-    Platform,
-    ScrollView,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
-} from 'react-native';
+  Alert,
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
+  ScrollView,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native"
 
 interface AddEditAddressModalProps {
-  visible: boolean;
-  onClose: () => void;
-  address: Address | null;
-  onSuccess: () => void;
+  visible: boolean
+  onClose: () => void
+  address: Address | null
+  onSuccess: () => void
 }
 
 export default function AddEditAddressModal({
@@ -28,68 +28,72 @@ export default function AddEditAddressModal({
   address,
   onSuccess,
 }: AddEditAddressModalProps) {
-  const { user } = useAuth();
-  const [line1, setLine1] = useState('');
-  const [line2, setLine2] = useState('');
-  const [city, setCity] = useState('');
-  const [state, setState] = useState('');
-  const [pincode, setPincode] = useState('');
-  const [landmark, setLandmark] = useState('');
-  const [deliveryInstructions, setDeliveryInstructions] = useState('');
-  const [isDefault, setIsDefault] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const { user } = useAuth()
+  const [name, setName] = useState("Home")
+  const [line1, setLine1] = useState("")
+  const [line2, setLine2] = useState("")
+  const [city, setCity] = useState("")
+  const [state, setState] = useState("")
+  const [pincode, setPincode] = useState("")
+  const [landmark, setLandmark] = useState("")
+  const [deliveryInstructions, setDeliveryInstructions] = useState("")
+  const [isDefault, setIsDefault] = useState(false)
+  const [loading, setLoading] = useState(false)
 
   useEffect(() => {
     if (address) {
-      setLine1(address.address_line1 || '');
-      setLine2(address.address_line2 || '');
-      setCity(address.city || '');
-      setState(address.state || '');
-      setPincode(address.pincode || '');
-      setLandmark(address.landmark || '');
-      setDeliveryInstructions(address.delivery_instructions || '');
-      setIsDefault(address.is_default || false);
+      setName(address.name || "Home")
+      setLine1(address.address_line1 || "")
+      setLine2(address.address_line2 || "")
+      setCity(address.city || "")
+      setState(address.state || "")
+      setPincode(address.pincode || "")
+      setLandmark(address.landmark || "")
+      setDeliveryInstructions(address.delivery_instructions || "")
+      setIsDefault(address.is_default || false)
     } else {
-      resetForm();
+      resetForm()
     }
-  }, [address, visible]);
+  }, [address, visible])
 
   const resetForm = () => {
-    setLine1('');
-    setLine2('');
-    setCity('');
-    setState('');
-    setPincode('');
-    setLandmark('');
-    setDeliveryInstructions('');
-    setIsDefault(false);
-  };
+    setName("Home")
+    setLine1("")
+    setLine2("")
+    setCity("")
+    setState("")
+    setPincode("")
+    setLandmark("")
+    setDeliveryInstructions("")
+    setIsDefault(false)
+  }
 
   const handleSave = async () => {
     // Validation
     if (!line1.trim()) {
-      Alert.alert('Error', 'Please enter address line 1');
-      return;
+      Alert.alert("Error", "Please enter address line 1")
+      return
     }
     if (!city.trim()) {
-      Alert.alert('Error', 'Please enter city');
-      return;
+      Alert.alert("Error", "Please enter city")
+      return
     }
     if (!state.trim()) {
-      Alert.alert('Error', 'Please enter state');
-      return;
+      Alert.alert("Error", "Please enter state")
+      return
     }
     if (!validatePincode(pincode)) {
-      Alert.alert('Error', 'Please enter a valid 6-digit pincode');
-      return;
+      Alert.alert("Error", "Please enter a valid 6-digit pincode")
+      return
     }
 
-    if (!user) return;
+    if (!user) return
 
-    setLoading(true);
+    setLoading(true)
     try {
       const addressData = {
         user_id: user.id,
+        name: name.trim() || "Home",
         address_line1: line1.trim(),
         address_line2: line2.trim() || null,
         city: city.trim(),
@@ -98,54 +102,60 @@ export default function AddEditAddressModal({
         landmark: landmark.trim() || null,
         delivery_instructions: deliveryInstructions.trim() || null,
         is_default: isDefault,
-      };
+      }
 
       if (address) {
         // Update existing address
-        const { error } = await supabase
-          .from('addresses')
-          .update(addressData)
-          .eq('id', address.id);
+        // If setting as default, clear all other defaults first
+        if (isDefault) {
+          await supabase
+            .from("addresses")
+            .update({ is_default: false })
+            .eq("user_id", user.id)
+        }
 
-        if (error) throw error;
-        Alert.alert('Success', 'Address updated successfully');
+        const { error } = await supabase
+          .from("addresses")
+          .update(addressData)
+          .eq("id", address.id)
+
+        if (error) throw error
+        Alert.alert("Success", "Address updated successfully")
       } else {
         // Create new address
         // If this is the first address or set as default, update others
         if (isDefault) {
           await supabase
-            .from('addresses')
+            .from("addresses")
             .update({ is_default: false })
-            .eq('user_id', user.id);
+            .eq("user_id", user.id)
         }
 
-        const { error } = await supabase
-          .from('addresses')
-          .insert([addressData]);
+        const { error } = await supabase.from("addresses").insert([addressData])
 
-        if (error) throw error;
-        Alert.alert('Success', 'Address added successfully');
+        if (error) throw error
+        Alert.alert("Success", "Address added successfully")
       }
 
-      onSuccess();
-      handleClose();
+      onSuccess()
+      handleClose()
     } catch (error) {
-      console.error('Error saving address:', error);
-      Alert.alert('Error', 'Failed to save address');
+      console.error("Error saving address:", error)
+      Alert.alert("Error", "Failed to save address")
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
   const handleClose = () => {
-    resetForm();
-    onClose();
-  };
+    resetForm()
+    onClose()
+  }
 
   return (
     <Modal visible={visible} transparent animationType="slide">
       <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
         className="flex-1"
       >
         <View className="flex-1 bg-black/50 justify-end">
@@ -154,13 +164,50 @@ export default function AddEditAddressModal({
             <View className="w-10 h-1 bg-neutral-lightGray rounded-full self-center mb-6" />
 
             <Text className="font-sofia-bold text-2xl text-primary-navy mb-2">
-              {address ? 'Edit Address' : 'Add New Address'}
+              {address ? "Edit Address" : "Add New Address"}
             </Text>
             <Text className="font-comfortaa text-sm text-neutral-gray mb-6">
-              {address ? 'Update your delivery address' : 'Add a new delivery address'}
+              {address
+                ? "Update your delivery address"
+                : "Add a new delivery address"}
             </Text>
 
             <ScrollView showsVerticalScrollIndicator={false}>
+              {/* Address Name / Label */}
+              <Text className="font-sofia-bold text-sm text-primary-navy mb-3">
+                Address Name
+              </Text>
+              <View className="flex-row gap-2 mb-4">
+                {["Home", "Work", "Other"].map((label) => (
+                  <TouchableOpacity
+                    key={label}
+                    onPress={() => setName(label)}
+                    className={`px-4 py-2.5 rounded-xl border-2 ${
+                      name === label
+                        ? "border-primary-navy bg-primary-navy"
+                        : "border-neutral-lightGray bg-white"
+                    }`}
+                  >
+                    <Text
+                      className={`font-sofia-bold text-sm ${
+                        name === label ? "text-white" : "text-primary-navy"
+                      }`}
+                    >
+                      {label}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+              {name === "Other" && (
+                <TextInput
+                  className="border-2 border-neutral-lightGray rounded-xl px-4 py-3.5 text-base text-primary-navy mb-4 font-comfortaa"
+                  placeholder="E.g., Mom's Place, Gym"
+                  placeholderTextColor="#9CA3AF"
+                  value={name === "Other" ? "" : name}
+                  onChangeText={(text) => setName(text || "Other")}
+                />
+              )}
+
               {/* Address Line 1 */}
               <Text className="font-sofia-bold text-sm text-primary-navy mb-3">
                 Address Line 1 *
@@ -271,8 +318,8 @@ export default function AddEditAddressModal({
                   <View
                     className={`w-6 h-6 rounded-full border-2 items-center justify-center ${
                       isDefault
-                        ? 'border-primary-navy bg-primary-navy'
-                        : 'border-neutral-gray bg-white'
+                        ? "border-primary-navy bg-primary-navy"
+                        : "border-neutral-gray bg-white"
                     }`}
                   >
                     {isDefault && (
@@ -285,14 +332,18 @@ export default function AddEditAddressModal({
               {/* Save Button */}
               <TouchableOpacity
                 className={`py-3.5 rounded-2xl items-center mb-3 shadow-md ${
-                  loading ? 'bg-neutral-gray' : 'bg-primary-navy'
+                  loading ? "bg-neutral-gray" : "bg-primary-navy"
                 }`}
                 onPress={handleSave}
                 disabled={loading}
                 activeOpacity={0.8}
               >
                 <Text className="font-sofia-bold text-sm text-white">
-                  {loading ? 'Saving...' : address ? 'Update Address' : 'Add Address'}
+                  {loading
+                    ? "Saving..."
+                    : address
+                      ? "Update Address"
+                      : "Add Address"}
                 </Text>
               </TouchableOpacity>
 
@@ -311,5 +362,5 @@ export default function AddEditAddressModal({
         </View>
       </KeyboardAvoidingView>
     </Modal>
-  );
+  )
 }

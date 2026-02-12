@@ -6,6 +6,8 @@
 import { supabase } from "@/lib/supabase"
 import {
   Address,
+  AddressInsert,
+  AddressUpdate,
   Offer,
   Order,
   Product,
@@ -276,4 +278,51 @@ export async function setDefaultAddress(
     .eq("id", addressId)
 
   if (error) throw error
+}
+
+/**
+ * Create a new address. If is_default is true, clears other defaults first.
+ */
+export async function createAddress(data: AddressInsert): Promise<Address> {
+  if (data.is_default && data.user_id) {
+    await supabase
+      .from("addresses")
+      .update({ is_default: false })
+      .eq("user_id", data.user_id)
+  }
+
+  const { data: address, error } = await supabase
+    .from("addresses")
+    .insert(data)
+    .select()
+    .single()
+
+  if (error) throw error
+  return address
+}
+
+/**
+ * Update an existing address. If is_default is true, clears other defaults first.
+ */
+export async function updateAddress(
+  addressId: string,
+  userId: string,
+  data: AddressUpdate,
+): Promise<Address> {
+  if (data.is_default) {
+    await supabase
+      .from("addresses")
+      .update({ is_default: false })
+      .eq("user_id", userId)
+  }
+
+  const { data: address, error } = await supabase
+    .from("addresses")
+    .update(data)
+    .eq("id", addressId)
+    .select()
+    .single()
+
+  if (error) throw error
+  return address
 }

@@ -15,6 +15,7 @@ CREATE TABLE users (
 CREATE TABLE addresses (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  name VARCHAR(100) DEFAULT 'Home',
   address_line1 VARCHAR(255) NOT NULL,
   address_line2 VARCHAR(255),
   landmark VARCHAR(255),

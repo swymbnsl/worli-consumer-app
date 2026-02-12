@@ -17,8 +17,15 @@ import {
   fetchActiveProducts,
   fetchActiveSubscriptions,
   fetchHomeOrders,
+  fetchUserAddresses,
 } from "@/lib/supabase-service"
-import { Offer, Order, Product, Subscription } from "@/types/database.types"
+import {
+  Address,
+  Offer,
+  Order,
+  Product,
+  Subscription,
+} from "@/types/database.types"
 import { useRouter } from "expo-router"
 import { ShoppingCart } from "lucide-react-native"
 import React, { useCallback, useEffect, useRef, useState } from "react"
@@ -42,6 +49,7 @@ export default function HomeScreen() {
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([])
   const [products, setProducts] = useState<Product[]>([])
   const [offers, setOffers] = useState<Offer[]>([])
+  const [defaultAddress, setDefaultAddress] = useState<Address | null>(null)
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
 
@@ -58,18 +66,29 @@ export default function HomeScreen() {
   // Fetch all data
   const fetchData = useCallback(async () => {
     try {
-      const [ordersData, subscriptionsData, productsData, offersData] =
-        await Promise.all([
-          user ? fetchHomeOrders(user.id) : Promise.resolve([]),
-          user ? fetchActiveSubscriptions(user.id) : Promise.resolve([]),
-          fetchActiveProducts(),
-          fetchActiveOffers(),
-        ])
+      const [
+        ordersData,
+        subscriptionsData,
+        productsData,
+        offersData,
+        addressesData,
+      ] = await Promise.all([
+        user ? fetchHomeOrders(user.id) : Promise.resolve([]),
+        user ? fetchActiveSubscriptions(user.id) : Promise.resolve([]),
+        fetchActiveProducts(),
+        fetchActiveOffers(),
+        user ? fetchUserAddresses(user.id) : Promise.resolve([]),
+      ])
 
       setOrders(ordersData)
       setSubscriptions(subscriptionsData)
       setProducts(productsData)
       setOffers(offersData)
+
+      // First address is default (sorted by is_default desc)
+      const defAddr =
+        addressesData.find((a) => a.is_default) || addressesData[0] || null
+      setDefaultAddress(defAddr)
     } catch (error) {
       console.error("Error fetching home data:", error)
     } finally {
@@ -114,7 +133,12 @@ export default function HomeScreen() {
   return (
     <View className="flex-1 bg-white">
       {/* Header with Logo and Location */}
-      <Header />
+      <Header
+        location={
+          defaultAddress?.name || defaultAddress?.landmark || "Add Address"
+        }
+        onLocationPress={() => router.push("/add-address")}
+      />
 
       <ScrollView
         className="flex-1"

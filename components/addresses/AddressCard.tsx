@@ -1,40 +1,45 @@
-import { Address } from '@/types/database.types';
-import { formatFullDate } from '@/utils/dateUtils';
-import { MapPin, MoreVertical } from 'lucide-react-native';
-import React, { useState } from 'react';
-import { Alert, Modal, Text, TouchableOpacity, View } from 'react-native';
+import { Address } from "@/types/database.types"
+import { formatFullDate } from "@/utils/dateUtils"
+import { MapPin, MoreVertical } from "lucide-react-native"
+import React, { useState } from "react"
+import { Alert, Modal, Text, TouchableOpacity, View } from "react-native"
 
 interface AddressCardProps {
-  address: Address;
-  onEdit: () => void;
-  onDelete: () => void;
-  onSetDefault: () => void;
+  address: Address
+  onEdit: () => void
+  onDelete: () => void
+  onSetDefault: () => void
 }
 
-export default function AddressCard({ address, onEdit, onDelete, onSetDefault }: AddressCardProps) {
-  const [showActions, setShowActions] = useState(false);
+export default function AddressCard({
+  address,
+  onEdit,
+  onDelete,
+  onSetDefault,
+}: AddressCardProps) {
+  const [showActions, setShowActions] = useState(false)
 
   const handleDelete = () => {
-    setShowActions(false);
+    setShowActions(false)
     Alert.alert(
-      'Delete Address',
-      'Are you sure you want to delete this address?',
+      "Delete Address",
+      "Are you sure you want to delete this address?",
       [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Delete', style: 'destructive', onPress: onDelete },
-      ]
-    );
-  };
+        { text: "Cancel", style: "cancel" },
+        { text: "Delete", style: "destructive", onPress: onDelete },
+      ],
+    )
+  }
 
   const handleSetDefault = () => {
-    setShowActions(false);
-    onSetDefault();
-  };
+    setShowActions(false)
+    onSetDefault()
+  }
 
   const handleEdit = () => {
-    setShowActions(false);
-    onEdit();
-  };
+    setShowActions(false)
+    onEdit()
+  }
 
   return (
     <>
@@ -43,7 +48,7 @@ export default function AddressCard({ address, onEdit, onDelete, onSetDefault }:
         <View className="flex-row justify-between items-start mb-3">
           <View className="flex-1">
             <Text className="font-sofia-bold text-base text-primary-navy mb-1">
-              Delivery Address
+              {address.name || "Home"}
             </Text>
           </View>
           <View className="flex-row items-center gap-2">
@@ -71,8 +76,8 @@ export default function AddressCard({ address, onEdit, onDelete, onSetDefault }:
           <View className="flex-1">
             <Text className="font-comfortaa text-sm text-neutral-darkGray leading-5 mb-1">
               {address.address_line1}
-              {address.address_line2 ? `, ${address.address_line2}` : ''}
-              {address.landmark ? `, ${address.landmark}` : ''}
+              {address.address_line2 ? `, ${address.address_line2}` : ""}
+              {address.landmark ? `, ${address.landmark}` : ""}
               {`, ${address.city}, ${address.state}-${address.pincode}`}
             </Text>
             {address.created_at && (
@@ -98,7 +103,7 @@ export default function AddressCard({ address, onEdit, onDelete, onSetDefault }:
         >
           <View className="bg-white rounded-t-3xl p-6">
             <View className="w-12 h-1 bg-neutral-gray/30 rounded-full self-center mb-6" />
-            
+
             <Text className="font-sofia-bold text-lg text-primary-navy mb-4">
               Address Actions
             </Text>
@@ -153,5 +158,5 @@ export default function AddressCard({ address, onEdit, onDelete, onSetDefault }:
         </TouchableOpacity>
       </Modal>
     </>
-  );
+  )
 }

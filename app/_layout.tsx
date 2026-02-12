@@ -79,6 +79,10 @@ export default function RootLayout() {
                       name="order-detail"
                       options={{ headerShown: false }}
                     />
+                    <Stack.Screen
+                      name="add-address"
+                      options={{ headerShown: false }}
+                    />
                   </Stack>
                 </BottomSheetModalProvider>
               </CartProvider>

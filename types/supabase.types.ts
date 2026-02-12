@@ -51,6 +51,7 @@ export type Database = {
           landmark: string | null
           latitude: number | null
           longitude: number | null
+          name: string | null
           pincode: string | null
           state: string | null
           updated_at: string | null
@@ -67,6 +68,7 @@ export type Database = {
           landmark?: string | null
           latitude?: number | null
           longitude?: number | null
+          name?: string | null
           pincode?: string | null
           state?: string | null
           updated_at?: string | null
@@ -83,6 +85,7 @@ export type Database = {
           landmark?: string | null
           latitude?: number | null
           longitude?: number | null
+          name?: string | null
           pincode?: string | null
           state?: string | null
           updated_at?: string | null
