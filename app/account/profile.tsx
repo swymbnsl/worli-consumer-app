@@ -3,7 +3,11 @@ import TextInput from "@/components/ui/TextInput"
 import { useAuth } from "@/hooks/useAuth"
 import { useRouter } from "expo-router"
 import React, { useState } from "react"
-import { Alert, ScrollView, View } from "react-native"
+import { ScrollView, View } from "react-native"
+import {
+  showErrorToast,
+  showSuccessToast,
+} from "@/components/ui/Toast"
 
 export default function ProfileScreen() {
   const router = useRouter()
@@ -14,7 +18,7 @@ export default function ProfileScreen() {
 
   const handleSave = async () => {
     if (!name.trim()) {
-      Alert.alert("Error", "Name cannot be empty")
+      showErrorToast("Error", "Name cannot be empty")
       return
     }
 
@@ -22,13 +26,13 @@ export default function ProfileScreen() {
     try {
       const success = await updateUser({ full_name: name, email })
       if (success) {
-        Alert.alert("Success", "Profile updated successfully")
+        showSuccessToast("Success", "Profile updated successfully")
         router.back()
       } else {
-        Alert.alert("Error", "Failed to update profile")
+        showErrorToast("Error", "Failed to update profile")
       }
     } catch (error) {
-      Alert.alert("Error", "An error occurred")
+      showErrorToast("Error", "An error occurred")
     } finally {
       setLoading(false)
     }

@@ -5,7 +5,11 @@ import { CartItem } from "@/context/CartContext"
 import { supabase } from "@/lib/supabase"
 import { Subscription } from "@/types/database.types"
 import React, { useEffect, useRef } from "react"
-import { Alert, View } from "react-native"
+import { View } from "react-native"
+import {
+  showErrorToast,
+  showSuccessToast,
+} from "@/components/ui/Toast"
 
 interface EditModalProps {
   visible: boolean
@@ -87,12 +91,12 @@ export default function EditModal({
 
             if (error) throw error
 
-            Alert.alert("Success", "Subscription updated successfully")
+            showSuccessToast("Success", "Subscription updated successfully")
             onUpdate()
             onClose()
           } catch (error) {
             console.error("Error updating subscription:", error)
-            Alert.alert("Error", "Failed to update subscription")
+            showErrorToast("Error", "Failed to update subscription")
           }
         }}
       />

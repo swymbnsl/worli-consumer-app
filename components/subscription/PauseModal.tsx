@@ -1,7 +1,6 @@
 import { Calendar } from 'lucide-react-native';
 import React, { useState } from 'react';
 import {
-    Alert,
     Modal,
     ScrollView,
     Text,
@@ -12,6 +11,7 @@ import { BORDER_RADIUS, COLORS, SPACING } from '@/constants/theme';
 import { supabase } from '@/lib/supabase';
 import { Subscription } from '@/types/database.types';
 import { formatDate, getDaysArray } from '@/utils/dateUtils';
+import { showErrorToast, showSuccessToast } from '@/components/ui/Toast';
 
 interface PauseModalProps {
   visible: boolean;
@@ -36,7 +36,7 @@ export default function PauseModal({ visible, onClose, subscription, onUpdate }:
 
   const handleConfirmPause = async () => {
     if (selectedDates.length === 0) {
-      Alert.alert('No Dates Selected', 'Please select at least one date to pause');
+      showErrorToast('No Dates Selected', 'Please select at least one date to pause');
       return;
     }
 
@@ -52,13 +52,13 @@ export default function PauseModal({ visible, onClose, subscription, onUpdate }:
 
       if (error) throw error;
 
-      Alert.alert('Success', `${selectedDates.length} date(s) paused successfully`);
+      showSuccessToast('Success', `${selectedDates.length} date(s) paused successfully`);
       setSelectedDates([]);
       onUpdate();
       onClose();
     } catch (error) {
       console.error('Error pausing dates:', error);
-      Alert.alert('Error', 'Failed to pause dates');
+      showErrorToast('Error', 'Failed to pause dates');
     } finally {
       setLoading(false);
     }

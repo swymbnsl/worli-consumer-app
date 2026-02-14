@@ -6,10 +6,11 @@ import { fetchOrderById, fetchProductSummary } from "@/lib/supabase-service"
 import { Order, Product as ProductType } from "@/types/database.types"
 import { formatFullDate } from "@/utils/dateUtils"
 import { formatCurrency } from "@/utils/formatters"
+import { showErrorToast } from "@/components/ui/Toast"
 import { useLocalSearchParams, useRouter } from "expo-router"
 import { Calendar, MapPin } from "lucide-react-native"
 import React, { useEffect, useState } from "react"
-import { Alert, Image, ScrollView, Text, View } from "react-native"
+import { Image, ScrollView, Text, View } from "react-native"
 
 export default function OrderDetailScreen() {
   const router = useRouter()
@@ -42,7 +43,7 @@ export default function OrderDetailScreen() {
       }
     } catch (error) {
       console.error("Error fetching order:", error)
-      Alert.alert("Error", "Failed to load order details")
+      showErrorToast("Error", "Failed to load order details")
       router.back()
     } finally {
       setLoading(false)

@@ -21,12 +21,16 @@ import { MapPin, Wallet as WalletIcon } from "lucide-react-native"
 import React, { useCallback, useEffect, useRef, useState } from "react"
 import {
   ActivityIndicator,
-  Alert,
   ScrollView,
   Text,
   TouchableOpacity,
   View,
 } from "react-native"
+import {
+  showErrorToast,
+  showSuccessToast,
+} from "@/components/ui/Toast"
+import { ConfirmModal } from "@/components/ui/Modal"
 
 // ─── Component ─────────────────────────────────────────────────────────────────
 
@@ -44,6 +48,7 @@ export default function CartScreen() {
   const [productCache, setProductCache] = useState<Record<string, Product>>({})
   const [loading, setLoading] = useState(false)
   const [placing, setPlacing] = useState(false)
+  const [showClearCartModal, setShowClearCartModal] = useState(false)
 
   // ─── Fetch addresses ────────────────────────────────────────────────
 
@@ -99,21 +104,21 @@ export default function CartScreen() {
 
   const handlePlaceOrder = async () => {
     if (!user?.id) {
-      Alert.alert("Login Required", "Please log in to place an order.")
+      showErrorToast("Login Required", "Please log in to place an order.")
       return
     }
     if (items.length === 0) {
-      Alert.alert("Cart Empty", "Add items to your cart first.")
+      showErrorToast("Cart Empty", "Add items to your cart first.")
       return
     }
     if (!selectedAddress) {
-      Alert.alert("No Address", "Please add a delivery address first.")
+      showErrorToast("No Address", "Please add a delivery address first.")
       return
     }
 
     const walletBalance = wallet?.balance ?? 0
     if (walletBalance < totalAmount) {
-      Alert.alert(
+      showErrorToast(
         "Insufficient Balance",
         "Please recharge your wallet to proceed.",
       )
@@ -135,11 +140,10 @@ export default function CartScreen() {
       }))
       await createSubscriptions(subscriptions)
       clearCart()
-      Alert.alert("Success", "Your subscriptions have been placed!", [
-        { text: "OK", onPress: () => router.back() },
-      ])
+      showSuccessToast("Success", "Your subscriptions have been placed!")
+      router.back()
     } catch (err: any) {
-      Alert.alert("Error", err.message || "Failed to place order.")
+      showErrorToast("Error", err.message || "Failed to place order.")
     } finally {
       setPlacing(false)
     }
@@ -149,10 +153,7 @@ export default function CartScreen() {
 
   const handleClearCart = () => {
     if (items.length === 0) return
-    Alert.alert("Clear Cart", "Remove all items from your cart?", [
-      { text: "Cancel", style: "cancel" },
-      { text: "Clear", style: "destructive", onPress: clearCart },
-    ])
+    setShowClearCartModal(true)
   }
 
   // ─── Wallet Balance ─────────────────────────────────────────────────
@@ -321,6 +322,20 @@ export default function CartScreen() {
 
       {/* Bottom Sheet for editing */}
       <SubscriptionBottomSheet ref={subscriptionSheetRef} />
+
+      {/* Clear Cart Confirmation */}
+      <ConfirmModal
+        visible={showClearCartModal}
+        onClose={() => setShowClearCartModal(false)}
+        title="Clear Cart"
+        description="Remove all items from your cart?"
+        confirmText="Clear"
+        onConfirm={() => {
+          setShowClearCartModal(false)
+          clearCart()
+        }}
+        destructive
+      />
     </View>
   )
 }

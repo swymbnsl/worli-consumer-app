@@ -1,9 +1,10 @@
 import Button from "@/components/ui/Button"
 import TextInput from "@/components/ui/TextInput"
+import { showErrorToast, showSuccessToast } from "@/components/ui/Toast"
 import { useAuth } from "@/hooks/useAuth"
 import { useRouter } from "expo-router"
 import React, { useState } from "react"
-import { Alert, ScrollView, Text, View } from "react-native"
+import { ScrollView, Text, View } from "react-native"
 import Animated, { FadeInDown, FadeInUp } from "react-native-reanimated"
 
 export default function CompleteProfileScreen() {
@@ -22,18 +23,18 @@ export default function CompleteProfileScreen() {
   const handleContinue = async () => {
     // Validate full name
     if (!fullName.trim()) {
-      Alert.alert("Error", "Please enter your full name")
+      showErrorToast("Error", "Please enter your full name")
       return
     }
 
     if (fullName.trim().length < 2) {
-      Alert.alert("Error", "Name must be at least 2 characters long")
+      showErrorToast("Error", "Name must be at least 2 characters long")
       return
     }
 
     // Validate email if provided
     if (email.trim() && !validateEmail(email)) {
-      Alert.alert("Error", "Please enter a valid email address")
+      showErrorToast("Error", "Please enter a valid email address")
       return
     }
 
@@ -50,18 +51,14 @@ export default function CompleteProfileScreen() {
       const success = await updateUser(updates)
 
       if (success) {
-        Alert.alert("Success", "Profile completed successfully!", [
-          {
-            text: "OK",
-            onPress: () => router.replace("/(tabs)/home"),
-          },
-        ])
+        showSuccessToast("Profile Completed", "Redirecting to home...")
+        router.replace("/(tabs)/home")
       } else {
-        Alert.alert("Error", "Failed to update profile. Please try again.")
+        showErrorToast("Error", "Failed to update profile. Please try again.")
       }
     } catch (error) {
       console.error("Error completing profile:", error)
-      Alert.alert("Error", "An error occurred. Please try again.")
+      showErrorToast("Error", "An error occurred. Please try again.")
     } finally {
       setIsLoading(false)
     }

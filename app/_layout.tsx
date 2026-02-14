@@ -1,6 +1,7 @@
 import { AuthProvider } from "@/context/AuthContext"
 import { CartProvider } from "@/context/CartContext"
 import { WalletProvider } from "@/context/WalletContext"
+import { Toast } from "@/components/ui/Toast"
 import { BottomSheetModalProvider } from "@gorhom/bottom-sheet"
 import { useFonts } from "expo-font"
 import { Stack } from "expo-router"
@@ -84,6 +85,7 @@ export default function RootLayout() {
                       options={{ headerShown: false }}
                     />
                   </Stack>
+                  <Toast />
                 </BottomSheetModalProvider>
               </CartProvider>
             </WalletProvider>

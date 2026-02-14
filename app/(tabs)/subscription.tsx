@@ -12,7 +12,12 @@ import { Subscription } from "@/types/database.types"
 import { useRouter } from "expo-router"
 import { Calendar, X } from "lucide-react-native"
 import React, { useEffect, useState } from "react"
-import { Alert, RefreshControl, ScrollView, Text, View } from "react-native"
+import { RefreshControl, ScrollView, Text, View } from "react-native"
+import {
+  showErrorToast,
+  showSuccessToast,
+} from "@/components/ui/Toast"
+import { ConfirmModal } from "@/components/ui/Modal"
 
 export default function SubscriptionScreen() {
   const { user } = useAuth()
@@ -23,6 +28,9 @@ export default function SubscriptionScreen() {
   const [pauseModalVisible, setPauseModalVisible] = useState(false)
   const [editModalVisible, setEditModalVisible] = useState(false)
   const [selectedSubscription, setSelectedSubscription] =
+    useState<Subscription | null>(null)
+  const [showCancelModal, setShowCancelModal] = useState(false)
+  const [cancellingSubscription, setCancellingSubscription] =
     useState<Subscription | null>(null)
 
   useEffect(() => {
@@ -59,34 +67,29 @@ export default function SubscriptionScreen() {
   }
 
   const handleCancelSubscription = (subscription: Subscription) => {
-    Alert.alert(
-      "Cancel Subscription",
-      "Are you sure you want to cancel this subscription? This action cannot be undone.",
-      [
-        { text: "Keep Subscription", style: "cancel" },
-        {
-          text: "Cancel Subscription",
-          style: "destructive",
-          onPress: async () => {
-            try {
-              await cancelSub(subscription.id)
+    setCancellingSubscription(subscription)
+    setShowCancelModal(true)
+  }
 
-              Alert.alert(
-                "Subscription Cancelled",
-                "Your subscription has been cancelled successfully.",
-              )
-              fetchSubscriptions()
-            } catch (error) {
-              console.error("Error cancelling subscription:", error)
-              Alert.alert(
-                "Error",
-                "Failed to cancel subscription. Please try again.",
-              )
-            }
-          },
-        },
-      ],
-    )
+  const handleConfirmCancel = async () => {
+    if (!cancellingSubscription) return
+    setShowCancelModal(false)
+    try {
+      await cancelSub(cancellingSubscription.id)
+      showSuccessToast(
+        "Subscription Cancelled",
+        "Your subscription has been cancelled successfully.",
+      )
+      fetchSubscriptions()
+    } catch (error) {
+      console.error("Error cancelling subscription:", error)
+      showErrorToast(
+        "Error",
+        "Failed to cancel subscription. Please try again.",
+      )
+    } finally {
+      setCancellingSubscription(null)
+    }
   }
 
   if (subscriptions.length === 0 && !loading) {
@@ -197,6 +200,21 @@ export default function SubscriptionScreen() {
           onUpdate={fetchSubscriptions}
         />
       )}
+
+      {/* Cancel Confirmation Modal */}
+      <ConfirmModal
+        visible={showCancelModal}
+        onClose={() => {
+          setShowCancelModal(false)
+          setCancellingSubscription(null)
+        }}
+        title="Cancel Subscription"
+        description="Are you sure you want to cancel this subscription? This action cannot be undone."
+        confirmText="Cancel Subscription"
+        cancelText="Keep Subscription"
+        onConfirm={handleConfirmCancel}
+        destructive
+      />
     </View>
   )
 }

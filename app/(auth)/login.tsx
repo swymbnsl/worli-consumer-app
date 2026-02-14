@@ -1,10 +1,10 @@
 import Button from "@/components/ui/Button"
 import TextInput from "@/components/ui/TextInput"
+import { showErrorToast, showInfoToast } from "@/components/ui/Toast"
 import { useAuth } from "@/hooks/useAuth"
 import { router } from "expo-router"
 import React, { useEffect, useRef, useState } from "react"
 import {
-  Alert,
   Image,
   KeyboardAvoidingView,
   Platform,
@@ -42,7 +42,7 @@ export default function LoginScreen() {
 
   const handleSendOTP = async () => {
     if (phoneNumber.length !== 10) {
-      Alert.alert("Invalid Phone", "Please enter a valid 10-digit phone number")
+      showErrorToast("Invalid Phone", "Please enter a valid 10-digit phone number")
       return
     }
 
@@ -54,16 +54,16 @@ export default function LoginScreen() {
       if (success) {
         setOtpSent(true)
         setOtp("") // Clear OTP when sending new one
-        Alert.alert(
+        showInfoToast(
           "OTP Sent",
           "Please check your phone for the verification code",
         )
       } else {
-        Alert.alert("Error", "Failed to send OTP. Please try again.")
+        showErrorToast("Error", "Failed to send OTP. Please try again.")
       }
     } catch (error) {
       console.error("OTP Error:", error)
-      Alert.alert("Error", "An error occurred. Please try again.")
+      showErrorToast("Error", "An error occurred. Please try again.")
     } finally {
       setLoading(false)
     }
@@ -71,7 +71,7 @@ export default function LoginScreen() {
 
   const handleVerifyOTP = async () => {
     if (otp.length !== 6) {
-      Alert.alert("Invalid OTP", "Please enter the 6-digit OTP")
+      showErrorToast("Invalid OTP", "Please enter the 6-digit OTP")
       return
     }
 
@@ -85,14 +85,14 @@ export default function LoginScreen() {
         // Navigation will be handled by the useEffect watching isLoggedIn
         router.replace("/(tabs)/home")
       } else {
-        Alert.alert(
+        showErrorToast(
           "Invalid OTP",
           "The OTP you entered is incorrect. Please try again.",
         )
       }
     } catch (error) {
       console.error("Verification Error:", error)
-      Alert.alert("Error", "Failed to verify OTP. Please try again.")
+      showErrorToast("Error", "Failed to verify OTP. Please try again.")
     } finally {
       setLoading(false)
     }

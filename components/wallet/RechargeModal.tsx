@@ -1,4 +1,5 @@
 import Button from "@/components/ui/Button"
+import { showErrorToast } from "@/components/ui/Toast"
 import { useWallet } from "@/hooks/useWallet"
 import { RazorpayError } from "@/lib/razorpay-service"
 import { formatCurrency } from "@/utils/formatters"
@@ -9,7 +10,7 @@ import {
   XCircle,
 } from "lucide-react-native"
 import React, { useState } from "react"
-import { Alert, Text, TextInput, TouchableOpacity, View } from "react-native"
+import { Text, TextInput, TouchableOpacity, View } from "react-native"
 
 type PaymentStatus = "idle" | "processing" | "success" | "failed"
 
@@ -33,17 +34,17 @@ export default function RechargeModal() {
     const amountNum = parseInt(amount)
 
     if (!amountNum || amountNum <= 0) {
-      Alert.alert("Invalid Amount", "Please enter a valid amount")
+      showErrorToast("Invalid Amount", "Please enter a valid amount")
       return
     }
 
     if (amountNum < 100) {
-      Alert.alert("Minimum Amount", "Minimum recharge amount is ₹100")
+      showErrorToast("Minimum Amount", "Minimum recharge amount is ₹100")
       return
     }
 
     if (amountNum > 50000) {
-      Alert.alert("Maximum Amount", "Maximum recharge amount is ₹50,000")
+      showErrorToast("Maximum Amount", "Maximum recharge amount is ₹50,000")
       return
     }
 
@@ -69,20 +70,9 @@ export default function RechargeModal() {
       }
 
       setPaymentStatus("failed")
-      Alert.alert(
+      showErrorToast(
         "Payment Failed",
         rzpError?.description || "Something went wrong. Please try again.",
-        [
-          {
-            text: "Retry",
-            onPress: () => setPaymentStatus("idle"),
-          },
-          {
-            text: "Cancel",
-            style: "cancel",
-            onPress: () => setPaymentStatus("idle"),
-          },
-        ],
       )
     }
   }

@@ -1,10 +1,11 @@
+import { ConfirmModal } from "@/components/ui/Modal"
+import { showErrorToast, showSuccessToast } from "@/components/ui/Toast"
 import { BORDER_RADIUS, COLORS, SHADOWS, SPACING } from "@/constants/theme"
 import { useAuth } from "@/hooks/useAuth"
 import { useRouter } from "expo-router"
 import { AlertTriangle } from "lucide-react-native"
 import React, { useState } from "react"
 import {
-  Alert,
   ScrollView,
   Text,
   TextInput,
@@ -17,50 +18,36 @@ export default function DeleteAccountScreen() {
   const { user, logout } = useAuth()
   const [confirmText, setConfirmText] = useState("")
   const [loading, setLoading] = useState(false)
+  const [showConfirmModal, setShowConfirmModal] = useState(false)
 
   const handleDelete = async () => {
     if (confirmText !== "DELETE") {
-      Alert.alert("Error", "Please type DELETE to confirm")
+      showErrorToast("Error", "Please type DELETE to confirm")
       return
     }
 
-    Alert.alert(
-      "Final Confirmation",
-      "Are you absolutely sure? This action cannot be undone.",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Delete Forever",
-          style: "destructive",
-          onPress: async () => {
-            setLoading(true)
-            try {
-              // In a real app, you would:
-              // 1. Delete user data from database
-              // 2. Cancel active subscriptions
-              // 3. Process refunds if any
-              // 4. Delete user account from auth
+    setShowConfirmModal(true)
+  }
 
-              // For now, just logout
-              await logout()
-              Alert.alert(
-                "Account Deleted",
-                "Your account has been successfully deleted.",
-              )
-              router.replace("/(auth)/login")
-            } catch (error) {
-              console.error("Delete error:", error)
-              Alert.alert(
-                "Error",
-                "Failed to delete account. Please try again.",
-              )
-            } finally {
-              setLoading(false)
-            }
-          },
-        },
-      ],
-    )
+  const handleConfirmDelete = async () => {
+    setShowConfirmModal(false)
+    setLoading(true)
+    try {
+      await logout()
+      showSuccessToast(
+        "Account Deleted",
+        "Your account has been successfully deleted.",
+      )
+      router.replace("/(auth)/login")
+    } catch (error) {
+      console.error("Delete error:", error)
+      showErrorToast(
+        "Error",
+        "Failed to delete account. Please try again.",
+      )
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -258,6 +245,16 @@ export default function DeleteAccountScreen() {
           </TouchableOpacity>
         </View>
       </ScrollView>
+
+      <ConfirmModal
+        visible={showConfirmModal}
+        onClose={() => setShowConfirmModal(false)}
+        title="Final Confirmation"
+        description="Are you absolutely sure? This action cannot be undone."
+        confirmText="Delete Forever"
+        onConfirm={handleConfirmDelete}
+        destructive
+      />
     </View>
   )
 }

@@ -4,7 +4,6 @@ import { Address } from "@/types/database.types"
 import { validatePincode } from "@/utils/validators"
 import React, { useEffect, useState } from "react"
 import {
-  Alert,
   KeyboardAvoidingView,
   Modal,
   Platform,
@@ -14,6 +13,10 @@ import {
   TouchableOpacity,
   View,
 } from "react-native"
+import {
+  showErrorToast,
+  showSuccessToast,
+} from "@/components/ui/Toast"
 
 interface AddEditAddressModalProps {
   visible: boolean
@@ -71,19 +74,19 @@ export default function AddEditAddressModal({
   const handleSave = async () => {
     // Validation
     if (!line1.trim()) {
-      Alert.alert("Error", "Please enter address line 1")
+      showErrorToast("Error", "Please enter address line 1")
       return
     }
     if (!city.trim()) {
-      Alert.alert("Error", "Please enter city")
+      showErrorToast("Error", "Please enter city")
       return
     }
     if (!state.trim()) {
-      Alert.alert("Error", "Please enter state")
+      showErrorToast("Error", "Please enter state")
       return
     }
     if (!validatePincode(pincode)) {
-      Alert.alert("Error", "Please enter a valid 6-digit pincode")
+      showErrorToast("Error", "Please enter a valid 6-digit pincode")
       return
     }
 
@@ -120,7 +123,7 @@ export default function AddEditAddressModal({
           .eq("id", address.id)
 
         if (error) throw error
-        Alert.alert("Success", "Address updated successfully")
+        showSuccessToast("Success", "Address updated successfully")
       } else {
         // Create new address
         // If this is the first address or set as default, update others
@@ -134,14 +137,14 @@ export default function AddEditAddressModal({
         const { error } = await supabase.from("addresses").insert([addressData])
 
         if (error) throw error
-        Alert.alert("Success", "Address added successfully")
+        showSuccessToast("Success", "Address added successfully")
       }
 
       onSuccess()
       handleClose()
     } catch (error) {
       console.error("Error saving address:", error)
-      Alert.alert("Error", "Failed to save address")
+      showErrorToast("Error", "Failed to save address")
     } finally {
       setLoading(false)
     }

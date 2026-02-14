@@ -4,11 +4,14 @@ import { formatCurrency } from '@/utils/formatters';
 import { Bell } from 'lucide-react-native';
 import React, { useState } from 'react';
 import {
-    Alert,
     Text,
     TouchableOpacity,
     View,
 } from 'react-native';
+import {
+  showErrorToast,
+  showSuccessToast,
+} from '@/components/ui/Toast';
 
 export default function LowBalanceNotification() {
   const { wallet, updateWalletSettings } = useWallet();
@@ -22,7 +25,7 @@ export default function LowBalanceNotification() {
 
   const handleSetNotification = async () => {
     if (notificationLimit < 0) {
-      Alert.alert('Invalid Amount', 'Please set a valid notification limit');
+      showErrorToast('Invalid Amount', 'Please set a valid notification limit');
       return;
     }
 
@@ -33,15 +36,15 @@ export default function LowBalanceNotification() {
       });
 
       if (success) {
-        Alert.alert(
+        showSuccessToast(
           'Success',
           `Low balance notification set to ${formatCurrency(notificationLimit)}`,
         );
       } else {
-        Alert.alert('Error', 'Failed to update notification settings');
+        showErrorToast('Error', 'Failed to update notification settings');
       }
     } catch (error) {
-      Alert.alert('Error', 'An error occurred. Please try again.');
+      showErrorToast('Error', 'An error occurred. Please try again.');
     } finally {
       setLoading(false);
     }

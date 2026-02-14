@@ -1,6 +1,10 @@
 import { X } from 'lucide-react-native';
 import React from 'react';
-import { Alert, Text, TouchableOpacity, View } from 'react-native';
+import { Text, TouchableOpacity, View } from 'react-native';
+import {
+  showErrorToast,
+  showSuccessToast,
+} from '@/components/ui/Toast';
 import { BORDER_RADIUS, COLORS, SHADOWS, SPACING } from '@/constants/theme';
 import { supabase } from '@/lib/supabase';
 import { formatFullDate } from '@/utils/dateUtils';
@@ -24,10 +28,10 @@ export default function PausedDatesList({ pausedDates, subscriptionId, onUpdate 
       if (error) throw error;
 
       onUpdate();
-      Alert.alert('Success', 'Pause removed successfully');
+      showSuccessToast('Success', 'Pause removed successfully');
     } catch (error) {
       console.error('Error removing pause:', error);
-      Alert.alert('Error', 'Failed to remove pause');
+      showErrorToast('Error', 'Failed to remove pause');
     }
   };
 

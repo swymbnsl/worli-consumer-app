@@ -4,13 +4,13 @@ import * as Clipboard from "expo-clipboard"
 import { Copy, Gift, Share2, Users } from "lucide-react-native"
 import React from "react"
 import {
-  Alert,
   ScrollView,
   Share,
   Text,
   TouchableOpacity,
   View,
 } from "react-native"
+import { showSuccessToast } from "@/components/ui/Toast"
 
 export default function ReferScreen() {
   const { user } = useAuth()
@@ -18,7 +18,7 @@ export default function ReferScreen() {
 
   const handleCopyCode = async () => {
     await Clipboard.setStringAsync(referralCode)
-    Alert.alert("Copied!", "Referral code copied to clipboard")
+    showSuccessToast("Copied!", "Referral code copied to clipboard")
   }
 
   const handleShare = async () => {

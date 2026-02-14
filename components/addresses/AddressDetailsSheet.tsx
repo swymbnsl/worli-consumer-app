@@ -16,7 +16,8 @@ import React, {
   useRef,
   useState,
 } from "react"
-import { Alert, Text, TextInput, TouchableOpacity, View } from "react-native"
+import { Text, TextInput, TouchableOpacity, View } from "react-native"
+import { showErrorToast } from "@/components/ui/Toast"
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
@@ -119,7 +120,7 @@ const AddressDetailsSheet = forwardRef<
     if (!user?.id) return
 
     if (!line1.trim()) {
-      Alert.alert("Error", "Please enter the complete address")
+      showErrorToast("Error", "Please enter the complete address")
       return
     }
 
@@ -151,7 +152,7 @@ const AddressDetailsSheet = forwardRef<
       bottomSheetRef.current?.dismiss()
       onSaved()
     } catch (err: any) {
-      Alert.alert("Error", err.message || "Failed to save address")
+      showErrorToast("Error", err.message || "Failed to save address")
     } finally {
       setSaving(false)
     }

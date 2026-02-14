@@ -8,7 +8,6 @@ import { ArrowLeft, Crosshair, MapPin, Search, X } from "lucide-react-native"
 import React, { useCallback, useEffect, useRef, useState } from "react"
 import {
   ActivityIndicator,
-  Alert,
   FlatList,
   Keyboard,
   Platform,
@@ -17,6 +16,10 @@ import {
   TouchableOpacity,
   View,
 } from "react-native"
+import {
+  showErrorToast,
+  showSuccessToast,
+} from "@/components/ui/Toast"
 import MapView, { Marker, Region } from "react-native-maps"
 
 // ─── Default Region (Mumbai) ───────────────────────────────────────────────────
@@ -80,7 +83,7 @@ export default function AddAddressScreen() {
     try {
       const { status } = await Location.requestForegroundPermissionsAsync()
       if (status !== "granted") {
-        Alert.alert(
+        showErrorToast(
           "Permission Denied",
           "Please enable location access in settings to use this feature.",
         )
@@ -109,7 +112,7 @@ export default function AddAddressScreen() {
       await reverseGeocode(loc.coords.latitude, loc.coords.longitude)
     } catch (err) {
       console.error("Location error:", err)
-      Alert.alert(
+      showErrorToast(
         "Error",
         "Could not get your location. Please search manually.",
       )
@@ -270,9 +273,8 @@ export default function AddAddressScreen() {
   }
 
   const handleSaved = () => {
-    Alert.alert("Success", "Address saved successfully!", [
-      { text: "OK", onPress: () => router.back() },
-    ])
+    showSuccessToast("Success", "Address saved successfully!")
+    router.back()
   }
 
   // ─── Format search result for display ───────────────────────────────

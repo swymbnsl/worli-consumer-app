@@ -2,7 +2,8 @@ import { Address } from "@/types/database.types"
 import { formatFullDate } from "@/utils/dateUtils"
 import { MapPin, MoreVertical } from "lucide-react-native"
 import React, { useState } from "react"
-import { Alert, Modal, Text, TouchableOpacity, View } from "react-native"
+import { Modal, Text, TouchableOpacity, View } from "react-native"
+import { ConfirmModal } from "@/components/ui/Modal"
 
 interface AddressCardProps {
   address: Address
@@ -18,17 +19,11 @@ export default function AddressCard({
   onSetDefault,
 }: AddressCardProps) {
   const [showActions, setShowActions] = useState(false)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
 
   const handleDelete = () => {
     setShowActions(false)
-    Alert.alert(
-      "Delete Address",
-      "Are you sure you want to delete this address?",
-      [
-        { text: "Cancel", style: "cancel" },
-        { text: "Delete", style: "destructive", onPress: onDelete },
-      ],
-    )
+    setShowDeleteConfirm(true)
   }
 
   const handleSetDefault = () => {
@@ -157,6 +152,20 @@ export default function AddressCard({
           </View>
         </TouchableOpacity>
       </Modal>
+
+      {/* Delete Confirmation */}
+      <ConfirmModal
+        visible={showDeleteConfirm}
+        onClose={() => setShowDeleteConfirm(false)}
+        title="Delete Address"
+        description="Are you sure you want to delete this address?"
+        confirmText="Delete"
+        onConfirm={() => {
+          setShowDeleteConfirm(false)
+          onDelete()
+        }}
+        destructive
+      />
     </>
   )
 }

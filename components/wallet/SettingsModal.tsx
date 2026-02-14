@@ -4,13 +4,13 @@ import { useWallet } from "@/hooks/useWallet"
 import { Wallet } from "@/types/database.types"
 import React, { useEffect, useState } from "react"
 import {
-  Alert,
   Modal,
   Text,
   TextInput,
   TouchableOpacity,
   View,
 } from "react-native"
+import { showErrorToast, showSuccessToast } from "@/components/ui/Toast"
 
 interface SettingsModalProps {
   visible: boolean
@@ -48,12 +48,12 @@ export default function SettingsModal({
     const alertNum = parseInt(alertAmount)
 
     if (!thresholdNum || thresholdNum < 0) {
-      Alert.alert("Invalid Input", "Please enter a valid threshold amount")
+      showErrorToast("Invalid Input", "Please enter a valid threshold amount")
       return
     }
 
     if (!alertNum || alertNum < 0) {
-      Alert.alert("Invalid Input", "Please enter a valid alert amount")
+      showErrorToast("Invalid Input", "Please enter a valid alert amount")
       return
     }
 
@@ -66,13 +66,13 @@ export default function SettingsModal({
       })
 
       if (success) {
-        Alert.alert("Success", "Wallet settings updated successfully")
+        showSuccessToast("Success", "Wallet settings updated successfully")
         onClose()
       } else {
-        Alert.alert("Error", "Failed to update settings")
+        showErrorToast("Error", "Failed to update settings")
       }
     } catch (error) {
-      Alert.alert("Error", "An error occurred")
+      showErrorToast("Error", "An error occurred")
     } finally {
       setLoading(false)
     }

@@ -3,7 +3,12 @@ import { useWallet } from "@/hooks/useWallet"
 import { formatCurrency } from "@/utils/formatters"
 import { RefreshCw, Zap, ZapOff } from "lucide-react-native"
 import React, { useEffect, useState } from "react"
-import { Alert, Switch, Text, TouchableOpacity, View } from "react-native"
+import { Switch, Text, TouchableOpacity, View } from "react-native"
+import {
+  showErrorToast,
+  showSuccessToast,
+} from "@/components/ui/Toast"
+import { ConfirmModal } from "@/components/ui/Modal"
 
 export default function AutoPayCard() {
   const { wallet, setupAutoPay, cancelAutoPay } = useWallet()
@@ -12,6 +17,7 @@ export default function AutoPayCard() {
   const [triggerAmount, setTriggerAmount] = useState(500)
   const [loading, setLoading] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
+  const [showDisableModal, setShowDisableModal] = useState(false)
 
   const rechargeOptions = [1000, 2000, 3000, 5000]
   const triggerOptions = [200, 500, 1000, 1500]
@@ -35,34 +41,26 @@ export default function AutoPayCard() {
       setIsEnabled(true)
     } else {
       // Disable autopay
-      Alert.alert(
-        "Disable AutoPay",
-        "Are you sure you want to disable automatic wallet recharge?",
-        [
-          { text: "Cancel", style: "cancel" },
-          {
-            text: "Disable",
-            style: "destructive",
-            onPress: async () => {
-              setLoading(true)
-              const success = await cancelAutoPay()
-              if (success) {
-                setIsEnabled(false)
-                setIsEditing(false)
-              } else {
-                Alert.alert("Error", "Failed to disable AutoPay")
-              }
-              setLoading(false)
-            },
-          },
-        ],
-      )
+      setShowDisableModal(true)
     }
+  }
+
+  const handleConfirmDisable = async () => {
+    setShowDisableModal(false)
+    setLoading(true)
+    const success = await cancelAutoPay()
+    if (success) {
+      setIsEnabled(false)
+      setIsEditing(false)
+    } else {
+      showErrorToast("Error", "Failed to disable AutoPay")
+    }
+    setLoading(false)
   }
 
   const handleSave = async () => {
     if (triggerAmount >= rechargeAmount) {
-      Alert.alert(
+      showErrorToast(
         "Invalid Settings",
         "Trigger amount must be less than recharge amount",
       )
@@ -74,15 +72,15 @@ export default function AutoPayCard() {
       const success = await setupAutoPay(rechargeAmount, triggerAmount)
       if (success) {
         setIsEditing(false)
-        Alert.alert(
+        showSuccessToast(
           "AutoPay Enabled",
           `Your wallet will be automatically recharged with ${formatCurrency(rechargeAmount)} when balance falls below ${formatCurrency(triggerAmount)}.`,
         )
       } else {
-        Alert.alert("Error", "Failed to setup AutoPay. Please try again.")
+        showErrorToast("Error", "Failed to setup AutoPay. Please try again.")
       }
     } catch (error) {
-      Alert.alert("Error", "Something went wrong. Please try again.")
+      showErrorToast("Error", "Something went wrong. Please try again.")
     } finally {
       setLoading(false)
     }
@@ -247,6 +245,17 @@ export default function AutoPayCard() {
           runs low. Never miss a delivery!
         </Text>
       )}
+
+      {/* Disable Confirmation */}
+      <ConfirmModal
+        visible={showDisableModal}
+        onClose={() => setShowDisableModal(false)}
+        title="Disable AutoPay"
+        description="Are you sure you want to disable automatic wallet recharge?"
+        confirmText="Disable"
+        onConfirm={handleConfirmDisable}
+        destructive
+      />
     </View>
   )
 }

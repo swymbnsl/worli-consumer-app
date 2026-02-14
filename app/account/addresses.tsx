@@ -11,7 +11,11 @@ import {
 import { Address } from "@/types/database.types"
 import { useRouter } from "expo-router"
 import React, { useEffect, useState } from "react"
-import { Alert, RefreshControl, ScrollView, Text, View } from "react-native"
+import { RefreshControl, ScrollView, Text, View } from "react-native"
+import {
+  showErrorToast,
+  showSuccessToast,
+} from "@/components/ui/Toast"
 
 export default function AddressesScreen() {
   const { user } = useAuth()
@@ -57,11 +61,11 @@ export default function AddressesScreen() {
   const handleDeleteAddress = async (addressId: string) => {
     try {
       await deleteAddr(addressId)
-      Alert.alert("Success", "Address deleted successfully")
+      showSuccessToast("Success", "Address deleted successfully")
       fetchAddresses()
     } catch (error) {
       console.error("Error deleting address:", error)
-      Alert.alert("Error", "Failed to delete address")
+      showErrorToast("Error", "Failed to delete address")
     }
   }
 
@@ -73,7 +77,7 @@ export default function AddressesScreen() {
       fetchAddresses()
     } catch (error) {
       console.error("Error setting default:", error)
-      Alert.alert("Error", "Failed to set default address")
+      showErrorToast("Error", "Failed to set default address")
     }
   }
 
