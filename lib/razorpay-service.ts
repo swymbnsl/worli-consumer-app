@@ -68,13 +68,7 @@ export const createRazorpayOrder = async (
     "create-razorpay-order",
     {
       body: {
-        amount: Math.round(amount * 100), // Convert to paise
-        currency: "INR",
-        receipt: `wallet_${userId}_${Date.now()}`,
-        notes: {
-          user_id: userId,
-          purpose: "wallet_recharge",
-        },
+        amount, // in rupees – edge function handles paise conversion
       },
     },
   )
@@ -96,7 +90,7 @@ export const openRazorpayCheckout = async (
     key: RAZORPAY_KEY_ID,
     amount: Math.round(options.amount * 100).toString(), // Amount in paise
     currency: options.currency || "INR",
-    name: options.name || "Duddu",
+    name: options.name || "Worli Dairy App",
     description: options.description || "Wallet Recharge",
     order_id: options.orderId,
     prefill: {
@@ -146,21 +140,15 @@ export const verifyPayment = async (
 // Setup AutoPay Mandate via Supabase Edge Function
 // ─────────────────────────────────────────
 export const setupAutoPayMandate = async (
-  userId: string,
-  maxAmount: number,
-  customerDetails: {
-    name: string
-    email: string
-    contact: string
-  },
+  rechargeAmount: number,
+  triggerAmount: number,
 ): Promise<AutoPayMandateResponse> => {
   const { data, error } = await supabase.functions.invoke(
     "setup-razorpay-autopay",
     {
       body: {
-        user_id: userId,
-        max_amount: Math.round(maxAmount * 100), // paise
-        customer: customerDetails,
+        recharge_amount: rechargeAmount, // in rupees
+        trigger_amount: triggerAmount, // in rupees
       },
     },
   )
@@ -169,21 +157,21 @@ export const setupAutoPayMandate = async (
     throw new Error(`Failed to setup autopay: ${error.message}`)
   }
 
+  if (!data?.success) {
+    throw new Error(data?.error || "Failed to setup autopay")
+  }
+
   return data
 }
 
 // ─────────────────────────────────────────
 // Cancel AutoPay Mandate
 // ─────────────────────────────────────────
-export const cancelAutoPayMandate = async (
-  subscriptionId: string,
-): Promise<boolean> => {
+export const cancelAutoPayMandate = async (): Promise<boolean> => {
   const { data, error } = await supabase.functions.invoke(
     "cancel-razorpay-autopay",
     {
-      body: {
-        subscription_id: subscriptionId,
-      },
+      body: {},
     },
   )
 

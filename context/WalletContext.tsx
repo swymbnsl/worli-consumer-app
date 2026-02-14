@@ -1,6 +1,8 @@
 import {
+  cancelAutoPayMandate,
   initiateWalletRecharge,
   RazorpayPaymentResult,
+  setupAutoPayMandate,
 } from "@/lib/razorpay-service"
 import { supabase } from "@/lib/supabase"
 import { useUserStore } from "@/stores/user-store"
@@ -240,7 +242,7 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({
   }
 
   // ─────────────────────────────────────────
-  // AutoPay Setup
+  // AutoPay Setup (via Edge Function → Razorpay)
   // ─────────────────────────────────────────
   const setupAutoPay = async (
     rechargeAmount: number,
@@ -249,18 +251,10 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({
     if (!user) return false
 
     try {
-      // Save autopay settings to wallet
-      const { error } = await supabase
-        .from("wallets")
-        .update({
-          auto_recharge_enabled: true,
-          auto_recharge_amount: rechargeAmount,
-          auto_recharge_trigger_amount: triggerAmount,
-        })
-        .eq("user_id", user.id)
+      // Call edge function which creates Razorpay customer, plan & subscription
+      await setupAutoPayMandate(rechargeAmount, triggerAmount)
 
-      if (error) throw error
-
+      // Edge function already updates the wallet DB, just refresh local state
       await fetchWallet()
       return true
     } catch (error) {
@@ -270,23 +264,20 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({
   }
 
   // ─────────────────────────────────────────
-  // Cancel AutoPay
+  // Cancel AutoPay (via Edge Function → Razorpay)
   // ─────────────────────────────────────────
   const cancelAutoPay = async (): Promise<boolean> => {
     if (!user) return false
 
     try {
-      const { error } = await supabase
-        .from("wallets")
-        .update({
-          auto_recharge_enabled: false,
-          auto_recharge_amount: null,
-          auto_recharge_trigger_amount: null,
-        })
-        .eq("user_id", user.id)
+      // Call edge function which cancels Razorpay subscription and clears DB
+      const cancelled = await cancelAutoPayMandate()
 
-      if (error) throw error
+      if (!cancelled) {
+        throw new Error("Failed to cancel autopay")
+      }
 
+      // Edge function already clears wallet DB, just refresh local state
       await fetchWallet()
       return true
     } catch (error) {
