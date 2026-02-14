@@ -161,10 +161,11 @@ export default function SubscriptionScreen() {
         }
       >
         {/* Active Subscriptions */}
-        {subscriptions.map((subscription) => (
+        {subscriptions.map((subscription, idx) => (
           <SubscriptionCard
             key={subscription.id}
             subscription={subscription}
+            index={idx}
             onEdit={() => handleEditSubscription(subscription)}
             onPause={() => handlePauseSubscription(subscription)}
             onCancel={() => handleCancelSubscription(subscription)}

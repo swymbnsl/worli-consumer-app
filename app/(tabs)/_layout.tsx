@@ -3,7 +3,82 @@ import { useAuth } from "@/hooks/useAuth"
 import { Redirect, Tabs } from "expo-router"
 import { Home, Package, ShoppingCart, User, Wallet } from "lucide-react-native"
 import { ActivityIndicator, Platform, Text, View } from "react-native"
+import Animated, {
+  FadeIn,
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+} from "react-native-reanimated"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
+import { useEffect } from "react"
+
+function TabIcon({
+  icon: Icon,
+  label,
+  focused,
+  color,
+}: {
+  icon: any
+  label: string
+  focused: boolean
+  color: string
+}) {
+  const scale = useSharedValue(1)
+
+  useEffect(() => {
+    if (focused) {
+      scale.value = withSpring(1.08, { damping: 12, stiffness: 200 })
+    } else {
+      scale.value = withSpring(1, { damping: 12, stiffness: 200 })
+    }
+  }, [focused])
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }))
+
+  return (
+    <Animated.View
+      style={[
+        {
+          alignItems: "center",
+          justifyContent: "center",
+          paddingTop: 4,
+          width: 56,
+        },
+        animatedStyle,
+      ]}
+    >
+      <View
+        style={{
+          width: 40,
+          height: 40,
+          borderRadius: 12,
+          backgroundColor: focused ? COLORS.primary.navy : "transparent",
+          alignItems: "center",
+          justifyContent: "center",
+          marginBottom: 2,
+        }}
+      >
+        <Icon
+          size={20}
+          color={focused ? COLORS.neutral.white : COLORS.neutral.gray}
+          strokeWidth={focused ? 2.2 : 1.8}
+        />
+      </View>
+      <Text
+        style={{
+          fontSize: 10,
+          fontFamily: focused ? "Sofia-Pro-Bold" : "Comfortaa-Regular",
+          color: focused ? COLORS.primary.navy : COLORS.neutral.gray,
+          letterSpacing: 0.2,
+        }}
+      >
+        {label}
+      </Text>
+    </Animated.View>
+  )
+}
 
 export default function TabsLayout() {
   const { isLoggedIn, loading, isProfileComplete } = useAuth()
@@ -43,64 +118,24 @@ export default function TabsLayout() {
         headerShown: false,
         tabBarShowLabel: false,
         tabBarStyle: {
-          backgroundColor: COLORS.neutral.white,
-          borderTopWidth: 1,
-          borderTopColor: COLORS.border,
+          backgroundColor: COLORS.neutral.lightCream,
+          borderTopWidth: 0,
           paddingBottom: bottomPad,
-          paddingTop: 12,
-          height: Platform.OS === "ios" ? 86 : 70,
-          shadowColor: COLORS.neutral.black,
-          shadowOffset: { width: 0, height: -4 },
-          shadowOpacity: 0.06,
-          shadowRadius: 12,
-          elevation: 8,
+          paddingTop: 8,
+          height: Platform.OS === "ios" ? 82 : 68,
+          elevation: 0,
+          shadowOpacity: 0,
         },
         tabBarActiveTintColor: COLORS.primary.navy,
         tabBarInactiveTintColor: COLORS.neutral.gray,
-        tabBarLabelStyle: {
-          fontSize: 11,
-          fontFamily: "Comfortaa-Regular",
-          fontWeight: "500",
-          letterSpacing: 0.2,
-          marginTop: 2,
-        },
-        tabBarIconStyle: {
-          marginTop: 4,
-        },
       }}
     >
       <Tabs.Screen
         name="home"
         options={{
           title: "Home",
-          tabBarIcon: ({ color, size, focused }) => (
-            <View
-              style={{
-                width: 56,
-                height: 56,
-                borderRadius: 16,
-                backgroundColor: focused ? COLORS.primary.cream : "transparent",
-                alignItems: "center",
-                justifyContent: "center",
-                marginTop: 2,
-              }}
-            >
-              <View style={{ alignItems: "center" }}>
-                <Home size={24} color={color} />
-                <Text
-                  style={{
-                    fontSize: 11,
-                    fontFamily: "Comfortaa-Regular",
-                    fontWeight: "500",
-                    letterSpacing: 0.2,
-                    marginTop: 2,
-                    color: focused ? COLORS.primary.navy : COLORS.neutral.gray,
-                  }}
-                >
-                  Home
-                </Text>
-              </View>
-            </View>
+          tabBarIcon: ({ color, focused }) => (
+            <TabIcon icon={Home} label="Home" focused={focused} color={color} />
           ),
         }}
       />
@@ -108,34 +143,13 @@ export default function TabsLayout() {
         name="subscription"
         options={{
           title: "Plan",
-          tabBarIcon: ({ color, size, focused }) => (
-            <View
-              style={{
-                width: 56,
-                height: 56,
-                borderRadius: 16,
-                backgroundColor: focused ? COLORS.primary.cream : "transparent",
-                alignItems: "center",
-                justifyContent: "center",
-                marginTop: 2,
-              }}
-            >
-              <View style={{ alignItems: "center" }}>
-                <Package size={24} color={color} />
-                <Text
-                  style={{
-                    fontSize: 11,
-                    fontFamily: "Comfortaa-Regular",
-                    fontWeight: "500",
-                    letterSpacing: 0.2,
-                    marginTop: 2,
-                    color: focused ? COLORS.primary.navy : COLORS.neutral.gray,
-                  }}
-                >
-                  Plan
-                </Text>
-              </View>
-            </View>
+          tabBarIcon: ({ color, focused }) => (
+            <TabIcon
+              icon={Package}
+              label="Plan"
+              focused={focused}
+              color={color}
+            />
           ),
         }}
       />
@@ -143,34 +157,13 @@ export default function TabsLayout() {
         name="wallet"
         options={{
           title: "Wallet",
-          tabBarIcon: ({ color, size, focused }) => (
-            <View
-              style={{
-                width: 56,
-                height: 56,
-                borderRadius: 16,
-                backgroundColor: focused ? COLORS.primary.cream : "transparent",
-                alignItems: "center",
-                justifyContent: "center",
-                marginTop: 2,
-              }}
-            >
-              <View style={{ alignItems: "center" }}>
-                <Wallet size={24} color={color} />
-                <Text
-                  style={{
-                    fontSize: 11,
-                    fontFamily: "Comfortaa-Regular",
-                    fontWeight: "500",
-                    letterSpacing: 0.2,
-                    marginTop: 2,
-                    color: focused ? COLORS.primary.navy : COLORS.neutral.gray,
-                  }}
-                >
-                  Wallet
-                </Text>
-              </View>
-            </View>
+          tabBarIcon: ({ color, focused }) => (
+            <TabIcon
+              icon={Wallet}
+              label="Wallet"
+              focused={focused}
+              color={color}
+            />
           ),
         }}
       />
@@ -178,34 +171,13 @@ export default function TabsLayout() {
         name="orders"
         options={{
           title: "Orders",
-          tabBarIcon: ({ color, size, focused }) => (
-            <View
-              style={{
-                width: 56,
-                height: 56,
-                borderRadius: 16,
-                backgroundColor: focused ? COLORS.primary.cream : "transparent",
-                alignItems: "center",
-                justifyContent: "center",
-                marginTop: 2,
-              }}
-            >
-              <View style={{ alignItems: "center" }}>
-                <ShoppingCart size={24} color={color} />
-                <Text
-                  style={{
-                    fontSize: 11,
-                    fontFamily: "Comfortaa-Regular",
-                    fontWeight: "500",
-                    letterSpacing: 0.2,
-                    marginTop: 2,
-                    color: focused ? COLORS.primary.navy : COLORS.neutral.gray,
-                  }}
-                >
-                  Orders
-                </Text>
-              </View>
-            </View>
+          tabBarIcon: ({ color, focused }) => (
+            <TabIcon
+              icon={ShoppingCart}
+              label="Orders"
+              focused={focused}
+              color={color}
+            />
           ),
         }}
       />
@@ -213,34 +185,13 @@ export default function TabsLayout() {
         name="account"
         options={{
           title: "Account",
-          tabBarIcon: ({ color, size, focused }) => (
-            <View
-              style={{
-                width: 56,
-                height: 56,
-                borderRadius: 16,
-                backgroundColor: focused ? COLORS.primary.cream : "transparent",
-                alignItems: "center",
-                justifyContent: "center",
-                marginTop: 2,
-              }}
-            >
-              <View style={{ alignItems: "center" }}>
-                <User size={24} color={color} />
-                <Text
-                  style={{
-                    fontSize: 11,
-                    fontFamily: "Comfortaa-Regular",
-                    fontWeight: "500",
-                    letterSpacing: 0.2,
-                    marginTop: 2,
-                    color: focused ? COLORS.primary.navy : COLORS.neutral.gray,
-                  }}
-                >
-                  Account
-                </Text>
-              </View>
-            </View>
+          tabBarIcon: ({ color, focused }) => (
+            <TabIcon
+              icon={User}
+              label="Account"
+              focused={focused}
+              color={color}
+            />
           ),
         }}
       />

@@ -171,17 +171,17 @@ export default function HomeScreen() {
         </View>
 
         {/* Today's Delivery Status Card */}
-        <View className="px-4 mb-5">
+        <Animated.View entering={FadeInDown.duration(400).delay(200)} className="px-4 mb-5">
           <TodayDeliveryCard
             selectedDate={selectedDate}
             order={selectedDateOrder}
           />
-        </View>
+        </Animated.View>
 
         {/* Promotional Banners Carousel */}
-        <View className="mb-6">
+        <Animated.View entering={FadeInDown.duration(400).delay(250)} className="mb-6">
           <PromoBanner offers={offers} onPressOffer={handleOfferPress} />
-        </View>
+        </Animated.View>
 
         <View className="px-4">
           <Animated.View entering={FadeInDown.duration(400).delay(300)}>

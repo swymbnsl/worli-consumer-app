@@ -4,13 +4,15 @@ import { formatFullDate } from "@/utils/dateUtils"
 import { formatCurrency } from "@/utils/formatters"
 import React, { useEffect, useState } from "react"
 import { Text, TouchableOpacity, View } from "react-native"
+import Animated, { FadeInUp } from "react-native-reanimated"
 
 interface OrderCardProps {
   order: Order
   onPress: () => void
+  index?: number
 }
 
-export default function OrderCard({ order, onPress }: OrderCardProps) {
+export default function OrderCard({ order, onPress, index = 0 }: OrderCardProps) {
   const [productName, setProductName] = useState<string>("Order")
 
   useEffect(() => {
@@ -46,6 +48,7 @@ export default function OrderCard({ order, onPress }: OrderCardProps) {
   const statusClasses = getStatusClasses()
 
   return (
+    <Animated.View entering={FadeInUp.duration(350).delay(index * 60).springify().damping(18)}>
     <TouchableOpacity
       className="bg-white rounded-2xl p-5 mb-4 shadow-md"
       onPress={onPress}
@@ -79,5 +82,6 @@ export default function OrderCard({ order, onPress }: OrderCardProps) {
         </Text>
       </View>
     </TouchableOpacity>
+    </Animated.View>
   )
 }

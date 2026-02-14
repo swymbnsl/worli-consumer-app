@@ -31,6 +31,7 @@ import {
   showSuccessToast,
 } from "@/components/ui/Toast"
 import { ConfirmModal } from "@/components/ui/Modal"
+import Animated, { FadeInUp } from "react-native-reanimated"
 
 // ─── Component ─────────────────────────────────────────────────────────────────
 
@@ -210,14 +211,15 @@ export default function CartScreen() {
             </Text>
 
             {/* Items */}
-            {items.map((item) => (
-              <CartItemCard
-                key={item.id}
-                item={item}
-                onEdit={handleEdit}
-                onRemove={removeItem}
-                onQuantityChange={handleQtyChange}
-              />
+            {items.map((item, idx) => (
+              <Animated.View key={item.id} entering={FadeInUp.duration(350).delay(idx * 60).springify().damping(18)}>
+                <CartItemCard
+                  item={item}
+                  onEdit={handleEdit}
+                  onRemove={removeItem}
+                  onQuantityChange={handleQtyChange}
+                />
+              </Animated.View>
             ))}
 
             {/* Subscriptions Total */}

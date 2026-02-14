@@ -10,6 +10,7 @@ import { formatFullDate } from "@/utils/dateUtils"
 import { useRouter } from "expo-router"
 import React, { useEffect, useState } from "react"
 import { RefreshControl, ScrollView, Text, View } from "react-native"
+import Animated, { FadeInUp } from "react-native-reanimated"
 
 export default function OrdersScreen() {
   const router = useRouter()
@@ -67,24 +68,27 @@ export default function OrdersScreen() {
           />
         }
       >
-        <FullCalendar
-          orders={orders}
-          selectedDate={selectedDate}
-          onDateSelect={setSelectedDate}
-        />
+        <Animated.View entering={FadeInUp.duration(400).springify().damping(18)}>
+          <FullCalendar
+            orders={orders}
+            selectedDate={selectedDate}
+            onDateSelect={setSelectedDate}
+          />
+        </Animated.View>
 
-        <View className="mb-6">
+        <Animated.View entering={FadeInUp.duration(400).delay(100).springify().damping(18)} className="mb-6">
           <Text className="font-sofia-bold text-xl text-primary-navy text-center mb-6">
             {formatFullDate(selectedDate)}
           </Text>
 
           {selectedOrders.length > 0 ? (
             <View>
-              {selectedOrders.map((order) => (
+              {selectedOrders.map((order, idx) => (
                 <OrderCard
                   key={order.id}
                   order={order}
                   onPress={() => handleOrderPress(order.id)}
+                  index={idx}
                 />
               ))}
             </View>
@@ -101,7 +105,7 @@ export default function OrdersScreen() {
               />
             </View>
           )}
-        </View>
+        </Animated.View>
       </ScrollView>
 
       {/* WhatsApp Button could go here absolutely positioned if needed */}

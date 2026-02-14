@@ -8,6 +8,7 @@ import { COLORS } from "@/constants/theme"
 import { useWallet } from "@/hooks/useWallet"
 import React, { useState } from "react"
 import { RefreshControl, ScrollView, Text, View } from "react-native"
+import Animated, { FadeInUp } from "react-native-reanimated"
 
 export default function WalletScreen() {
   const { wallet, transactions, loading, refreshWallet } = useWallet()
@@ -39,16 +40,24 @@ export default function WalletScreen() {
         <WalletBalanceCard balance={wallet?.balance || 0} />
 
         {/* Recharge Section - Razorpay Integrated */}
-        <RechargeModal />
+        <Animated.View entering={FadeInUp.duration(400).delay(80).springify().damping(18)}>
+          <RechargeModal />
+        </Animated.View>
 
         {/* AutoPay Settings */}
-        <AutoPayCard />
+        <Animated.View entering={FadeInUp.duration(400).delay(160).springify().damping(18)}>
+          <AutoPayCard />
+        </Animated.View>
 
         {/* Low Balance Notification Settings */}
-        <LowBalanceNotification />
+        <Animated.View entering={FadeInUp.duration(400).delay(240).springify().damping(18)}>
+          <LowBalanceNotification />
+        </Animated.View>
 
         {/* Transaction List */}
-        <TransactionList transactions={transactions} />
+        <Animated.View entering={FadeInUp.duration(400).delay(320).springify().damping(18)}>
+          <TransactionList transactions={transactions} />
+        </Animated.View>
       </ScrollView>
     </View>
   )

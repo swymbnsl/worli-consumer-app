@@ -2,6 +2,7 @@ import { formatCurrency } from '@/utils/formatters';
 import { Wallet2 } from 'lucide-react-native';
 import React from 'react';
 import { Text, View } from 'react-native';
+import Animated, { FadeInUp } from 'react-native-reanimated';
 
 interface WalletBalanceCardProps {
   balance: number;
@@ -9,7 +10,7 @@ interface WalletBalanceCardProps {
 
 export default function WalletBalanceCard({ balance }: WalletBalanceCardProps) {
   return (
-    <View className="mx-4 mb-6 mt-6">
+    <Animated.View entering={FadeInUp.duration(400).springify().damping(18)} className="mx-4 mb-6 mt-6">
       <View className="bg-primary-navy rounded-2xl p-8 relative overflow-hidden shadow-lg">
         {/* Background decorations matching app style */}
         <View className="absolute -top-10 -right-10 w-36 h-36 rounded-full bg-primary-cream opacity-10" />
@@ -27,6 +28,6 @@ export default function WalletBalanceCard({ balance }: WalletBalanceCardProps) {
           {formatCurrency(balance)}
         </Text>
       </View>
-    </View>
+    </Animated.View>
   );
 }

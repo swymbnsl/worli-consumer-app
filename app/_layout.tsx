@@ -47,7 +47,7 @@ export default function RootLayout() {
             <WalletProvider>
               <CartProvider>
                 <BottomSheetModalProvider>
-                  <Stack screenOptions={{ headerShown: false }}>
+                  <Stack screenOptions={{ headerShown: false, animation: "fade" }}>
                     <Stack.Screen
                       name="index"
                       options={{ headerShown: false }}
