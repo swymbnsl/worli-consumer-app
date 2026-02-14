@@ -1,6 +1,7 @@
 import FullCalendar from "@/components/orders/FullCalendar"
 import OrderCard from "@/components/orders/OrderCard"
 import Button from "@/components/ui/Button"
+import PageHeader from "@/components/ui/PageHeader"
 import { COLORS } from "@/constants/theme"
 import { useAuth } from "@/hooks/useAuth"
 import { fetchAllOrders } from "@/lib/supabase-service"
@@ -52,10 +53,7 @@ export default function OrdersScreen() {
 
   return (
     <View className="flex-1 bg-neutral-lightCream">
-      {/* Page Title */}
-      <View className="bg-primary-navy px-5 pt-14 pb-5">
-        <Text className="font-sofia-bold text-2xl text-white">My Orders</Text>
-      </View>
+      <PageHeader title="My Orders" showBackButton={false} />
 
       <ScrollView
         className="flex-1 px-4 pt-4"

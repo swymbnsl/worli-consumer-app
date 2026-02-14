@@ -110,7 +110,7 @@ export default function ProductScreen() {
   return (
     <View className="flex-1 bg-neutral-lightCream">
       {/* Header */}
-      <PageHeader title={product.name} subtitle="PRODUCT DETAILS" />
+      <PageHeader title={product.name} />
 
       <ScrollView
         className="flex-1"

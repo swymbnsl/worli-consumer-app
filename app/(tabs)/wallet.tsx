@@ -3,6 +3,7 @@ import LowBalanceNotification from "@/components/wallet/LowBalanceNotification"
 import RechargeModal from "@/components/wallet/RechargeModal"
 import TransactionList from "@/components/wallet/TransactionList"
 import WalletBalanceCard from "@/components/wallet/WalletBalanceCard"
+import PageHeader from "@/components/ui/PageHeader"
 import { COLORS } from "@/constants/theme"
 import { useWallet } from "@/hooks/useWallet"
 import React, { useState } from "react"
@@ -20,10 +21,7 @@ export default function WalletScreen() {
 
   return (
     <View className="flex-1 bg-neutral-lightCream">
-      {/* Page Title */}
-      <View className="bg-primary-navy px-5 pt-14 pb-5">
-        <Text className="font-sofia-bold text-2xl text-white">My Wallet</Text>
-      </View>
+      <PageHeader title="My Wallet" showBackButton={false} />
 
       <ScrollView
         className="flex-1"

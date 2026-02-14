@@ -2,6 +2,7 @@ import EditModal from "@/components/subscription/EditModal"
 import PauseModal from "@/components/subscription/PauseModal"
 import SubscriptionCard from "@/components/subscription/SubscriptionCard"
 import Button from "@/components/ui/Button"
+import PageHeader from "@/components/ui/PageHeader"
 import { COLORS } from "@/constants/theme"
 import { useAuth } from "@/hooks/useAuth"
 import {
@@ -94,13 +95,8 @@ export default function SubscriptionScreen() {
 
   if (subscriptions.length === 0 && !loading) {
     return (
-      <View className="flex-1 bg-white">
-        {/* Page Title */}
-        <View className="bg-primary-navy px-5 pt-14 pb-5">
-          <Text className="font-sofia-bold text-2xl text-white">
-            My Subscriptions
-          </Text>
-        </View>
+      <View className="flex-1 bg-neutral-lightCream">
+        <PageHeader title="My Subscriptions" showBackButton={false} />
 
         {/* Empty State */}
         <View className="flex-1 justify-center items-center px-8">
@@ -136,19 +132,20 @@ export default function SubscriptionScreen() {
   }
 
   return (
-    <View className="flex-1 bg-white">
-      {/* Page Title */}
-      <View className="bg-primary-navy px-5 pt-14 pb-5">
-        <Text className="font-sofia-bold text-2xl text-white">
-          My Subscriptions
-        </Text>
-        {subscriptions.length > 0 && (
-          <Text className="font-comfortaa text-sm text-primary-cream mt-1">
-            {subscriptions.length} active{" "}
-            {subscriptions.length === 1 ? "subscription" : "subscriptions"}
-          </Text>
-        )}
-      </View>
+    <View className="flex-1 bg-neutral-lightCream">
+      <PageHeader
+        title="My Subscriptions"
+        showBackButton={false}
+        rightComponent={
+          subscriptions.length > 0 ? (
+            <View className="bg-functional-success/10 px-3 py-1.5 rounded-full">
+              <Text className="font-sofia-bold text-xs text-functional-success">
+                {subscriptions.length}
+              </Text>
+            </View>
+          ) : undefined
+        }
+      />
 
       <ScrollView
         className="flex-1"

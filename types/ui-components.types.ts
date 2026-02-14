@@ -23,13 +23,10 @@ export interface CustomTextInputProps extends TextInputProps {
 // PageHeader Component Types
 export interface PageHeaderProps {
   title: string
-  subtitle?: string
   showBackButton?: boolean
   disabled?: boolean
   onBackPress?: () => void
   rightComponent?: React.ReactNode
-  backgroundColor?: string
-  animationDelay?: number
 }
 
 // InfoCard Component Types
