@@ -1,9 +1,9 @@
+import { ConfirmModal } from "@/components/ui/Modal"
 import { Address } from "@/types/database.types"
 import { formatFullDate } from "@/utils/dateUtils"
-import { MapPin, MoreVertical } from "lucide-react-native"
+import { Check, Edit3, MapPin, MoreVertical, Trash2 } from "lucide-react-native"
 import React, { useState } from "react"
 import { Modal, Text, TouchableOpacity, View } from "react-native"
-import { ConfirmModal } from "@/components/ui/Modal"
 
 interface AddressCardProps {
   address: Address
@@ -109,7 +109,7 @@ export default function AddressCard({
                 className="flex-row items-center py-4 border-b border-neutral-lightGray active:opacity-70"
               >
                 <View className="w-10 h-10 rounded-full bg-secondary-sage/10 items-center justify-center mr-3">
-                  <Text className="text-lg">✓</Text>
+                  <Check size={20} color="#638C5F" strokeWidth={2.5} />
                 </View>
                 <Text className="font-comfortaa text-base text-primary-navy flex-1">
                   Set as Default
@@ -122,7 +122,7 @@ export default function AddressCard({
               className="flex-row items-center py-4 border-b border-neutral-lightGray active:opacity-70"
             >
               <View className="w-10 h-10 rounded-full bg-secondary-skyBlue/20 items-center justify-center mr-3">
-                <Text className="text-lg">✏️</Text>
+                <Edit3 size={20} color="#101B53" strokeWidth={2} />
               </View>
               <Text className="font-comfortaa text-base text-primary-navy flex-1">
                 Edit Address
@@ -134,7 +134,7 @@ export default function AddressCard({
               className="flex-row items-center py-4 active:opacity-70"
             >
               <View className="w-10 h-10 rounded-full bg-functional-error/10 items-center justify-center mr-3">
-                <Text className="text-lg">🗑️</Text>
+                <Trash2 size={20} color="#EF6600" strokeWidth={2} />
               </View>
               <Text className="font-comfortaa text-base text-functional-error flex-1">
                 Delete Address

@@ -98,7 +98,7 @@ export default function ProductScreen() {
           <Button
             title="Go Back"
             onPress={() => router.back()}
-            variant="primary"
+            variant="navy"
             size="medium"
             fullWidth={false}
           />
@@ -142,7 +142,7 @@ export default function ProductScreen() {
               {product.volume}
             </Text>
           )}
-          <Text className="text-2xl font-sofia-bold text-primary-orange mb-7">
+          <Text className="text-2xl font-sofia-bold text-primary-navy mb-7">
             {formatCurrency(product.price)}
           </Text>
 
@@ -223,7 +223,7 @@ export default function ProductScreen() {
           <Button
             title="Subscribe"
             onPress={() => subscriptionSheetRef.current?.open(product)}
-            variant="primary"
+            variant="navy"
             size="large"
           />
         </View>

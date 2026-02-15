@@ -1,15 +1,15 @@
 import SubscriptionBottomSheet, {
-  SubscriptionBottomSheetRef,
+    SubscriptionBottomSheetRef,
 } from "@/components/cart/SubscriptionBottomSheet"
+import {
+    showErrorToast,
+    showSuccessToast,
+} from "@/components/ui/Toast"
 import { CartItem } from "@/context/CartContext"
 import { supabase } from "@/lib/supabase"
 import { Subscription } from "@/types/database.types"
 import React, { useEffect, useRef } from "react"
 import { View } from "react-native"
-import {
-  showErrorToast,
-  showSuccessToast,
-} from "@/components/ui/Toast"
 
 interface EditModalProps {
   visible: boolean
@@ -86,6 +86,7 @@ export default function EditModal({
                 start_date: updatedItem.startDate,
                 interval_days: updatedItem.intervalDays || null,
                 custom_quantities: updatedItem.customQuantities || null,
+                delivery_time: updatedItem.preferredDeliveryTime || null,
               })
               .eq("id", subscription.id)
 

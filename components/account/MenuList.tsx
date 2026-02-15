@@ -13,6 +13,7 @@ interface MenuItem {
   iconBg?: string
   route?: string
   action?: () => void
+  onPress?: () => void
   isDanger?: boolean
 }
 
@@ -26,17 +27,19 @@ export default function MenuSection({ title, items, index = 0 }: MenuSectionProp
   const router = useRouter()
 
   const handlePress = (item: MenuItem) => {
-    if (item.action) {
-      item.action()
+    if (item.onPress) {
+      item.onPress();
+    } else if (item.action) {
+      item.action();
     } else if (item.route) {
       // @ts-ignore
-      router.push(item.route)
+      router.push(item.route);
     }
   }
 
   return (
     <Animated.View
-      entering={FadeInUp.duration(400).delay(index * 60).springify().damping(18)}
+      entering={FadeInUp.duration(500).delay(index * 60)}
       className="mx-4 mb-4"
     >
       {title && (

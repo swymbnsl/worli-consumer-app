@@ -188,7 +188,6 @@ export type Database = {
           hand_delivery: boolean | null
           id: string
           leave_at_door: boolean | null
-          preference_type: string | null
           preferred_delivery_time: string | null
           ring_doorbell: boolean | null
           special_instructions: string | null
@@ -200,7 +199,6 @@ export type Database = {
           hand_delivery?: boolean | null
           id?: string
           leave_at_door?: boolean | null
-          preference_type?: string | null
           preferred_delivery_time?: string | null
           ring_doorbell?: boolean | null
           special_instructions?: string | null
@@ -212,7 +210,6 @@ export type Database = {
           hand_delivery?: boolean | null
           id?: string
           leave_at_door?: boolean | null
-          preference_type?: string | null
           preferred_delivery_time?: string | null
           ring_doorbell?: boolean | null
           special_instructions?: string | null

@@ -1,5 +1,9 @@
 import Button from "@/components/ui/Button"
 import TextInput from "@/components/ui/TextInput"
+import {
+    showErrorToast,
+    showSuccessToast,
+} from "@/components/ui/Toast"
 import { COLORS } from "@/constants/theme"
 import { useAuth } from "@/hooks/useAuth"
 import { useRouter } from "expo-router"
@@ -7,10 +11,6 @@ import { Camera, Mail, Phone, User } from "lucide-react-native"
 import React, { useState } from "react"
 import { KeyboardAvoidingView, Platform, ScrollView, Text, TouchableOpacity, View } from "react-native"
 import Animated, { FadeInUp } from "react-native-reanimated"
-import {
-  showErrorToast,
-  showSuccessToast,
-} from "@/components/ui/Toast"
 
 export default function ProfileScreen() {
   const router = useRouter()
@@ -65,7 +65,7 @@ export default function ProfileScreen() {
         >
           {/* Avatar Section */}
           <Animated.View
-            entering={FadeInUp.duration(400).springify().damping(18)}
+            entering={FadeInUp.duration(500)}
             className="items-center pt-6 pb-2"
           >
             <View className="relative">
@@ -101,7 +101,7 @@ export default function ProfileScreen() {
 
           {/* Form */}
           <Animated.View
-            entering={FadeInUp.duration(400).delay(100).springify().damping(18)}
+            entering={FadeInUp.duration(500).delay(100)}
             className="mx-5 mt-6"
           >
             <Text className="font-sofia-bold text-xs text-neutral-gray uppercase tracking-wider mb-3 ml-1">
@@ -148,7 +148,7 @@ export default function ProfileScreen() {
 
           {/* Save Button */}
           <Animated.View
-            entering={FadeInUp.duration(400).delay(200).springify().damping(18)}
+            entering={FadeInUp.duration(500).delay(200)}
             className="mx-5 mt-8"
           >
             <Button

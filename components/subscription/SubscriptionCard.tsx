@@ -4,19 +4,19 @@ import { Product, Subscription } from "@/types/database.types"
 import { formatDate } from "@/utils/dateUtils"
 import { formatCurrency } from "@/utils/formatters"
 import {
-  Calendar,
-  Edit3,
-  PauseCircle,
-  Repeat,
-  Trash2,
+    Calendar,
+    Edit3,
+    PauseCircle,
+    Repeat,
+    Trash2,
 } from "lucide-react-native"
 import React, { useEffect, useState } from "react"
 import {
-  ActivityIndicator,
-  Image,
-  Text,
-  TouchableOpacity,
-  View,
+    ActivityIndicator,
+    Image,
+    Text,
+    TouchableOpacity,
+    View,
 } from "react-native"
 import Animated, { FadeInUp } from "react-native-reanimated"
 
@@ -81,10 +81,8 @@ export default function SubscriptionCard({
 
   return (
     <Animated.View
-      entering={FadeInUp.duration(400)
-        .delay(index * 80)
-        .springify()
-        .damping(18)}
+      entering={FadeInUp.duration(500)
+        .delay(index * 80)}
       className="mx-4 mt-3"
     >
       <View

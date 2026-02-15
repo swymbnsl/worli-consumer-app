@@ -1,17 +1,17 @@
 import Button from '@/components/ui/Button';
+import {
+  showErrorToast,
+  showSuccessToast,
+} from '@/components/ui/Toast';
 import { useWallet } from '@/hooks/useWallet';
 import { formatCurrency } from '@/utils/formatters';
 import { Bell } from 'lucide-react-native';
 import React, { useState } from 'react';
 import {
-    Text,
-    TouchableOpacity,
-    View,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
-import {
-  showErrorToast,
-  showSuccessToast,
-} from '@/components/ui/Toast';
 
 export default function LowBalanceNotification() {
   const { wallet, updateWalletSettings } = useWallet();
@@ -123,7 +123,7 @@ export default function LowBalanceNotification() {
         onPress={handleSetNotification}
         disabled={loading}
         isLoading={loading}
-        variant="primary"
+        variant="navy"
       />
     </View>
   );

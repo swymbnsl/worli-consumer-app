@@ -76,11 +76,11 @@ export default function CompleteProfileScreen() {
           entering={FadeInDown.duration(600).delay(100)}
           className="bg-primary-navy px-6 pt-16 pb-12"
         >
-          <View className="items-center mb-6">
-            <View className="w-20 h-20 rounded-3xl bg-primary-orange items-center justify-center mb-4 shadow-lg">
-              <Text className="text-5xl">👤</Text>
+            <View className="items-center mb-6">
+            <View className="w-20 h-20 rounded-full bg-white items-center justify-center mb-4 shadow-lg">
+              <Text className="text-4xl">👤</Text>
             </View>
-          </View>
+            </View>
 
           <Text className="font-sofia-bold text-3xl text-white text-center mb-3">
             Complete Your Profile
@@ -159,6 +159,7 @@ export default function CompleteProfileScreen() {
             onPress={handleContinue}
             disabled={isLoading}
             isLoading={isLoading}
+            variant="navy"
           />
         </Animated.View>
       </ScrollView>

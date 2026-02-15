@@ -5,8 +5,8 @@ import React, { useEffect, useRef } from "react"
 import {
   Animated,
   Dimensions,
-  Modal as RNModal,
   Pressable,
+  Modal as RNModal,
   Text,
   TouchableOpacity,
   View,
@@ -150,20 +150,22 @@ export default function Modal({
                 {/* Buttons */}
                 {buttons && buttons.length > 0 && (
                   <View
-                    className={`flex-${buttons.length === 1 ? "col" : "row"} gap-3`}
+                    className={`flex-row gap-3 mt-2`}
                   >
                     {buttons.map((button, index) => (
                       <View
                         key={index}
-                        className={buttons.length === 1 ? "w-full" : "flex-1"}
+                        className="flex-1"
                       >
                         <Button
                           title={button.text}
                           onPress={button.onPress}
-                          variant={
-                            button.destructive
-                              ? "danger"
-                              : button.variant || "primary"
+                          variant={button.variant || "primary"}
+                          fullWidth
+                          className={
+                            button.variant === "outline"
+                              ? ""
+                              : "border-2 border-transparent"
                           }
                         />
                       </View>
@@ -223,7 +225,7 @@ export function ConfirmModal({
         {
           text: confirmText,
           onPress: handleConfirm,
-          variant: "primary",
+          variant: "navy",
           destructive,
         },
       ]}

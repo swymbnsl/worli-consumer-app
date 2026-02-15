@@ -6,7 +6,9 @@ import {
   CustomQuantities,
   SubscriptionFrequency,
 } from "@/context/CartContext"
+import { useAuth } from "@/hooks/useAuth"
 import { useCart } from "@/hooks/useCart"
+import { supabase } from "@/lib/supabase"
 import { Product } from "@/types/database.types"
 import { formatCurrency } from "@/utils/formatters"
 import {
@@ -14,7 +16,7 @@ import {
   BottomSheetModal,
   BottomSheetScrollView,
 } from "@gorhom/bottom-sheet"
-import { Calendar, Minus, Plus } from "lucide-react-native"
+import { Calendar, Clock, Minus, Pencil, Plus } from "lucide-react-native"
 import React, {
   forwardRef,
   useCallback,
@@ -45,6 +47,21 @@ const INTERVAL_OPTIONS = [2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 30]
 
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
 
+const DELIVERY_TIME_SLOTS = [
+  { value: "06:00-07:00", label: "6 AM - 7 AM" },
+  { value: "07:00-08:00", label: "7 AM - 8 AM" },
+  { value: "08:00-09:00", label: "8 AM - 9 AM" },
+  { value: "09:00-10:00", label: "9 AM - 10 AM" },
+  { value: "10:00-11:00", label: "10 AM - 11 AM" },
+  { value: "11:00-12:00", label: "11 AM - 12 PM" },
+  { value: "12:00-13:00", label: "12 PM - 1 PM" },
+  { value: "13:00-14:00", label: "1 PM - 2 PM" },
+  { value: "14:00-15:00", label: "2 PM - 3 PM" },
+  { value: "15:00-16:00", label: "3 PM - 4 PM" },
+  { value: "16:00-17:00", label: "4 PM - 5 PM" },
+  { value: "17:00-18:00", label: "5 PM - 6 PM" },
+]
+
 const getTomorrow = () => {
   const d = new Date()
   d.setDate(d.getDate() + 1)
@@ -72,6 +89,7 @@ const SubscriptionBottomSheet = forwardRef<
 >((props, ref) => {
   const bottomSheetRef = useRef<BottomSheetModal>(null)
   const { addItem, updateItem } = useCart()
+  const { user } = useAuth()
 
   // State
   const [product, setProduct] = useState<Product | null>(null)
@@ -90,6 +108,10 @@ const SubscriptionBottomSheet = forwardRef<
     6: 1,
   })
   const [showDatePicker, setShowDatePicker] = useState(false)
+  const [showTimePicker, setShowTimePicker] = useState(false)
+  const [preferredDeliveryTime, setPreferredDeliveryTime] = useState<string>(
+    DELIVERY_TIME_SLOTS[0].value,
+  )
 
   const snapPoints = useMemo(() => ["70%", "92%"], [])
 
@@ -115,6 +137,9 @@ const SubscriptionBottomSheet = forwardRef<
             6: 1,
           },
         )
+        setPreferredDeliveryTime(
+          editItem.preferredDeliveryTime || DELIVERY_TIME_SLOTS[0].value,
+        )
       } else {
         setEditingItem(null)
         setFrequency("daily")
@@ -130,8 +155,10 @@ const SubscriptionBottomSheet = forwardRef<
           5: 1,
           6: 1,
         })
+        setPreferredDeliveryTime(DELIVERY_TIME_SLOTS[0].value)
       }
       setShowDatePicker(false)
+      setShowTimePicker(false)
       bottomSheetRef.current?.present()
     },
     close: () => {
@@ -155,6 +182,37 @@ const SubscriptionBottomSheet = forwardRef<
       startDate,
       intervalDays: frequency === "on_interval" ? intervalDays : undefined,
       customQuantities: frequency === "custom" ? customQuantities : undefined,
+      preferredDeliveryTime,
+    }
+
+    // Save preferred delivery time to Supabase delivery_preferences table
+    if (user?.id) {
+      try {
+        // Validate slot before saving (security)
+        const isValidSlot = DELIVERY_TIME_SLOTS.some(
+          (slot) => slot.value === preferredDeliveryTime,
+        )
+
+        if (!isValidSlot) {
+          console.error("Invalid delivery time slot selected")
+        } else {
+          const { error } = await supabase
+            .from("delivery_preferences")
+            .upsert(
+              {
+                user_id: user.id,
+                preferred_delivery_time: preferredDeliveryTime,
+              },
+              { onConflict: "user_id" },
+            )
+
+          if (error) {
+            console.error("Failed to save delivery preference:", error)
+          }
+        }
+      } catch (error) {
+        console.error("Failed to save delivery preference:", error)
+      }
     }
 
     // If editing an existing subscription via callback (not cart)
@@ -244,6 +302,41 @@ const SubscriptionBottomSheet = forwardRef<
               </Text>
             </View>
           </View>
+          
+          <View className="mb-6">
+            <Text className="font-sofia-bold text-base text-neutral-black mb-3">
+              Preferred Delivery Time Slot
+            </Text>
+            <TouchableOpacity
+              className="flex-row items-center justify-between border border-neutral-lightGray rounded-lg px-3 py-3"
+              onPress={() => setShowTimePicker(true)}
+              activeOpacity={0.7}
+            >
+              <View className="flex-row items-center flex-1">
+                <Clock size={18} color={COLORS.neutral.gray} />
+                <Text className="font-comfortaa-bold text-sm text-neutral-black ml-2">
+                  {DELIVERY_TIME_SLOTS.find(
+                    (s) => s.value === preferredDeliveryTime,
+                  )?.label || "Select Time"}
+                </Text>
+              </View>
+              <Pencil size={16} color={COLORS.neutral.gray} />
+            </TouchableOpacity>
+          </View>
+
+          {/* Time Picker Modal */}
+          {showTimePicker && (
+            <View className="mb-4">
+              <TimeSlotPicker
+                selectedSlot={preferredDeliveryTime}
+                onSelect={(slot: string) => {
+                  setPreferredDeliveryTime(slot)
+                  setShowTimePicker(false)
+                }}
+                onClose={() => setShowTimePicker(false)}
+              />
+            </View>
+          )}
 
           {/* ─── Frequency Question ───────────────────────────────── */}
           <Text className="font-sofia-bold text-base text-neutral-black mb-4">
@@ -427,13 +520,6 @@ const SubscriptionBottomSheet = forwardRef<
             </View>
           )}
 
-          {/* ─── Info Text ────────────────────────────────────────── */}
-          <Text className="font-comfortaa text-sm text-neutral-darkGray mb-6">
-            Order by <Text className="font-sofia-bold">9 PM</Text> for delivery{" "}
-            <Text className="font-sofia-bold">next day</Text> by{" "}
-            <Text className="font-sofia-bold">07:00 AM</Text>
-          </Text>
-
           {/* ─── Add To Cart Button ───────────────────────────────── */}
           <Button
             title={
@@ -441,11 +527,11 @@ const SubscriptionBottomSheet = forwardRef<
                 ? "Update Subscription"
                 : editingItem
                   ? "Update Cart"
-                  : "Add To Cart"
+                  : "Add to Cart"
             }
             onPress={handleAddToCart}
             variant="navy"
-            size="large"
+            size="medium"
           />
         </BottomSheetScrollView>
       )}
@@ -454,6 +540,59 @@ const SubscriptionBottomSheet = forwardRef<
 })
 
 SubscriptionBottomSheet.displayName = "SubscriptionBottomSheet"
+
+// ─── Time Slot Picker (scrollable time slot grid) ─────────────────────────────
+
+function TimeSlotPicker({
+  selectedSlot,
+  onSelect,
+  onClose,
+}: {
+  selectedSlot: string
+  onSelect: (slot: string) => void
+  onClose: () => void
+}) {
+  return (
+    <View className="bg-neutral-lightCream rounded-xl p-4">
+      <Text className="font-sofia-bold text-base text-neutral-black mb-4 text-center">
+        Select Delivery Time
+      </Text>
+      <View className="flex-row flex-wrap gap-2.5">
+        {DELIVERY_TIME_SLOTS.map((slot) => {
+          const isSelected = selectedSlot === slot.value
+          return (
+            <TouchableOpacity
+              key={slot.value}
+              className={`items-center justify-center py-2.5 px-3 rounded-lg border ${
+                isSelected
+                  ? "border-primary-navy bg-primary-navy"
+                  : "border-neutral-lightGray bg-white"
+              }`}
+              style={{ width: "48%" }}
+              onPress={() => onSelect(slot.value)}
+              activeOpacity={0.7}
+            >
+              <Text
+                className={`font-comfortaa text-xs ${
+                  isSelected ? "text-white" : "text-neutral-black"
+                }`}
+              >
+                {slot.label}
+              </Text>
+            </TouchableOpacity>
+          )
+        })}
+      </View>
+      <TouchableOpacity
+        className="mt-4 items-center py-2.5 bg-primary-navy rounded-lg"
+        onPress={onClose}
+        activeOpacity={0.7}
+      >
+        <Text className="font-sofia-bold text-sm text-white">Done</Text>
+      </TouchableOpacity>
+    </View>
+  )
+}
 
 // ─── Inline Date Picker (scrollable date grid) ────────────────────────────────
 

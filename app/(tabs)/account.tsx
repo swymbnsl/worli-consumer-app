@@ -16,8 +16,7 @@ import {
   MessageCircle,
   Package,
   RefreshCw,
-  Settings,
-  Trash2,
+  Settings
 } from "lucide-react-native"
 import React, { useState } from "react"
 import { ScrollView, Text, TouchableOpacity, View } from "react-native"
@@ -58,24 +57,24 @@ export default function AccountScreen() {
   ]
 
   const supportItems = [
-    { id: "faq", label: "FAQs", icon: HelpCircle, iconBg: "#EEF2FF" },
-    { id: "contact", label: "Contact Us", icon: MessageCircle, iconBg: "#F0FDF4" },
-    { id: "refer", label: "Refer & Earn", icon: Gift, iconBg: "#FEF3E2" },
+    { id: "faq", label: "FAQs", icon: HelpCircle, iconBg: "#EEF2FF", onPress: () => router.push("/account/faq") },
+    { id: "contact", label: "Contact Us", icon: MessageCircle, iconBg: "#F0FDF4", onPress: () => router.push("/account/contact") },
+    { id: "refer", label: "Refer & Earn", icon: Gift, iconBg: "#FEF3E2", onPress: () => router.push("/account/refer") },
   ]
 
   const preferencesItems = [
-    { id: "language", label: "App Language", icon: Globe, iconBg: "#F5F3FF" },
-    { id: "delivery", label: "Delivery Preferences", icon: Settings, iconBg: "#F0F9FF" },
-    { id: "address", label: "Manage Addresses", icon: MapPin, iconBg: "#FFF7ED", route: "/account/addresses" },
+    { id: "language", label: "App Language", icon: Globe, iconBg: "#F5F3FF", onPress: () => router.push("/account/language") },
+    { id: "delivery", label: "Delivery Preferences", icon: Settings, iconBg: "#F0F9FF", onPress: () => router.push("/account/delivery") },
+    { id: "address", label: "Manage Addresses", icon: MapPin, iconBg: "#FFF7ED", route: "/account/addresses", onPress: () => router.push("/account/addresses") },
   ]
 
   const legalItems = [
-    { id: "terms", label: "Terms & Conditions", icon: FileText, iconBg: "#F9FAFB" },
-    { id: "privacy", label: "Privacy Policy", icon: Lock, iconBg: "#F9FAFB" },
+    { id: "terms", label: "Terms & Conditions", icon: FileText, iconBg: "#F9FAFB", onPress: () => router.push("/account/terms") },
+    { id: "privacy", label: "Privacy Policy", icon: Lock, iconBg: "#F9FAFB", onPress: () => router.push("/account/privacy") },
   ]
 
   const dangerItems = [
-    { id: "delete", label: "Delete My Account", icon: Trash2, isDanger: true },
+    // { id: "delete", label: "Delete My Account", icon: Trash2, isDanger: true, onPress: () => router.push("/account/delete") },
     { id: "logout", label: "Logout", icon: LogOut, isDanger: true, action: () => setShowLogoutModal(true) },
   ]
 
@@ -92,7 +91,7 @@ export default function AccountScreen() {
 
         {/* Quick Actions */}
         <Animated.View
-          entering={FadeInUp.duration(400).delay(80).springify().damping(18)}
+          entering={FadeInUp.duration(500).delay(80)}
           className="flex-row px-4 mt-5 mb-2"
           style={{ gap: 10 }}
         >
@@ -136,7 +135,7 @@ export default function AccountScreen() {
 
         {/* App version */}
         <Text className="text-center font-comfortaa text-[11px] text-neutral-gray mt-2 mb-4">
-          Duddu v1.0.0
+          Worli Dairy v1.0.0
         </Text>
       </ScrollView>
 

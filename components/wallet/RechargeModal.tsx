@@ -106,10 +106,10 @@ export default function RechargeModal() {
     return (
       <View className="bg-white mx-4 rounded-2xl p-8 mb-5 shadow-lg">
         <View className="items-center py-4">
-          <View className="w-20 h-20 bg-functional-error/10 rounded-full items-center justify-center mb-4">
-            <XCircle size={40} color="#EF6600" strokeWidth={2} />
+          <View className="w-20 h-20 bg-primary-navy/10 rounded-full items-center justify-center mb-4">
+            <XCircle size={40} color="#101B53" strokeWidth={2} />
           </View>
-          <Text className="font-sofia-bold text-2xl text-functional-error mb-2">
+          <Text className="font-sofia-bold text-2xl text-primary-navy mb-2">
             Payment Failed
           </Text>
           <Text className="font-comfortaa text-sm text-neutral-gray text-center mb-4">
@@ -118,7 +118,7 @@ export default function RechargeModal() {
           <Button
             title="Try Again"
             onPress={() => setPaymentStatus("idle")}
-            variant="primary"
+            variant="navy"
           />
         </View>
       </View>

@@ -170,7 +170,7 @@ export default function LoginScreen() {
                 onPress={() => setOtpSent(false)}
                 className="self-start mb-6 active:opacity-70"
               >
-                <Text className="font-comfortaa text-sm text-primary-orange font-semibold">
+                <Text className="font-comfortaa text-sm text-primary-navy font-semibold">
                   ← Change Phone Number
                 </Text>
               </TouchableOpacity>
@@ -197,7 +197,7 @@ export default function LoginScreen() {
                   onPress={handleSendOTP}
                   disabled={loading || phoneNumber.length !== 10}
                   isLoading={loading}
-                  variant="primary"
+                  variant="navy"
                 />
               </>
             ) : (
@@ -233,7 +233,7 @@ export default function LoginScreen() {
                   onPress={handleVerifyOTP}
                   disabled={loading || otp.length !== 6}
                   isLoading={loading}
-                  variant="primary"
+                  variant="navy"
                   className="mb-4"
                 />
 
@@ -245,7 +245,7 @@ export default function LoginScreen() {
                 >
                   <Text className="font-comfortaa text-sm text-primary-navy text-center font-medium">
                     Didn't receive code?{" "}
-                    <Text className="text-primary-orange font-semibold">
+                    <Text className="text-primary-navy font-semibold underline">
                       Resend
                     </Text>
                   </Text>

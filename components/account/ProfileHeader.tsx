@@ -1,7 +1,7 @@
 import { COLORS } from "@/constants/theme"
 import { User as UserType } from "@/types/database.types"
 import { useRouter } from "expo-router"
-import { ChevronRight, Pencil } from "lucide-react-native"
+import { Pencil } from "lucide-react-native"
 import React from "react"
 import { Text, TouchableOpacity, View } from "react-native"
 import Animated, { FadeInUp } from "react-native-reanimated"
@@ -23,7 +23,7 @@ export default function ProfileHeader({ user }: ProfileHeaderProps) {
     .slice(0, 2)
 
   return (
-    <Animated.View entering={FadeInUp.duration(400).springify().damping(18)}>
+    <Animated.View entering={FadeInUp.duration(500)}>
       <TouchableOpacity
         className="mx-4 mt-2 bg-white rounded-2xl p-5 flex-row items-center"
         style={{

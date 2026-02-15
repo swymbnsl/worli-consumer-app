@@ -2,15 +2,14 @@ import { COLORS } from "@/constants/theme"
 import { useAuth } from "@/hooks/useAuth"
 import { Redirect, Tabs } from "expo-router"
 import { Home, Package, ShoppingCart, User, Wallet } from "lucide-react-native"
+import { useEffect } from "react"
 import { ActivityIndicator, Platform, Text, View } from "react-native"
 import Animated, {
-  FadeIn,
   useAnimatedStyle,
   useSharedValue,
-  withSpring,
+  withSpring
 } from "react-native-reanimated"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
-import { useEffect } from "react"
 
 function TabIcon({
   icon: Icon,
@@ -27,9 +26,9 @@ function TabIcon({
 
   useEffect(() => {
     if (focused) {
-      scale.value = withSpring(1.08, { damping: 12, stiffness: 200 })
+      scale.value = withSpring(1.08, { damping: 25, stiffness: 300 })
     } else {
-      scale.value = withSpring(1, { damping: 12, stiffness: 200 })
+      scale.value = withSpring(1, { damping: 25, stiffness: 300 })
     }
   }, [focused])
 
@@ -123,8 +122,12 @@ export default function TabsLayout() {
           paddingBottom: bottomPad,
           paddingTop: 8,
           height: Platform.OS === "ios" ? 82 : 68,
-          elevation: 0,
-          shadowOpacity: 0,
+          // Add shadow for top separation
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: -4 },
+          shadowOpacity: 0.12,
+          shadowRadius: 8,
+          elevation: 8,
         },
         tabBarActiveTintColor: COLORS.primary.navy,
         tabBarInactiveTintColor: COLORS.neutral.gray,

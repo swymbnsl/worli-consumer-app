@@ -1,5 +1,6 @@
+import ProductImage from "@/components/common/ProductImage"
 import { COLORS } from "@/constants/theme"
-import { Order } from "@/types/database.types"
+import { Order, Product } from "@/types/database.types"
 import { Calendar } from "lucide-react-native"
 import React from "react"
 import { Text, View } from "react-native"
@@ -8,6 +9,7 @@ import Animated, { FadeInDown } from "react-native-reanimated"
 interface TodayDeliveryCardProps {
   selectedDate: string
   order?: Order | null
+  product?: Product | null
 }
 
 const formatDisplayDate = (dateStr: string): string => {
@@ -93,6 +95,7 @@ const getStatusMessage = (
 export default function TodayDeliveryCard({
   selectedDate,
   order,
+  product,
 }: TodayDeliveryCardProps) {
   const displayDate = formatDisplayDate(selectedDate)
   const { message, icon } = getStatusMessage(order)
@@ -112,6 +115,20 @@ export default function TodayDeliveryCard({
         <Text className="font-comfortaa text-sm text-neutral-darkGray">
           {message}
         </Text>
+        {/* Show product details if delivered */}
+        {order?.status === "delivered" && product && (
+          <View className="flex-row items-center mt-2">
+            <ProductImage imageUrl={product.image_url} size="small" />
+            <View className="ml-2">
+              <Text className="font-sofia-bold text-xs text-primary-navy">
+                {product.name}
+              </Text>
+              <Text className="font-comfortaa text-xs text-neutral-gray">
+                Qty: {order.quantity}
+              </Text>
+            </View>
+          </View>
+        )}
       </View>
       <Text className="text-2xl">{icon}</Text>
     </Animated.View>

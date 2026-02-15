@@ -109,7 +109,7 @@ export default function Onboarding() {
           <Animated.View entering={FadeInUp.duration(600).delay(500)}>
             <Button
               title="Get Started"
-              variant="primary"
+              variant="navy"
               size="large"
               onPress={handleGetStarted}
             />

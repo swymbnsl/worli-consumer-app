@@ -1,3 +1,4 @@
+import { COLORS } from "@/constants/theme"
 import { ButtonProps } from "@/types/ui-components.types"
 import React from "react"
 import { ActivityIndicator, Text, TouchableOpacity } from "react-native"
@@ -74,6 +75,25 @@ export default function Button({
     }
   }
 
+  const getTextSize = () => {
+    switch (size) {
+      case "small":
+        return 14
+      case "medium":
+        return 16
+      case "large":
+        return 18
+      default:
+        return 16
+    }
+  }
+
+  const getTextColor = () => {
+    if (variant === "outline") return COLORS.primary.navy
+    if (variant === "navy") return COLORS.white
+    return COLORS.white
+  }
+
   const baseClasses = `rounded-xl items-center justify-center ${getSizeClasses()} ${getVariantClasses()}`
   const widthClasses = fullWidth ? "w-full" : ""
   const disabledClasses = disabled || isLoading ? "opacity-50" : ""
@@ -101,7 +121,15 @@ export default function Button({
           size="small"
         />
       ) : (
-        <Text className={`${getTextClasses()} ${getTextSizeClasses()}`}>
+        <Text 
+          style={{
+            color: getTextColor(),
+            fontSize: getTextSize(),
+            fontFamily: 'Sofia-Pro-Bold',
+            textAlign: 'center',
+          }}
+          allowFontScaling={false}
+        >
           {title}
         </Text>
       )}

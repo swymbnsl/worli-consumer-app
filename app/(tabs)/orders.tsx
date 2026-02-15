@@ -68,7 +68,7 @@ export default function OrdersScreen() {
           />
         }
       >
-        <Animated.View entering={FadeInUp.duration(400).springify().damping(18)}>
+        <Animated.View entering={FadeInUp.duration(500)}>
           <FullCalendar
             orders={orders}
             selectedDate={selectedDate}
@@ -76,7 +76,7 @@ export default function OrdersScreen() {
           />
         </Animated.View>
 
-        <Animated.View entering={FadeInUp.duration(400).delay(100).springify().damping(18)} className="mb-6">
+        <Animated.View entering={FadeInUp.duration(500).delay(100)} className="mb-6">
           <Text className="font-sofia-bold text-xl text-primary-navy text-center mb-6">
             {formatFullDate(selectedDate)}
           </Text>

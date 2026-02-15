@@ -2,7 +2,12 @@ import EditModal from "@/components/subscription/EditModal"
 import PauseModal from "@/components/subscription/PauseModal"
 import SubscriptionCard from "@/components/subscription/SubscriptionCard"
 import Button from "@/components/ui/Button"
+import { ConfirmModal } from "@/components/ui/Modal"
 import PageHeader from "@/components/ui/PageHeader"
+import {
+  showErrorToast,
+  showSuccessToast,
+} from "@/components/ui/Toast"
 import { COLORS } from "@/constants/theme"
 import { useAuth } from "@/hooks/useAuth"
 import {
@@ -10,15 +15,10 @@ import {
   fetchActiveSubscriptions,
 } from "@/lib/supabase-service"
 import { Subscription } from "@/types/database.types"
-import { useRouter } from "expo-router"
+import { useFocusEffect, useRouter } from "expo-router"
 import { Calendar, X } from "lucide-react-native"
-import React, { useEffect, useState } from "react"
+import React, { useCallback, useState } from "react"
 import { RefreshControl, ScrollView, Text, View } from "react-native"
-import {
-  showErrorToast,
-  showSuccessToast,
-} from "@/components/ui/Toast"
-import { ConfirmModal } from "@/components/ui/Modal"
 
 export default function SubscriptionScreen() {
   const { user } = useAuth()
@@ -34,9 +34,11 @@ export default function SubscriptionScreen() {
   const [cancellingSubscription, setCancellingSubscription] =
     useState<Subscription | null>(null)
 
-  useEffect(() => {
-    fetchSubscriptions()
-  }, [user])
+  useFocusEffect(
+    useCallback(() => {
+      fetchSubscriptions()
+    }, [user]),
+  )
 
   const fetchSubscriptions = async () => {
     if (!user) return
@@ -101,29 +103,29 @@ export default function SubscriptionScreen() {
         {/* Empty State */}
         <View className="flex-1 justify-center items-center px-8">
           {/* Calendar Icon with X */}
-          <View className="mb-8 relative">
-            <View className="bg-primary-navy/5 p-6 rounded-2xl">
+          <View className="mb-6 relative">
+            <View className="bg-primary-navy/5 p-4 rounded-2xl">
               <Calendar
-                size={80}
+                size={64}
                 color={COLORS.primary.navy}
                 strokeWidth={1.5}
               />
             </View>
-            <View className="absolute -bottom-2 -right-2 bg-functional-error rounded-full p-3 border-4 border-white">
-              <X size={24} color="white" strokeWidth={3} />
+            <View className="absolute -bottom-2 -right-2 bg-functional-error rounded-full p-2 border-4 border-white bg-primary-navy">
+              <X size={20} color="white" strokeWidth={3} />
             </View>
           </View>
 
-          <Text className="font-sofia-bold text-2xl text-neutral-darkGray mb-3 text-center">
+          <Text className="font-sofia-bold text-xl text-neutral-darkGray mb-3 text-center">
             You don't have any subscriptions yet
           </Text>
 
-          <View className="mt-4 w-full px-8">
+          <View className="mt-3 w-full px-8">
             <Button
               title="Start Shopping"
               onPress={() => router.push("/(tabs)/home")}
               variant="navy"
-              size="large"
+              size="medium"
             />
           </View>
         </View>
@@ -208,8 +210,8 @@ export default function SubscriptionScreen() {
         }}
         title="Cancel Subscription"
         description="Are you sure you want to cancel this subscription? This action cannot be undone."
-        confirmText="Cancel Subscription"
-        cancelText="Keep Subscription"
+        confirmText="Cancel"
+        cancelText="Keep"
         onConfirm={handleConfirmCancel}
         destructive
       />

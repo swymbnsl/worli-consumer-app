@@ -12,7 +12,7 @@ export default function TransactionsScreen() {
           Transaction history is available in the Wallet tab
         </Text>
         <TouchableOpacity
-          className="bg-primary-orange py-3.5 px-6 rounded-xl mt-5 active:opacity-90 shadow-md"
+          className="bg-primary-navy py-3.5 px-6 rounded-xl mt-5 active:opacity-90 shadow-md"
           onPress={() => router.push("/(tabs)/wallet")}
         >
           <Text className="font-sofia-bold text-sm text-white">

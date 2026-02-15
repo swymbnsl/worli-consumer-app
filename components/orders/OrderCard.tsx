@@ -48,7 +48,7 @@ export default function OrderCard({ order, onPress, index = 0 }: OrderCardProps)
   const statusClasses = getStatusClasses()
 
   return (
-    <Animated.View entering={FadeInUp.duration(350).delay(index * 60).springify().damping(18)}>
+    <Animated.View entering={FadeInUp.duration(500).delay(index * 60)}>
     <TouchableOpacity
       className="bg-white rounded-2xl p-5 mb-4 shadow-md"
       onPress={onPress}

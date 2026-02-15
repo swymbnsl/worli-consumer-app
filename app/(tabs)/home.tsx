@@ -131,7 +131,7 @@ export default function HomeScreen() {
   }
 
   return (
-    <View className="flex-1 bg-white">
+    <View className="flex-1 bg-neutral-lightCream">
       {/* Header with Logo and Location */}
       <Header
         location={
@@ -156,7 +156,7 @@ export default function HomeScreen() {
         {/* Date Strip Calendar */}
         <Animated.View
           entering={FadeInDown.duration(400).delay(150)}
-          className="mb-2 bg-neutral-lightCream/30"
+          className="mb-2 bg-neutral-lightCream"
         >
           <DateStrip
             orders={orders}
@@ -166,12 +166,12 @@ export default function HomeScreen() {
         </Animated.View>
 
         {/* Calendar Legend */}
-        <View className="mb-4 bg-neutral-lightCream/30 pb-3">
+        <View className="mb-4 bg-neutral-lightCream pb-3">
           <CalendarLegend />
         </View>
 
         {/* Today's Delivery Status Card */}
-        <Animated.View entering={FadeInDown.duration(400).delay(200)} className="px-4 mb-5">
+        <Animated.View entering={FadeInDown.duration(400).delay(200)} className="px-4 mb-5 bg-neutral-lightCream rounded-2xl">
           <TodayDeliveryCard
             selectedDate={selectedDate}
             order={selectedDateOrder}
@@ -179,7 +179,7 @@ export default function HomeScreen() {
         </Animated.View>
 
         {/* Promotional Banners Carousel */}
-        <Animated.View entering={FadeInDown.duration(400).delay(250)} className="mb-6">
+        <Animated.View entering={FadeInDown.duration(400).delay(250)} className="mb-6 bg-neutral-lightCream rounded-2xl">
           <PromoBanner offers={offers} onPressOffer={handleOfferPress} />
         </Animated.View>
 
@@ -201,7 +201,7 @@ export default function HomeScreen() {
       {/* Floating Action Button — Cart */}
       {itemCount > 0 && (
         <TouchableOpacity
-          className="absolute bottom-24 right-5 w-14 h-14 rounded-full bg-primary-navy items-center justify-center"
+          className="absolute bottom-4 right-4 w-14 h-14 rounded-full bg-primary-navy items-center justify-center"
           style={{
             shadowColor: "#000",
             shadowOffset: { width: 0, height: 4 },
@@ -214,8 +214,8 @@ export default function HomeScreen() {
         >
           <ShoppingCart size={22} color={COLORS.neutral.white} />
           {/* Badge */}
-          <View className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-primary-orange items-center justify-center">
-            <Text className="font-sofia-bold text-[10px] text-white">
+          <View className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-neutral-lightCream border border-primary-navy items-center justify-center">
+            <Text className="font-sofia-bold text-[10px] text-primary-navy">
               {itemCount}
             </Text>
           </View>

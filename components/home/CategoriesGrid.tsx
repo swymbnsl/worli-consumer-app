@@ -122,7 +122,7 @@ export default function CategoriesGrid({
 
             {/* Price and Add Button */}
             <View className="flex-row items-center justify-between mt-1">
-              <Text className="font-sofia-bold text-lg text-primary-orange">
+              <Text className="font-sofia-bold text-lg text-primary-navy">
                 {formatCurrency(category.price)}
               </Text>
               <TouchableOpacity

@@ -56,10 +56,10 @@ export default function ContactScreen() {
             >
               <View className="flex-row items-start justify-between">
                 <View className="flex-1">
-                  <Text className="font-comfortaa text-xs text-neutral-gray mb-2">
+                  <Text className="font-sofia-bold text-xs text-neutral-gray mb-2">
                     {item.label}
                   </Text>
-                  <Text className="font-comfortaa text-base text-primary-navy leading-6">
+                  <Text className="font-sofia-bold text-base text-primary-navy leading-6">
                     {item.value}
                   </Text>
                 </View>
@@ -81,25 +81,25 @@ export default function ContactScreen() {
 
         {/* Business Hours Card */}
         <View className="bg-white rounded-2xl p-4 mt-2 shadow-sm">
-          <Text className="font-comfortaa text-xs text-neutral-gray mb-3">
+          <Text className="font-sofia-bold text-xs text-neutral-gray mb-3">
             Business Hours
           </Text>
-          <Text className="font-comfortaa text-sm text-primary-navy mb-2">
+          <Text className="font-sofia-bold text-sm text-primary-navy mb-2">
             Monday - Saturday
           </Text>
-          <Text className="font-comfortaa text-sm text-neutral-gray mb-4">
+          <Text className="font-sofia-bold text-sm text-neutral-gray mb-4">
             6:00 AM - 9:00 PM
           </Text>
-          <Text className="font-comfortaa text-sm text-primary-navy mb-2">
+          <Text className="font-sofia-bold text-sm text-primary-navy mb-2">
             Sunday
           </Text>
-          <Text className="font-comfortaa text-sm text-neutral-gray">
+          <Text className="font-sofia-bold text-sm text-neutral-gray">
             6:00 AM - 12:00 PM
           </Text>
         </View>
 
         {/* Help Text */}
-        <Text className="font-comfortaa text-xs text-neutral-gray text-center mt-6 px-8 leading-5">
+        <Text className="font-sofia-bold text-xs text-neutral-gray text-center mt-6 px-8 leading-5">
           We're here to help! Reach out through any of the above channels for
           quick support.
         </Text>
