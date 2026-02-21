@@ -3,6 +3,7 @@ import { AuthProvider } from "@/context/AuthContext"
 import { CartProvider } from "@/context/CartContext"
 import { NetworkProvider } from "@/context/NetworkContext"
 import { WalletProvider } from "@/context/WalletContext"
+import { initNtpSync } from "@/utils/ntpTime"
 import { BottomSheetModalProvider } from "@gorhom/bottom-sheet"
 import { useFonts } from "expo-font"
 import { Stack } from "expo-router"
@@ -24,6 +25,11 @@ export default function RootLayout() {
     "Comfortaa-Bold": require("../assets/fonts/Comfortaa-Bold.ttf"),
     "Comfortaa-Regular": require("../assets/fonts/Comfortaa-Regular.ttf"),
   })
+
+  useEffect(() => {
+    // Initialize NTP time sync for tamper-proof ordering cutoff
+    initNtpSync()
+  }, [])
 
   useEffect(() => {
     if (error) console.error("Font loading error:", error)

@@ -1,5 +1,6 @@
 import ProductImage from "@/components/common/ProductImage"
 import Button from "@/components/ui/Button"
+import { ConfirmModal } from "@/components/ui/Modal"
 import { COLORS } from "@/constants/theme"
 import {
   CartItem,
@@ -11,6 +12,14 @@ import { useCart } from "@/hooks/useCart"
 import { supabase } from "@/lib/supabase"
 import { Product } from "@/types/database.types"
 import { formatCurrency } from "@/utils/formatters"
+import {
+  getDayAfterTomorrowDateNtp,
+  getNtpNow,
+  getTomorrowDateNtp,
+  getTomorrowWeekdayNtp,
+  isPastCutoff,
+  isTomorrowNtp,
+} from "@/utils/ntpTime"
 import {
   BottomSheetBackdrop,
   BottomSheetModal,
@@ -62,10 +71,12 @@ const DELIVERY_TIME_SLOTS = [
   { value: "17:00-18:00", label: "5 PM - 6 PM" },
 ]
 
-const getTomorrow = () => {
-  const d = new Date()
-  d.setDate(d.getDate() + 1)
-  return d.toISOString().split("T")[0]
+const getDefaultStartDate = (freq: SubscriptionFrequency = "daily") => {
+  // For buy_once, if past cutoff, skip tomorrow and default to day-after-tomorrow
+  if (freq === "buy_once" && isPastCutoff()) {
+    return getDayAfterTomorrowDateNtp()
+  }
+  return getTomorrowDateNtp()
 }
 
 const formatDateDisplay = (dateStr: string) => {
@@ -96,7 +107,9 @@ const SubscriptionBottomSheet = forwardRef<
   const [editingItem, setEditingItem] = useState<CartItem | null>(null)
   const [frequency, setFrequency] = useState<SubscriptionFrequency>("daily")
   const [quantity, setQuantity] = useState(1)
-  const [startDate, setStartDate] = useState(getTomorrow())
+  const [startDate, setStartDate] = useState(getDefaultStartDate())
+  const [showCutoffModal, setShowCutoffModal] = useState(false)
+  const [pendingCartPayload, setPendingCartPayload] = useState<Omit<CartItem, "id"> | null>(null)
   const [intervalDays, setIntervalDays] = useState(2)
   const [customQuantities, setCustomQuantities] = useState<CustomQuantities>({
     0: 1,
@@ -125,6 +138,8 @@ const SubscriptionBottomSheet = forwardRef<
         setFrequency(editItem.frequency)
         setQuantity(editItem.quantity)
         setStartDate(editItem.startDate)
+        setShowCutoffModal(false)
+        setPendingCartPayload(null)
         setIntervalDays(editItem.intervalDays || 2)
         setCustomQuantities(
           editItem.customQuantities || {
@@ -144,7 +159,9 @@ const SubscriptionBottomSheet = forwardRef<
         setEditingItem(null)
         setFrequency("daily")
         setQuantity(1)
-        setStartDate(getTomorrow())
+        setStartDate(getDefaultStartDate("daily"))
+        setShowCutoffModal(false)
+        setPendingCartPayload(null)
         setIntervalDays(2)
         setCustomQuantities({
           0: 1,
@@ -168,29 +185,42 @@ const SubscriptionBottomSheet = forwardRef<
 
   // ─── Handlers ────────────────────────────────────────────────────────
 
-  const handleAddToCart = async () => {
-    if (!product) return
+  // ─── Cutoff check helper ─────────────────────────────────────────────
 
-    const payload: Omit<CartItem, "id"> = {
-      productId: product.id,
-      productName: product.name,
-      productPrice: product.price,
-      productImage: product.image_url,
-      productVolume: product.volume,
-      quantity,
-      frequency,
-      startDate,
-      intervalDays: frequency === "on_interval" ? intervalDays : undefined,
-      customQuantities: frequency === "custom" ? customQuantities : undefined,
-      preferredDeliveryTime,
+  /**
+   * Determines if the current subscription config triggers the 7 PM cutoff.
+   * Returns true if user needs to be warned (i.e., tomorrow's delivery will be missed).
+   */
+  const shouldShowCutoffWarning = (freq: SubscriptionFrequency, start: string): boolean => {
+    if (!isPastCutoff()) return false
+    if (!isTomorrowNtp(start)) return false
+
+    switch (freq) {
+      case "buy_once":
+        // buy_once should be blocked at the UI level, but this is a safety net
+        return true
+      case "daily":
+      case "on_interval":
+        return true
+      case "custom": {
+        // Only warn if tomorrow's weekday has quantity > 0
+        const tomorrowWeekday = getTomorrowWeekdayNtp()
+        const tomorrowQty = customQuantities[tomorrowWeekday] ?? 0
+        return tomorrowQty > 0
+      }
+      default:
+        return false
     }
+  }
 
+  // ─── Finalize add-to-cart (after cutoff check passes) ───────────────
+
+  const finalizeAddToCart = async (payload: Omit<CartItem, "id">) => {
     // Save preferred delivery time to Supabase delivery_preferences table
     if (user?.id) {
       try {
-        // Validate slot before saving (security)
         const isValidSlot = DELIVERY_TIME_SLOTS.some(
-          (slot) => slot.value === preferredDeliveryTime,
+          (slot) => slot.value === payload.preferredDeliveryTime,
         )
 
         if (!isValidSlot) {
@@ -201,7 +231,7 @@ const SubscriptionBottomSheet = forwardRef<
             .upsert(
               {
                 user_id: user.id,
-                preferred_delivery_time: preferredDeliveryTime,
+                preferred_delivery_time: payload.preferredDeliveryTime!,
               },
               { onConflict: "user_id" },
             )
@@ -230,6 +260,48 @@ const SubscriptionBottomSheet = forwardRef<
     }
 
     bottomSheetRef.current?.dismiss()
+  }
+
+  // ─── Add to cart with cutoff interception ───────────────────────────
+
+  const handleAddToCart = async () => {
+    if (!product) return
+
+    const payload: Omit<CartItem, "id"> = {
+      productId: product.id,
+      productName: product.name,
+      productPrice: product.price,
+      productImage: product.image_url,
+      productVolume: product.volume,
+      quantity,
+      frequency,
+      startDate,
+      intervalDays: frequency === "on_interval" ? intervalDays : undefined,
+      customQuantities: frequency === "custom" ? customQuantities : undefined,
+      preferredDeliveryTime,
+    }
+
+    // Check for 7 PM cutoff — show confirmation if needed
+    if (shouldShowCutoffWarning(frequency, startDate)) {
+      setPendingCartPayload(payload)
+      setShowCutoffModal(true)
+      return
+    }
+
+    await finalizeAddToCart(payload)
+  }
+
+  const handleCutoffConfirm = async () => {
+    setShowCutoffModal(false)
+    if (pendingCartPayload) {
+      await finalizeAddToCart(pendingCartPayload)
+      setPendingCartPayload(null)
+    }
+  }
+
+  const handleCutoffCancel = () => {
+    setShowCutoffModal(false)
+    setPendingCartPayload(null)
   }
 
   const updateCustomQty = (day: number, delta: number) => {
@@ -355,7 +427,11 @@ const SubscriptionBottomSheet = forwardRef<
                       ? "bg-primary-navy border-primary-navy"
                       : "bg-white border-neutral-lightGray"
                   }`}
-                  onPress={() => setFrequency(tab.value)}
+                  onPress={() => {
+                    setFrequency(tab.value)
+                    // Update start date based on new frequency's cutoff rules
+                    setStartDate(getDefaultStartDate(tab.value))
+                  }}
                   activeOpacity={0.7}
                 >
                   <Text
@@ -511,6 +587,7 @@ const SubscriptionBottomSheet = forwardRef<
               {/* @ts-ignore - DateTimePicker from @react-native-community */}
               <DateTimePickerFallback
                 startDate={startDate}
+                frequency={frequency}
                 onSelect={(date: string) => {
                   setStartDate(date)
                   setShowDatePicker(false)
@@ -533,6 +610,19 @@ const SubscriptionBottomSheet = forwardRef<
             variant="navy"
             size="medium"
           />
+
+          {/* 7 PM Cutoff Confirmation Modal */}
+```tsx
+          <ConfirmModal
+            visible={showCutoffModal}
+            onClose={handleCutoffCancel}
+            onConfirm={handleCutoffConfirm}
+            title="Heads up!"
+            description="It's past our 7 PM cutoff for tomorrow's delivery, so your first delivery will arrive on the next available date. Is that okay?"
+            confirmText="Continue"
+            cancelText="Cancel"
+          />
+```
         </BottomSheetScrollView>
       )}
     </BottomSheetModal>
@@ -598,17 +688,23 @@ function TimeSlotPicker({
 
 function DateTimePickerFallback({
   startDate,
+  frequency,
   onSelect,
   onClose,
 }: {
   startDate: string
+  frequency: SubscriptionFrequency
   onSelect: (date: string) => void
   onClose: () => void
 }) {
+  const pastCutoff = isPastCutoff()
+  const tomorrowStr = getTomorrowDateNtp()
+
   const days: string[] = useMemo(() => {
     const arr: string[] = []
+    const now = getNtpNow()
     for (let i = 1; i <= 30; i++) {
-      const d = new Date()
+      const d = new Date(now)
       d.setDate(d.getDate() + i)
       arr.push(d.toISOString().split("T")[0])
     }
@@ -625,34 +721,54 @@ function DateTimePickerFallback({
           const dayName = d.toLocaleDateString("en-IN", { weekday: "short" })
           const month = d.toLocaleDateString("en-IN", { month: "short" })
 
+          // Disable tomorrow for buy_once when past 7 PM cutoff
+          const isTomorrowDisabled =
+            frequency === "buy_once" && pastCutoff && date === tomorrowStr
+
           return (
             <TouchableOpacity
               key={date}
               className={`items-center py-2 px-2 rounded-lg border ${
-                isSelected
-                  ? "border-primary-navy bg-primary-navy"
-                  : "border-neutral-lightGray bg-white"
+                isTomorrowDisabled
+                  ? "border-neutral-lightGray bg-neutral-lightGray/50 opacity-40"
+                  : isSelected
+                    ? "border-primary-navy bg-primary-navy"
+                    : "border-neutral-lightGray bg-white"
               }`}
               style={{ width: "18%" }}
-              onPress={() => onSelect(date)}
+              onPress={() => !isTomorrowDisabled && onSelect(date)}
+              activeOpacity={isTomorrowDisabled ? 1 : 0.7}
+              disabled={isTomorrowDisabled}
             >
               <Text
                 className={`font-comfortaa text-[10px] ${
-                  isSelected ? "text-white" : "text-neutral-gray"
+                  isTomorrowDisabled
+                    ? "text-neutral-gray/60"
+                    : isSelected
+                      ? "text-white"
+                      : "text-neutral-gray"
                 }`}
               >
                 {dayName}
               </Text>
               <Text
                 className={`font-sofia-bold text-base ${
-                  isSelected ? "text-white" : "text-neutral-black"
+                  isTomorrowDisabled
+                    ? "text-neutral-gray/60"
+                    : isSelected
+                      ? "text-white"
+                      : "text-neutral-black"
                 }`}
               >
                 {dayNum}
               </Text>
               <Text
                 className={`font-comfortaa text-[10px] ${
-                  isSelected ? "text-white" : "text-neutral-gray"
+                  isTomorrowDisabled
+                    ? "text-neutral-gray/60"
+                    : isSelected
+                      ? "text-white"
+                      : "text-neutral-gray"
                 }`}
               >
                 {month}

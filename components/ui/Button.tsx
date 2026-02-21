@@ -52,13 +52,13 @@ export default function Button({
   const getSizeClasses = () => {
     switch (size) {
       case "small":
-        return "py-2 px-4"
+        return "py-2 px-3"
       case "medium":
-        return "py-4 px-6"
+        return "py-4 px-5"
       case "large":
-        return "py-5 px-8"
+        return "py-5 px-7"
       default:
-        return "py-4 px-6"
+        return "py-4 px-5"
     }
   }
 

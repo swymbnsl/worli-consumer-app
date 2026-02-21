@@ -1,3 +1,5 @@
+import { getNtpNow } from './ntpTime';
+
 export const formatDate = (dateStr: string): string => {
   const date = new Date(dateStr);
   return date.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
@@ -50,11 +52,11 @@ export const isPast = (dateStr: string): boolean => {
 };
 
 export const getTodayDate = (): string => {
-  return new Date().toISOString().split('T')[0];
+  return getNtpNow().toISOString().split('T')[0];
 };
 
 export const getTomorrowDate = (): string => {
-  const tomorrow = new Date();
+  const tomorrow = getNtpNow();
   tomorrow.setDate(tomorrow.getDate() + 1);
   return tomorrow.toISOString().split('T')[0];
 };
