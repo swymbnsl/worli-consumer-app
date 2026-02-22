@@ -1,5 +1,5 @@
 import { COLORS } from "@/constants/theme"
-import { supabase } from "@/lib/supabase"
+import { fetchProductById } from "@/lib/supabase-service"
 import { Product, Subscription } from "@/types/database.types"
 import { formatDate } from "@/utils/dateUtils"
 import { formatCurrency } from "@/utils/formatters"
@@ -46,14 +46,9 @@ export default function SubscriptionCard({
       }
 
       try {
-        const { data, error } = await supabase
-          .from("products")
-          .select("*")
-          .eq("id", subscription.product_id)
-          .single()
-
-        if (data && !error) {
-          setProduct(data)
+        const product = await fetchProductById(subscription.product_id)
+        if (product) {
+          setProduct(product)
         }
       } catch (error) {
         console.error("Error fetching product:", error)

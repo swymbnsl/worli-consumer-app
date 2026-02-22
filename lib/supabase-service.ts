@@ -13,6 +13,11 @@ import {
   Product,
   Subscription,
   SubscriptionInsert,
+  SubscriptionUpdate,
+  Transaction,
+  TransactionInsert,
+  Wallet,
+  WalletUpdate,
 } from "@/types/database.types"
 
 // ─── Orders ────────────────────────────────────────────────────────────────────
@@ -200,6 +205,54 @@ export async function cancelSubscription(
 }
 
 /**
+ * Update a subscription by ID.
+ */
+export async function updateSubscription(
+  subscriptionId: string,
+  data: SubscriptionUpdate,
+): Promise<void> {
+  const { error } = await supabase
+    .from("subscriptions")
+    .update(data)
+    .eq("id", subscriptionId)
+
+  if (error) throw error
+}
+
+/**
+ * Check if an address has any active subscriptions.
+ */
+export async function hasActiveSubscriptionsForAddress(
+  addressId: string,
+): Promise<boolean> {
+  const { data } = await supabase
+    .from("subscriptions")
+    .select("id")
+    .eq("address_id", addressId)
+    .eq("status", "active")
+    .limit(1)
+
+  return (data?.length ?? 0) > 0
+}
+
+/**
+ * Save or update a user's delivery time preference.
+ */
+export async function saveDeliveryPreference(
+  userId: string,
+  preferredDeliveryTime: string,
+): Promise<void> {
+  const { error } = await supabase
+    .from("delivery_preferences")
+    .upsert(
+      { user_id: userId, preferred_delivery_time: preferredDeliveryTime },
+      { onConflict: "user_id" },
+    )
+
+  if (error) throw error
+}
+
+/**
  * Create a single subscription.
  */
 export async function createSubscription(
@@ -374,4 +427,81 @@ export async function checkDuplicateSubscription(
     .limit(1)
 
   return (data?.length ?? 0) > 0
+}
+
+// ─── Wallets ───────────────────────────────────────────────────────────────────
+
+/**
+ * Fetch the wallet for a user.
+ */
+export async function fetchWallet(userId: string): Promise<Wallet> {
+  const { data, error } = await supabase
+    .from("wallets")
+    .select("*")
+    .eq("user_id", userId)
+    .single()
+
+  if (error) throw error
+  return data
+}
+
+/**
+ * Fetch recent transactions for a user.
+ */
+export async function fetchTransactions(
+  userId: string,
+  limit = 50,
+): Promise<Transaction[]> {
+  const { data, error } = await supabase
+    .from("transactions")
+    .select("*")
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false })
+    .limit(limit)
+
+  if (error) throw error
+  return data || []
+}
+
+/**
+ * Update wallet balance.
+ */
+export async function updateWalletBalance(
+  userId: string,
+  newBalance: number,
+): Promise<void> {
+  const { error } = await supabase
+    .from("wallets")
+    .update({ balance: newBalance })
+    .eq("user_id", userId)
+
+  if (error) throw error
+}
+
+/**
+ * Create a transaction record.
+ */
+export async function createTransaction(
+  transaction: TransactionInsert,
+): Promise<void> {
+  const { error } = await supabase
+    .from("transactions")
+    .insert([transaction])
+
+  if (error) throw error
+}
+
+/**
+ * Update wallet settings.
+ */
+export async function updateWalletSettings(
+  userId: string,
+  settings: WalletUpdate,
+): Promise<void> {
+  const { error } = await supabase
+    .from("wallets")
+    .update(settings)
+    .eq("user_id", userId)
+
+  if (error) throw error
 }

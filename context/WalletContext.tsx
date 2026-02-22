@@ -1,10 +1,16 @@
 import {
-  cancelAutoPayMandate,
-  initiateWalletRecharge,
-  RazorpayPaymentResult,
-  setupAutoPayMandate,
+    cancelAutoPayMandate,
+    initiateWalletRecharge,
+    RazorpayPaymentResult,
+    setupAutoPayMandate,
 } from "@/lib/razorpay-service"
-import { supabase } from "@/lib/supabase"
+import {
+    createTransaction,
+    fetchTransactions as fetchTransactionsSvc,
+    fetchWallet as fetchWalletSvc,
+    updateWalletBalance,
+    updateWalletSettings as updateWalletSettingsSvc,
+} from "@/lib/supabase-service"
 import { useUserStore } from "@/stores/user-store"
 import { Transaction, Wallet } from "@/types/database.types"
 import React, { createContext, useContext, useEffect, useState } from "react"
@@ -72,13 +78,7 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({
     if (!user) return
 
     try {
-      const { data, error } = await supabase
-        .from("wallets")
-        .select("*")
-        .eq("user_id", user.id)
-        .single()
-
-      if (error) throw error
+      const data = await fetchWalletSvc(user.id)
       setWallet(data)
     } catch (error) {
       console.error("Error fetching wallet:", error)
@@ -91,15 +91,8 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({
     if (!user) return
 
     try {
-      const { data, error } = await supabase
-        .from("transactions")
-        .select("*")
-        .eq("user_id", user.id)
-        .order("created_at", { ascending: false })
-        .limit(50)
-
-      if (error) throw error
-      setTransactions(data || [])
+      const data = await fetchTransactionsSvc(user.id)
+      setTransactions(data)
     } catch (error) {
       console.error("Error fetching transactions:", error)
     }
@@ -111,30 +104,19 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({
     try {
       const newBalance = Number(wallet.balance) + amount
 
-      // Update wallet balance
-      const { error: walletError } = await supabase
-        .from("wallets")
-        .update({ balance: newBalance })
-        .eq("user_id", user.id)
+      await updateWalletBalance(user.id, newBalance)
 
-      if (walletError) throw walletError
-
-      // Create transaction record
-      const { error: txnError } = await supabase.from("transactions").insert([
-        {
-          transaction_id: `TXN${Date.now()}`,
-          user_id: user.id,
-          wallet_id: wallet.id,
-          type: "credit",
-          amount: amount,
-          status: "success",
-          description: "Wallet recharge",
-          balance_before: wallet.balance,
-          balance_after: newBalance,
-        },
-      ])
-
-      if (txnError) throw txnError
+      await createTransaction({
+        transaction_id: `TXN${Date.now()}`,
+        user_id: user.id,
+        wallet_id: wallet.id,
+        type: "credit",
+        amount: amount,
+        status: "success",
+        description: "Wallet recharge",
+        balance_before: wallet.balance,
+        balance_after: newBalance,
+      })
 
       await fetchWallet()
       await fetchTransactions()
@@ -159,30 +141,19 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({
         return false
       }
 
-      // Update wallet balance
-      const { error: walletError } = await supabase
-        .from("wallets")
-        .update({ balance: newBalance })
-        .eq("user_id", user.id)
+      await updateWalletBalance(user.id, newBalance)
 
-      if (walletError) throw walletError
-
-      // Create transaction record
-      const { error: txnError } = await supabase.from("transactions").insert([
-        {
-          transaction_id: `TXN${Date.now()}`,
-          user_id: user.id,
-          wallet_id: wallet.id,
-          type: "debit",
-          amount: amount,
-          status: "success",
-          description: description,
-          balance_before: wallet.balance,
-          balance_after: newBalance,
-        },
-      ])
-
-      if (txnError) throw txnError
+      await createTransaction({
+        transaction_id: `TXN${Date.now()}`,
+        user_id: user.id,
+        wallet_id: wallet.id,
+        type: "debit",
+        amount: amount,
+        status: "success",
+        description: description,
+        balance_before: wallet.balance,
+        balance_after: newBalance,
+      })
 
       await fetchWallet()
       await fetchTransactions()
@@ -199,13 +170,7 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({
     if (!user) return false
 
     try {
-      const { error } = await supabase
-        .from("wallets")
-        .update(settings)
-        .eq("user_id", user.id)
-
-      if (error) throw error
-
+      await updateWalletSettingsSvc(user.id, settings)
       await fetchWallet()
       return true
     } catch (error) {

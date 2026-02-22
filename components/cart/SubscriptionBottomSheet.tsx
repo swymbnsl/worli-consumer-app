@@ -10,8 +10,7 @@ import {
 } from "@/context/CartContext"
 import { useAuth } from "@/hooks/useAuth"
 import { useCart } from "@/hooks/useCart"
-import { supabase } from "@/lib/supabase"
-import { checkDuplicateSubscription, fetchUserAddresses } from "@/lib/supabase-service"
+import { checkDuplicateSubscription, fetchUserAddresses, saveDeliveryPreference } from "@/lib/supabase-service"
 import { Address, Product } from "@/types/database.types"
 import { formatCurrency } from "@/utils/formatters"
 import {
@@ -252,17 +251,9 @@ const SubscriptionBottomSheet = forwardRef<
         if (!isValidSlot) {
           console.error("Invalid delivery time slot selected")
         } else {
-          const { error } = await supabase
-            .from("delivery_preferences")
-            .upsert(
-              {
-                user_id: user.id,
-                preferred_delivery_time: payload.preferredDeliveryTime!,
-              },
-              { onConflict: "user_id" },
-            )
-
-          if (error) {
+          try {
+            await saveDeliveryPreference(user.id, payload.preferredDeliveryTime!)
+          } catch (error) {
             console.error("Failed to save delivery preference:", error)
           }
         }

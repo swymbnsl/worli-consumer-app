@@ -7,10 +7,10 @@ import {
 } from "@/components/ui/Toast"
 import { COLORS } from "@/constants/theme"
 import { useAuth } from "@/hooks/useAuth"
-import { supabase } from "@/lib/supabase"
 import {
     deleteAddress as deleteAddr,
     fetchUserAddresses,
+    hasActiveSubscriptionsForAddress,
     setDefaultAddress,
 } from "@/lib/supabase-service"
 import { Address } from "@/types/database.types"
@@ -62,14 +62,9 @@ export default function AddressesScreen() {
   const handleDeleteAddress = async (addressId: string) => {
     try {
       // Check if any active subscription uses this address
-      const { data: activeSubs } = await supabase
-        .from("subscriptions")
-        .select("id")
-        .eq("address_id", addressId)
-        .eq("status", "active")
-        .limit(1)
+      const hasActive = await hasActiveSubscriptionsForAddress(addressId)
 
-      if (activeSubs && activeSubs.length > 0) {
+      if (hasActive) {
         showErrorToast(
           "Cannot Delete",
           "This address has an active subscription. Please change the subscription's address before deleting.",
