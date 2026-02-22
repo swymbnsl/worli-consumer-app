@@ -49,7 +49,7 @@ CREATE TABLE subscriptions (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   user_id UUID REFERENCES users(id) ON DELETE CASCADE,
   product_id UUID REFERENCES products(id),
-  address_id UUID REFERENCES addresses(id),
+  address_id UUID REFERENCES addresses(id) ON DELETE SET NULL,
   start_date DATE NOT NULL,
   end_date DATE,
   frequency VARCHAR(50) DEFAULT 'daily',
@@ -79,7 +79,7 @@ CREATE TABLE orders (
   status VARCHAR(50) DEFAULT 'scheduled',
   quantity INTEGER DEFAULT 1,
   amount DECIMAL(10, 2),
-  address_id UUID REFERENCES addresses(id),
+  address_id UUID REFERENCES addresses(id) ON DELETE SET NULL,
   delivery_notes TEXT,
   delivered_at TIMESTAMP WITH TIME ZONE,
   cancelled_at TIMESTAMP WITH TIME ZONE,
@@ -278,11 +278,13 @@ CREATE INDEX idx_users_phone ON users(phone_number);
 -- Addresses indexes
 CREATE INDEX idx_addresses_user_id ON addresses(user_id);
 CREATE INDEX idx_addresses_default ON addresses(user_id, is_default);
+CREATE UNIQUE INDEX idx_unique_address_name_per_user ON addresses(user_id, LOWER(name));
 
 -- Subscriptions indexes
 CREATE INDEX idx_subscriptions_user_id ON subscriptions(user_id);
 CREATE INDEX idx_subscriptions_status ON subscriptions(status);
 CREATE INDEX idx_subscriptions_active ON subscriptions(user_id, status) WHERE status = 'active';
+CREATE UNIQUE INDEX idx_unique_active_subscription ON subscriptions(user_id, product_id, address_id) WHERE status = 'active';
 
 -- Orders indexes
 CREATE INDEX idx_orders_user_id ON orders(user_id);

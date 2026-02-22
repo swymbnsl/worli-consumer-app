@@ -1,21 +1,22 @@
 import AddEditAddressModal from "@/components/addresses/AddEditAddressModal"
 import AddressCard from "@/components/addresses/AddressCard"
 import Button from "@/components/ui/Button"
+import {
+    showErrorToast,
+    showSuccessToast,
+} from "@/components/ui/Toast"
 import { COLORS } from "@/constants/theme"
 import { useAuth } from "@/hooks/useAuth"
+import { supabase } from "@/lib/supabase"
 import {
-  deleteAddress as deleteAddr,
-  fetchUserAddresses,
-  setDefaultAddress,
+    deleteAddress as deleteAddr,
+    fetchUserAddresses,
+    setDefaultAddress,
 } from "@/lib/supabase-service"
 import { Address } from "@/types/database.types"
 import { useRouter } from "expo-router"
 import React, { useEffect, useState } from "react"
 import { RefreshControl, ScrollView, Text, View } from "react-native"
-import {
-  showErrorToast,
-  showSuccessToast,
-} from "@/components/ui/Toast"
 
 export default function AddressesScreen() {
   const { user } = useAuth()
@@ -60,6 +61,22 @@ export default function AddressesScreen() {
 
   const handleDeleteAddress = async (addressId: string) => {
     try {
+      // Check if any active subscription uses this address
+      const { data: activeSubs } = await supabase
+        .from("subscriptions")
+        .select("id")
+        .eq("address_id", addressId)
+        .eq("status", "active")
+        .limit(1)
+
+      if (activeSubs && activeSubs.length > 0) {
+        showErrorToast(
+          "Cannot Delete",
+          "This address has an active subscription. Please change the subscription's address before deleting.",
+        )
+        return
+      }
+
       await deleteAddr(addressId)
       showSuccessToast("Success", "Address deleted successfully")
       fetchAddresses()

@@ -90,6 +90,16 @@ export default function CartItemCard({
         </Text>
       </View>
 
+      {/* Address Row */}
+      {item.addressName && (
+        <View className="flex-row items-center mt-1">
+          <Text className="font-comfortaa text-xs text-neutral-darkGray">
+            Delivering to:{" "}
+            <Text className="font-sofia-bold">{item.addressName}</Text>
+          </Text>
+        </View>
+      )}
+
       {/* Bottom Row: frequency + edit + delete */}
       <View className="flex-row items-center justify-between mt-2 pt-2 border-t border-neutral-lightGray">
         <View className="flex-row items-center flex-1">

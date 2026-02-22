@@ -1,13 +1,13 @@
 import CartItemCard from "@/components/cart/CartItemCard"
 import SubscriptionBottomSheet, {
-  SubscriptionBottomSheetRef,
+    SubscriptionBottomSheetRef,
 } from "@/components/cart/SubscriptionBottomSheet"
 import Button from "@/components/ui/Button"
 import Modal, { ConfirmModal } from "@/components/ui/Modal"
 import PageHeader from "@/components/ui/PageHeader"
 import {
-  showErrorToast,
-  showSuccessToast,
+    showErrorToast,
+    showSuccessToast,
 } from "@/components/ui/Toast"
 import { COLORS } from "@/constants/theme"
 import { CartItem } from "@/context/CartContext"
@@ -15,9 +15,9 @@ import { useAuth } from "@/hooks/useAuth"
 import { useCart } from "@/hooks/useCart"
 import { useWallet } from "@/hooks/useWallet"
 import {
-  createSubscriptions,
-  fetchProductById,
-  fetchUserAddresses,
+    createSubscriptions,
+    fetchProductById,
+    fetchUserAddresses,
 } from "@/lib/supabase-service"
 import { Address, Product } from "@/types/database.types"
 import { formatCurrency } from "@/utils/formatters"
@@ -25,11 +25,11 @@ import { useRouter } from "expo-router"
 import { Check, MapPin, Wallet as WalletIcon } from "lucide-react-native"
 import React, { useCallback, useEffect, useRef, useState } from "react"
 import {
-  ActivityIndicator,
-  ScrollView,
-  Text,
-  TouchableOpacity,
-  View,
+    ActivityIndicator,
+    ScrollView,
+    Text,
+    TouchableOpacity,
+    View,
 } from "react-native"
 import Animated, { FadeInUp } from "react-native-reanimated"
 
@@ -114,8 +114,16 @@ export default function CartScreen() {
       showErrorToast("Cart Empty", "Add items to your cart first.")
       return false
     }
-    if (!selectedAddress) {
-      showErrorToast("No Address", "Please add a delivery address first.")
+
+    // Check that every item has an address (per-item or fallback)
+    const missingAddress = items.some(
+      (item) => !item.addressId && !selectedAddress,
+    )
+    if (missingAddress) {
+      showErrorToast(
+        "No Address",
+        "Please select a delivery address for all items.",
+      )
       return false
     }
 
@@ -137,7 +145,7 @@ export default function CartScreen() {
   }
 
   const handleConfirmOrder = async () => {
-    if (!user?.id || !selectedAddress) return
+    if (!user?.id) return
 
     setPlacing(true)
     setShowPlaceOrderModal(false)
@@ -146,7 +154,7 @@ export default function CartScreen() {
       const subscriptions = items.map((item) => ({
         user_id: user.id,
         product_id: item.productId,
-        address_id: selectedAddress.id,
+        address_id: item.addressId || selectedAddress?.id,
         quantity: item.quantity,
         frequency: item.frequency,
         start_date: item.startDate,

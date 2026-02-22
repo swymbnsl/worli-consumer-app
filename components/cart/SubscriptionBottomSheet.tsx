@@ -1,6 +1,7 @@
 import ProductImage from "@/components/common/ProductImage"
 import Button from "@/components/ui/Button"
 import { ConfirmModal } from "@/components/ui/Modal"
+import { showErrorToast } from "@/components/ui/Toast"
 import { COLORS } from "@/constants/theme"
 import {
   CartItem,
@@ -10,7 +11,8 @@ import {
 import { useAuth } from "@/hooks/useAuth"
 import { useCart } from "@/hooks/useCart"
 import { supabase } from "@/lib/supabase"
-import { Product } from "@/types/database.types"
+import { checkDuplicateSubscription, fetchUserAddresses } from "@/lib/supabase-service"
+import { Address, Product } from "@/types/database.types"
 import { formatCurrency } from "@/utils/formatters"
 import {
   getDayAfterTomorrowDateNtp,
@@ -25,7 +27,7 @@ import {
   BottomSheetModal,
   BottomSheetScrollView,
 } from "@gorhom/bottom-sheet"
-import { Calendar, Clock, Minus, Pencil, Plus } from "lucide-react-native"
+import { Calendar, Check, ChevronDown, Clock, MapPin, Minus, Pencil, Plus } from "lucide-react-native"
 import React, {
   forwardRef,
   useCallback,
@@ -126,13 +128,36 @@ const SubscriptionBottomSheet = forwardRef<
     DELIVERY_TIME_SLOTS[0].value,
   )
 
+  // Address state
+  const [addresses, setAddresses] = useState<Address[]>([])
+  const [selectedAddress, setSelectedAddress] = useState<Address | null>(null)
+  const [showAddressPicker, setShowAddressPicker] = useState(false)
+
   const snapPoints = useMemo(() => ["70%", "92%"], [])
 
   // ─── Imperative Handle ───────────────────────────────────────────────
 
   useImperativeHandle(ref, () => ({
-    open: (p: Product, editItem?: CartItem) => {
+    open: async (p: Product, editItem?: CartItem) => {
       setProduct(p)
+
+      // Fetch addresses
+      if (user?.id) {
+        try {
+          const addrs = await fetchUserAddresses(user.id)
+          setAddresses(addrs)
+          if (editItem?.addressId) {
+            const match = addrs.find((a) => a.id === editItem.addressId)
+            setSelectedAddress(match || addrs.find((a) => a.is_default) || addrs[0] || null)
+          } else {
+            setSelectedAddress(addrs.find((a) => a.is_default) || addrs[0] || null)
+          }
+        } catch {
+          setAddresses([])
+          setSelectedAddress(null)
+        }
+      }
+
       if (editItem) {
         setEditingItem(editItem)
         setFrequency(editItem.frequency)
@@ -176,6 +201,7 @@ const SubscriptionBottomSheet = forwardRef<
       }
       setShowDatePicker(false)
       setShowTimePicker(false)
+      setShowAddressPicker(false)
       bottomSheetRef.current?.present()
     },
     close: () => {
@@ -279,6 +305,8 @@ const SubscriptionBottomSheet = forwardRef<
       intervalDays: frequency === "on_interval" ? intervalDays : undefined,
       customQuantities: frequency === "custom" ? customQuantities : undefined,
       preferredDeliveryTime,
+      addressId: selectedAddress?.id,
+      addressName: selectedAddress?.name || undefined,
     }
 
     // Check for 7 PM cutoff — show confirmation if needed
@@ -286,6 +314,26 @@ const SubscriptionBottomSheet = forwardRef<
       setPendingCartPayload(payload)
       setShowCutoffModal(true)
       return
+    }
+
+    // Frontend duplicate subscription check
+    if (user?.id && selectedAddress?.id && !editingItem) {
+      try {
+        const isDuplicate = await checkDuplicateSubscription(
+          user.id,
+          product.id,
+          selectedAddress.id,
+        )
+        if (isDuplicate) {
+          showErrorToast(
+            "Duplicate Subscription",
+            `You already have an active subscription for ${product.name} at this address.`,
+          )
+          return
+        }
+      } catch {
+        // If check fails, let the edge function handle it
+      }
     }
 
     await finalizeAddToCart(payload)
@@ -374,6 +422,89 @@ const SubscriptionBottomSheet = forwardRef<
               </Text>
             </View>
           </View>
+
+          {/* ─── Delivery Address ──────────────────────────────── */}
+          <View className="mb-6">
+            <Text className="font-sofia-bold text-base text-neutral-black mb-3">
+              Delivery Address
+            </Text>
+            <TouchableOpacity
+              className="flex-row items-center border border-neutral-lightGray rounded-lg px-3 py-3"
+              onPress={() => setShowAddressPicker(!showAddressPicker)}
+              activeOpacity={0.7}
+            >
+              <MapPin size={18} color={COLORS.neutral.gray} />
+              <View className="flex-1 ml-2">
+                <Text className="font-comfortaa-bold text-sm text-neutral-black">
+                  {selectedAddress?.name || "Select Address"}
+                </Text>
+                {selectedAddress && (
+                  <Text className="font-comfortaa text-xs text-neutral-gray" numberOfLines={1}>
+                    {[selectedAddress.address_line1, selectedAddress.city].filter(Boolean).join(", ")}
+                  </Text>
+                )}
+              </View>
+              <ChevronDown size={16} color={COLORS.neutral.gray} />
+            </TouchableOpacity>
+          </View>
+
+          {/* Address Picker */}
+          {showAddressPicker && (
+            <View className="mb-4 bg-neutral-lightCream rounded-xl p-3">
+              <Text className="font-sofia-bold text-base text-neutral-black mb-3 text-center">
+                Select Delivery Address
+              </Text>
+              {addresses.length === 0 ? (
+                <Text className="text-center font-comfortaa text-neutral-gray py-4">
+                  No addresses found. Please add one first.
+                </Text>
+              ) : (
+                addresses.map((addr) => {
+                  const isSelected = selectedAddress?.id === addr.id
+                  return (
+                    <TouchableOpacity
+                      key={addr.id}
+                      className={`flex-row items-center border rounded-xl p-3 mb-2 ${
+                        isSelected
+                          ? "border-primary-navy bg-primary-navy/5"
+                          : "border-neutral-lightGray bg-white"
+                      }`}
+                      onPress={() => {
+                        setSelectedAddress(addr)
+                        setShowAddressPicker(false)
+                      }}
+                      activeOpacity={0.7}
+                    >
+                      <MapPin
+                        size={16}
+                        color={isSelected ? COLORS.primary.navy : COLORS.neutral.gray}
+                      />
+                      <View className="flex-1 ml-2">
+                        <Text
+                          className={`font-sofia-bold text-sm ${
+                            isSelected ? "text-primary-navy" : "text-neutral-darkGray"
+                          }`}
+                        >
+                          {addr.name || "Home"}
+                        </Text>
+                        <Text className="font-comfortaa text-xs text-neutral-gray" numberOfLines={1}>
+                          {[addr.address_line1, addr.city, addr.pincode].filter(Boolean).join(", ")}
+                        </Text>
+                      </View>
+                      {isSelected && <Check size={18} color={COLORS.primary.navy} />}
+                    </TouchableOpacity>
+                  )
+                })
+              )}
+              <TouchableOpacity
+                className="mt-2 items-center py-2.5 bg-primary-navy rounded-lg"
+                onPress={() => setShowAddressPicker(false)}
+                activeOpacity={0.7}
+              >
+                <Text className="font-sofia-bold text-sm text-white">Done</Text>
+              </TouchableOpacity>
+            </View>
+          )}
           
           <View className="mb-6">
             <Text className="font-sofia-bold text-base text-neutral-black mb-3">
@@ -612,7 +743,6 @@ const SubscriptionBottomSheet = forwardRef<
           />
 
           {/* 7 PM Cutoff Confirmation Modal */}
-```tsx
           <ConfirmModal
             visible={showCutoffModal}
             onClose={handleCutoffCancel}
@@ -622,7 +752,6 @@ const SubscriptionBottomSheet = forwardRef<
             confirmText="Continue"
             cancelText="Cancel"
           />
-```
         </BottomSheetScrollView>
       )}
     </BottomSheetModal>

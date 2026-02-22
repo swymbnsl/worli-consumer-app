@@ -1,5 +1,9 @@
+import {
+  showErrorToast,
+  showSuccessToast,
+} from "@/components/ui/Toast"
 import { useAuth } from "@/hooks/useAuth"
-import { supabase } from "@/lib/supabase"
+import { createAddress, updateAddress } from "@/lib/supabase-service"
 import { Address } from "@/types/database.types"
 import { validatePincode } from "@/utils/validators"
 import React, { useEffect, useState } from "react"
@@ -13,10 +17,6 @@ import {
   TouchableOpacity,
   View,
 } from "react-native"
-import {
-  showErrorToast,
-  showSuccessToast,
-} from "@/components/ui/Toast"
 
 interface AddEditAddressModalProps {
   visible: boolean
@@ -108,43 +108,19 @@ export default function AddEditAddressModal({
       }
 
       if (address) {
-        // Update existing address
-        // If setting as default, clear all other defaults first
-        if (isDefault) {
-          await supabase
-            .from("addresses")
-            .update({ is_default: false })
-            .eq("user_id", user.id)
-        }
-
-        const { error } = await supabase
-          .from("addresses")
-          .update(addressData)
-          .eq("id", address.id)
-
-        if (error) throw error
+        await updateAddress(address.id, user.id, addressData)
         showSuccessToast("Success", "Address updated successfully")
       } else {
-        // Create new address
-        // If this is the first address or set as default, update others
-        if (isDefault) {
-          await supabase
-            .from("addresses")
-            .update({ is_default: false })
-            .eq("user_id", user.id)
-        }
-
-        const { error } = await supabase.from("addresses").insert([addressData])
-
-        if (error) throw error
+        await createAddress(addressData)
         showSuccessToast("Success", "Address added successfully")
       }
 
       onSuccess()
       handleClose()
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error saving address:", error)
-      showErrorToast("Error", "Failed to save address")
+      // Service layer throws user-friendly errors for duplicates
+      showErrorToast("Error", error.message || "Failed to save address")
     } finally {
       setLoading(false)
     }

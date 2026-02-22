@@ -1,40 +1,40 @@
 import SubscriptionBottomSheet, {
-  SubscriptionBottomSheetRef,
+    SubscriptionBottomSheetRef,
 } from "@/components/cart/SubscriptionBottomSheet"
 import {
-  CalendarLegend,
-  CategoriesGrid,
-  DateStrip,
-  PromoBanner,
-  TodayDeliveryCard,
+    CalendarLegend,
+    CategoriesGrid,
+    DateStrip,
+    PromoBanner,
+    TodayDeliveryCard,
 } from "@/components/home"
 import Header from "@/components/ui/Header"
 import { COLORS } from "@/constants/theme"
 import { useAuth } from "@/hooks/useAuth"
 import { useCart } from "@/hooks/useCart"
 import {
-  fetchActiveOffers,
-  fetchActiveProducts,
-  fetchActiveSubscriptions,
-  fetchHomeOrders,
-  fetchUserAddresses,
+    fetchActiveOffers,
+    fetchActiveProducts,
+    fetchActiveSubscriptions,
+    fetchHomeOrders,
+    fetchUserAddresses,
 } from "@/lib/supabase-service"
 import {
-  Address,
-  Offer,
-  Order,
-  Product,
-  Subscription,
+    Address,
+    Offer,
+    Order,
+    Product,
+    Subscription,
 } from "@/types/database.types"
 import { useRouter } from "expo-router"
 import { ShoppingCart } from "lucide-react-native"
 import React, { useCallback, useEffect, useRef, useState } from "react"
 import {
-  RefreshControl,
-  ScrollView,
-  Text,
-  TouchableOpacity,
-  View,
+    RefreshControl,
+    ScrollView,
+    Text,
+    TouchableOpacity,
+    View,
 } from "react-native"
 import Animated, { FadeInDown } from "react-native-reanimated"
 
@@ -137,7 +137,7 @@ export default function HomeScreen() {
         location={
           defaultAddress?.name || defaultAddress?.landmark || "Add Address"
         }
-        onLocationPress={() => router.push("/add-address")}
+        onLocationPress={() => router.push("/account/addresses")}
       />
 
       <ScrollView

@@ -24,6 +24,8 @@ export interface CartItem {
   intervalDays?: number // for on_interval (2,3,4…30)
   customQuantities?: CustomQuantities // for custom (per-day qty)
   preferredDeliveryTime?: string // delivery slot (e.g. "09:00-10:00")
+  addressId?: string // per-item delivery address
+  addressName?: string // display label for the address
 }
 
 export interface CartContextType {

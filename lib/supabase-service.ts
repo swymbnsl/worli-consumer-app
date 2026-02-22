@@ -205,29 +205,29 @@ export async function cancelSubscription(
 export async function createSubscription(
   subscription: SubscriptionInsert,
 ): Promise<Subscription> {
-  const { data, error } = await supabase
-    .from("subscriptions")
-    .insert([subscription])
-    .select()
-    .single()
-
-  if (error) throw error
-  return data
+  const result = await createSubscriptions([subscription])
+  return result[0]
 }
 
 /**
- * Create multiple subscriptions in a batch.
+ * Create multiple subscriptions in a batch using the edge function.
  */
 export async function createSubscriptions(
   subscriptions: SubscriptionInsert[],
 ): Promise<Subscription[]> {
-  const { data, error } = await supabase
-    .from("subscriptions")
-    .insert(subscriptions)
-    .select()
+  const { data, error } = await supabase.functions.invoke(
+    "create-subscriptions",
+    { body: { subscriptions } },
+  )
 
-  if (error) throw error
-  return data || []
+  if (error) {
+    // supabase-js wraps non-2xx responses. Try to extract our custom error
+    // It's often in error.context?.error or error.message depending on the exact error type
+    const customError = error.context?.error || error.message
+    throw new Error(customError || "Failed to create subscriptions")
+  }
+  if (data?.error) throw new Error(data.error)
+  return data?.subscriptions || []
 }
 
 // ─── Addresses ─────────────────────────────────────────────────────────────────
@@ -282,9 +282,22 @@ export async function setDefaultAddress(
 
 /**
  * Create a new address. If is_default is true, clears other defaults first.
+ * Throws a user-friendly error if an address with the same name already exists.
  */
 export async function createAddress(data: AddressInsert): Promise<Address> {
-  if (data.is_default && data.user_id) {
+  if (!data.user_id) throw new Error("User ID is required")
+
+  // Check for duplicate name
+  const existing = await fetchUserAddresses(data.user_id)
+  const nameLower = (data.name || "Home").toLowerCase().trim()
+  const dup = existing.find((a) => a.name?.toLowerCase().trim() === nameLower)
+  if (dup) {
+    throw new Error(
+      `You already have an address named "${dup.name}". Please use a different name.`,
+    )
+  }
+
+  if (data.is_default) {
     await supabase
       .from("addresses")
       .update({ is_default: false })
@@ -303,12 +316,27 @@ export async function createAddress(data: AddressInsert): Promise<Address> {
 
 /**
  * Update an existing address. If is_default is true, clears other defaults first.
+ * Throws a user-friendly error if another address with the same name already exists.
  */
 export async function updateAddress(
   addressId: string,
   userId: string,
   data: AddressUpdate,
 ): Promise<Address> {
+  // Check for duplicate name (exclude the address being edited)
+  if (data.name) {
+    const existing = await fetchUserAddresses(userId)
+    const nameLower = data.name.toLowerCase().trim()
+    const dup = existing.find(
+      (a) => a.name?.toLowerCase().trim() === nameLower && a.id !== addressId,
+    )
+    if (dup) {
+      throw new Error(
+        `You already have an address named "${dup.name}". Please use a different name.`,
+      )
+    }
+  }
+
   if (data.is_default) {
     await supabase
       .from("addresses")
@@ -325,4 +353,25 @@ export async function updateAddress(
 
   if (error) throw error
   return address
+}
+
+/**
+ * Check if a duplicate active subscription exists for this product + address.
+ * Returns true if a duplicate exists.
+ */
+export async function checkDuplicateSubscription(
+  userId: string,
+  productId: string,
+  addressId: string,
+): Promise<boolean> {
+  const { data } = await supabase
+    .from("subscriptions")
+    .select("id")
+    .eq("user_id", userId)
+    .eq("product_id", productId)
+    .eq("address_id", addressId)
+    .eq("status", "active")
+    .limit(1)
+
+  return (data?.length ?? 0) > 0
 }
