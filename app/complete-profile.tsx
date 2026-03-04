@@ -1,10 +1,13 @@
 import Button from "@/components/ui/Button"
 import TextInput from "@/components/ui/TextInput"
 import { showErrorToast, showSuccessToast } from "@/components/ui/Toast"
+import { COLORS } from "@/constants/theme"
 import { useAuth } from "@/hooks/useAuth"
+import { applyReferralCode, checkReferralCode } from "@/lib/supabase-service"
 import { useRouter } from "expo-router"
+import { CheckCircle, XCircle } from "lucide-react-native"
 import React, { useState } from "react"
-import { ScrollView, Text, View } from "react-native"
+import { ActivityIndicator, ScrollView, Text, View } from "react-native"
 import Animated, { FadeInDown, FadeInUp } from "react-native-reanimated"
 
 export default function CompleteProfileScreen() {
@@ -12,7 +15,40 @@ export default function CompleteProfileScreen() {
   const { user, updateUser } = useAuth()
   const [fullName, setFullName] = useState("")
   const [email, setEmail] = useState("")
+  const [referralCode, setReferralCode] = useState("")
+  const [referralStatus, setReferralStatus] = useState<
+    "idle" | "checking" | "valid" | "invalid"
+  >("idle")
+  const [referralError, setReferralError] = useState("")
   const [isLoading, setIsLoading] = useState(false)
+
+  const handleReferralCodeChange = (text: string) => {
+    setReferralCode(text.toUpperCase())
+    // Reset verification whenever the text changes
+    if (referralStatus !== "idle") {
+      setReferralStatus("idle")
+      setReferralError("")
+    }
+  }
+
+  const handleVerifyReferralCode = async () => {
+    if (!referralCode.trim()) return
+    setReferralStatus("checking")
+    setReferralError("")
+    try {
+      const result = await checkReferralCode(referralCode.trim())
+      if (result.valid) {
+        setReferralStatus("valid")
+      } else {
+        setReferralStatus("invalid")
+        setReferralError(result.error ?? "Invalid referral code.")
+      }
+    } catch (e) {
+      console.error("Referral check error:", e)
+      setReferralStatus("invalid")
+      setReferralError("Could not verify code. Please try again.")
+    }
+  }
 
   const validateEmail = (email: string): boolean => {
     if (!email.trim()) return true // Email is optional
@@ -38,6 +74,15 @@ export default function CompleteProfileScreen() {
       return
     }
 
+    // Block submission if a code was entered but not verified
+    if (referralCode.trim() && referralStatus !== "valid") {
+      showErrorToast(
+        "Verify Referral Code",
+        "Please verify your referral code before continuing, or clear it to skip.",
+      )
+      return
+    }
+
     setIsLoading(true)
     try {
       const updates: { full_name: string; email?: string } = {
@@ -50,12 +95,32 @@ export default function CompleteProfileScreen() {
 
       const success = await updateUser(updates)
 
-      if (success) {
-        showSuccessToast("Profile Completed", "Redirecting to home...")
-        router.replace("/(tabs)/home")
-      } else {
+      if (!success) {
         showErrorToast("Error", "Failed to update profile. Please try again.")
+        return
       }
+
+      // Apply referral code if provided (non-blocking: profile is already saved)
+      if (referralCode.trim()) {
+        try {
+          const result = await applyReferralCode(referralCode.trim())
+          if (result.success) {
+            showSuccessToast(
+              "Referral Applied! 🎉",
+              `You’ll both earn ₹${result.reward_amount} when your first order is delivered.`,
+            )
+          } else {
+            // Non-fatal: show the reason but still continue to home
+            showErrorToast("Referral Code", result.error)
+          }
+        } catch (referralError) {
+          console.error("Referral code error:", referralError)
+          // Don't block navigation — profile was saved successfully
+        }
+      }
+
+      showSuccessToast("Profile Completed", "Welcome aboard!")
+      router.replace("/(tabs)/home")
     } catch (error) {
       console.error("Error completing profile:", error)
       showErrorToast("Error", "An error occurred. Please try again.")
@@ -117,12 +182,59 @@ export default function CompleteProfileScreen() {
               placeholder="Enter your email"
               keyboardType="email-address"
               autoCapitalize="none"
-              containerClassName="mb-2"
+              containerClassName="mb-4"
             />
 
-            <Text className="font-comfortaa text-xs text-neutral-gray mt-2">
-              We'll use this to send you order confirmations and updates
-            </Text>
+            <TextInput
+              label="Referral Code (Optional)"
+              value={referralCode}
+              onChangeText={handleReferralCodeChange}
+              placeholder="e.g. RAHUL423"
+              autoCapitalize="characters"
+              autoCorrect={false}
+              containerClassName="mb-3"
+              editable={referralStatus !== "valid" && referralStatus !== "checking"}
+            />
+
+            {/* Status message */}
+            {referralStatus === "valid" ? (
+              <View className="flex-row items-center gap-2 bg-primary-navy/5 border border-primary-navy/15 rounded-xl px-4 py-3 mb-3">
+                <CheckCircle size={15} color={COLORS.primary.navy} />
+                <Text className="font-comfortaa text-xs text-primary-navy flex-1 leading-4">
+                  Valid code! You'll both earn wallet credits after your first delivery.
+                </Text>
+              </View>
+            ) : referralStatus === "invalid" ? (
+              <View className="flex-row items-center gap-2 mb-3">
+                <XCircle size={15} color={COLORS.functional.error} />
+                <Text className="font-comfortaa text-xs text-functional-error flex-1 leading-4">
+                  {referralError}
+                </Text>
+              </View>
+            ) : referralStatus === "checking" ? (
+              <View className="flex-row items-center gap-2 mb-3">
+                <ActivityIndicator size="small" color={COLORS.primary.navy} />
+                <Text className="font-comfortaa text-xs text-neutral-gray">
+                  Verifying code...
+                </Text>
+              </View>
+            ) : (
+              <Text className="font-comfortaa text-xs text-neutral-gray mb-3">
+                Enter a friend's code to earn rewards on your first delivery.
+              </Text>
+            )}
+
+            {/* Verify button — always visible; greyed when empty or already valid */}
+            {referralStatus !== "valid" && (
+              <Button
+                title="Verify Code"
+                onPress={handleVerifyReferralCode}
+                variant="outline"
+                size="medium"
+                isLoading={referralStatus === "checking"}
+                disabled={referralCode.trim() === "" || referralStatus === "checking"}
+              />
+            )}
           </View>
 
           {/* Phone Number Info */}
@@ -145,10 +257,14 @@ export default function CompleteProfileScreen() {
                 • Full name is required (at least 2 characters)
               </Text>
               <Text className="font-comfortaa text-xs text-neutral-gray leading-5">
-                • Email is optional but recommended for updates
+                • Email is optional but recommended for order updates
               </Text>
               <Text className="font-comfortaa text-xs text-neutral-gray leading-5">
-                • You can update this information later from your profile
+                • Referral code is optional — both you and your friend earn
+                wallet credits on your first delivery
+              </Text>
+              <Text className="font-comfortaa text-xs text-neutral-gray leading-5">
+                • You can update your name and email later from your profile
               </Text>
             </View>
           </View>

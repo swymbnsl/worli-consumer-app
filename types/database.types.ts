@@ -19,6 +19,8 @@ export type BottleReturn = Tables<"bottle_returns">
 export type SubscriptionHold = Tables<"subscription_holds">
 export type Referral = Tables<"referrals">
 export type AppSetting = Tables<"app_settings">
+export type Discount = Tables<"discounts">
+export type DiscountUsage = Tables<"discount_usages">
 
 // Insert types for creating new records
 export type UserInsert = TablesInsert<"users">
@@ -27,9 +29,15 @@ export type SubscriptionInsert = TablesInsert<"subscriptions">
 export type OrderInsert = TablesInsert<"orders">
 export type WalletInsert = TablesInsert<"wallets">
 export type TransactionInsert = TablesInsert<"transactions">
+export type DiscountInsert = TablesInsert<"discounts">
+export type DiscountUsageInsert = TablesInsert<"discount_usages">
+export type ReferralInsert = TablesInsert<"referrals">
 
 // Update types for updating existing records
 export type UserUpdate = TablesUpdate<"users">
 export type AddressUpdate = TablesUpdate<"addresses">
 export type SubscriptionUpdate = TablesUpdate<"subscriptions">
 export type WalletUpdate = TablesUpdate<"wallets">
+export type DiscountUpdate = TablesUpdate<"discounts">
+export type DiscountUsageUpdate = TablesUpdate<"discount_usages">
+export type ReferralUpdate = TablesUpdate<"referrals">

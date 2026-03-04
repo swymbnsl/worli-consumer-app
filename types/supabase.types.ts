@@ -226,6 +226,150 @@ export type Database = {
           },
         ]
       }
+      discount_usages: {
+        Row: {
+          applied_at: string
+          created_at: string | null
+          discount_amount_applied: number
+          discount_id: string
+          final_amount: number
+          id: string
+          order_id: string | null
+          original_amount: number
+          reversed_at: string | null
+          status: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          applied_at?: string
+          created_at?: string | null
+          discount_amount_applied: number
+          discount_id: string
+          final_amount: number
+          id?: string
+          order_id?: string | null
+          original_amount: number
+          reversed_at?: string | null
+          status?: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          applied_at?: string
+          created_at?: string | null
+          discount_amount_applied?: number
+          discount_id?: string
+          final_amount?: number
+          id?: string
+          order_id?: string | null
+          original_amount?: number
+          reversed_at?: string | null
+          status?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "discount_usages_discount_id_fkey"
+            columns: ["discount_id"]
+            isOneToOne: false
+            referencedRelation: "discounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "discount_usages_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "discount_usages_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      discounts: {
+        Row: {
+          applicable_to: string | null
+          code: string
+          created_at: string | null
+          current_uses: number
+          description: string | null
+          discount_type: string
+          discount_value: number
+          id: string
+          is_active: boolean
+          is_first_order_only: boolean
+          max_discount_amount: number | null
+          max_discount_orders: number | null
+          max_uses: number | null
+          max_uses_per_user: number
+          metadata: Json | null
+          min_order_amount: number | null
+          product_id: string | null
+          updated_at: string | null
+          valid_from: string | null
+          valid_until: string | null
+        }
+        Insert: {
+          applicable_to?: string | null
+          code: string
+          created_at?: string | null
+          current_uses?: number
+          description?: string | null
+          discount_type: string
+          discount_value: number
+          id?: string
+          is_active?: boolean
+          is_first_order_only?: boolean
+          max_discount_amount?: number | null
+          max_discount_orders?: number | null
+          max_uses?: number | null
+          max_uses_per_user?: number
+          metadata?: Json | null
+          min_order_amount?: number | null
+          product_id?: string | null
+          updated_at?: string | null
+          valid_from?: string | null
+          valid_until?: string | null
+        }
+        Update: {
+          applicable_to?: string | null
+          code?: string
+          created_at?: string | null
+          current_uses?: number
+          description?: string | null
+          discount_type?: string
+          discount_value?: number
+          id?: string
+          is_active?: boolean
+          is_first_order_only?: boolean
+          max_discount_amount?: number | null
+          max_discount_orders?: number | null
+          max_uses?: number | null
+          max_uses_per_user?: number
+          metadata?: Json | null
+          min_order_amount?: number | null
+          product_id?: string | null
+          updated_at?: string | null
+          valid_from?: string | null
+          valid_until?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "discounts_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       faqs: {
         Row: {
           answer: string
@@ -367,6 +511,8 @@ export type Database = {
           delivered_at: string | null
           delivery_date: string
           delivery_notes: string | null
+          discount_amount: number | null
+          discount_code_id: string | null
           id: string
           order_number: string
           product_id: string | null
@@ -385,6 +531,8 @@ export type Database = {
           delivered_at?: string | null
           delivery_date: string
           delivery_notes?: string | null
+          discount_amount?: number | null
+          discount_code_id?: string | null
           id?: string
           order_number: string
           product_id?: string | null
@@ -403,6 +551,8 @@ export type Database = {
           delivered_at?: string | null
           delivery_date?: string
           delivery_notes?: string | null
+          discount_amount?: number | null
+          discount_code_id?: string | null
           id?: string
           order_number?: string
           product_id?: string | null
@@ -418,6 +568,13 @@ export type Database = {
             columns: ["address_id"]
             isOneToOne: false
             referencedRelation: "addresses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_discount_code_id_fkey"
+            columns: ["discount_code_id"]
+            isOneToOne: false
+            referencedRelation: "discounts"
             referencedColumns: ["id"]
           },
           {
@@ -448,10 +605,12 @@ export type Database = {
           created_at: string | null
           deposit_amount: number | null
           description: string | null
+          features: string[]
           id: string
           image_url: string | null
           is_active: boolean | null
           name: string
+          nutritional_info: Json
           price: number
           updated_at: string | null
           volume: string | null
@@ -460,10 +619,12 @@ export type Database = {
           created_at?: string | null
           deposit_amount?: number | null
           description?: string | null
+          features?: string[]
           id?: string
           image_url?: string | null
           is_active?: boolean | null
           name: string
+          nutritional_info?: Json
           price: number
           updated_at?: string | null
           volume?: string | null
@@ -472,10 +633,12 @@ export type Database = {
           created_at?: string | null
           deposit_amount?: number | null
           description?: string | null
+          features?: string[]
           id?: string
           image_url?: string | null
           is_active?: boolean | null
           name?: string
+          nutritional_info?: Json
           price?: number
           updated_at?: string | null
           volume?: string | null
@@ -485,39 +648,55 @@ export type Database = {
       referrals: {
         Row: {
           created_at: string | null
+          expires_at: string | null
           id: string
-          referee_id: string | null
-          referral_code: string
-          referrer_id: string | null
-          reward_amount: number | null
-          rewarded_at: string | null
-          status: string | null
+          qualifying_order_id: string | null
+          referee_id: string
+          referee_reward_amount: number
+          referee_rewarded_at: string | null
+          referrer_id: string
+          referrer_reward_amount: number
+          referrer_rewarded_at: string | null
+          status: string
         }
         Insert: {
           created_at?: string | null
+          expires_at?: string | null
           id?: string
-          referee_id?: string | null
-          referral_code: string
-          referrer_id?: string | null
-          reward_amount?: number | null
-          rewarded_at?: string | null
-          status?: string | null
+          qualifying_order_id?: string | null
+          referee_id: string
+          referee_reward_amount?: number
+          referee_rewarded_at?: string | null
+          referrer_id: string
+          referrer_reward_amount?: number
+          referrer_rewarded_at?: string | null
+          status?: string
         }
         Update: {
           created_at?: string | null
+          expires_at?: string | null
           id?: string
-          referee_id?: string | null
-          referral_code?: string
-          referrer_id?: string | null
-          reward_amount?: number | null
-          rewarded_at?: string | null
-          status?: string | null
+          qualifying_order_id?: string | null
+          referee_id?: string
+          referee_reward_amount?: number
+          referee_rewarded_at?: string | null
+          referrer_id?: string
+          referrer_reward_amount?: number
+          referrer_rewarded_at?: string | null
+          status?: string
         }
         Relationships: [
           {
+            foreignKeyName: "referrals_qualifying_order_id_fkey"
+            columns: ["qualifying_order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "referrals_referee_id_fkey"
             columns: ["referee_id"]
-            isOneToOne: false
+            isOneToOne: true
             referencedRelation: "users"
             referencedColumns: ["id"]
           },
@@ -574,6 +753,9 @@ export type Database = {
           created_at: string | null
           custom_quantities: Json | null
           delivery_time: string | null
+          discount_amount: number | null
+          discount_code_id: string | null
+          discount_orders_remaining: number | null
           end_date: string | null
           frequency: string | null
           id: string
@@ -590,6 +772,9 @@ export type Database = {
           created_at?: string | null
           custom_quantities?: Json | null
           delivery_time?: string | null
+          discount_amount?: number | null
+          discount_code_id?: string | null
+          discount_orders_remaining?: number | null
           end_date?: string | null
           frequency?: string | null
           id?: string
@@ -606,6 +791,9 @@ export type Database = {
           created_at?: string | null
           custom_quantities?: Json | null
           delivery_time?: string | null
+          discount_amount?: number | null
+          discount_code_id?: string | null
+          discount_orders_remaining?: number | null
           end_date?: string | null
           frequency?: string | null
           id?: string
@@ -623,6 +811,13 @@ export type Database = {
             columns: ["address_id"]
             isOneToOne: false
             referencedRelation: "addresses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subscriptions_discount_code_id_fkey"
+            columns: ["discount_code_id"]
+            isOneToOne: false
+            referencedRelation: "discounts"
             referencedColumns: ["id"]
           },
           {
@@ -827,6 +1022,8 @@ export type Database = {
           full_name: string | null
           id: string
           phone_number: string
+          referral_code: string | null
+          referred_by: string | null
           updated_at: string | null
         }
         Insert: {
@@ -835,6 +1032,8 @@ export type Database = {
           full_name?: string | null
           id?: string
           phone_number: string
+          referral_code?: string | null
+          referred_by?: string | null
           updated_at?: string | null
         }
         Update: {
@@ -843,9 +1042,19 @@ export type Database = {
           full_name?: string | null
           id?: string
           phone_number?: string
+          referral_code?: string | null
+          referred_by?: string | null
           updated_at?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "users_referred_by_fkey"
+            columns: ["referred_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       wallets: {
         Row: {

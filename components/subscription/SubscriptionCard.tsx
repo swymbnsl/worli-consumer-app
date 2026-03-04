@@ -8,6 +8,7 @@ import {
     Edit3,
     PauseCircle,
     Repeat,
+    Tag,
     Trash2,
 } from "lucide-react-native"
 import React, { useEffect, useState } from "react"
@@ -61,6 +62,24 @@ export default function SubscriptionCard({
   }, [subscription.product_id])
 
   const dailyCost = (product?.price || 0) * (subscription.quantity || 1)
+
+  // ─── Discount helpers ──────────────────────────────────────────────
+  const remaining = subscription.discount_orders_remaining ?? null
+  const hasActiveDiscount =
+    !!subscription.discount_code_id &&
+    (remaining === null || remaining > 0)
+
+  const discountedDailyCost = hasActiveDiscount
+    ? Math.max(0, dailyCost - (subscription.discount_amount ?? 0))
+    : dailyCost
+
+  // Approximate date the discount expires (daily = 1 delivery / day)
+  const discountEndDateLabel = (() => {
+    if (!hasActiveDiscount || remaining === null) return null
+    const end = new Date()
+    end.setDate(end.getDate() + remaining - 1)
+    return end.toLocaleDateString("en-IN", { day: "numeric", month: "short" })
+  })()
 
   const frequencyLabel =
     (subscription.frequency || "daily").charAt(0).toUpperCase() +
@@ -124,11 +143,20 @@ export default function SubscriptionCard({
               {/* Price */}
               <View className="items-end">
                 <Text className="font-sofia-bold text-base text-primary-navy">
-                  {formatCurrency(dailyCost)}
+                  {formatCurrency(hasActiveDiscount ? discountedDailyCost : dailyCost)}
                 </Text>
-                <Text className="font-comfortaa text-[10px] text-neutral-gray">
-                  /day
-                </Text>
+                {hasActiveDiscount && discountedDailyCost < dailyCost ? (
+                  <Text
+                    className="font-comfortaa text-[10px] text-neutral-gray"
+                    style={{ textDecorationLine: "line-through" }}
+                  >
+                    {formatCurrency(dailyCost)}
+                  </Text>
+                ) : (
+                  <Text className="font-comfortaa text-[10px] text-neutral-gray">
+                    /day
+                  </Text>
+                )}
               </View>
             </View>
 
@@ -165,6 +193,23 @@ export default function SubscriptionCard({
             </View>
           </View>
         </View>
+
+        {/* Discount info strip */}
+        {hasActiveDiscount && (
+          <View
+            className="mx-4 mb-3 flex-row items-center px-3 py-2 rounded-xl"
+            style={{ backgroundColor: COLORS.functional.success + "15" }}
+          >
+            <Tag size={12} color={COLORS.functional.success} strokeWidth={2.5} />
+            <Text className="font-comfortaa text-xs ml-2" style={{ color: COLORS.functional.success }}>
+              {remaining === null
+                ? `Saving ${formatCurrency(subscription.discount_amount ?? 0)}/order · unlimited orders`
+                : `Saving ${formatCurrency(subscription.discount_amount ?? 0)}/order · ${remaining} deliver${remaining === 1 ? "y" : "ies"} left${
+                    discountEndDateLabel ? ` · until ${discountEndDateLabel}` : ""
+                  }`}
+            </Text>
+          </View>
+        )}
 
         {/* Action Bar */}
         <View className="flex-row border-t border-neutral-lightGray/60">

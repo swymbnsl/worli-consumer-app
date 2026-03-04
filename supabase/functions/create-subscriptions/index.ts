@@ -140,6 +140,35 @@ Deno.serve(async (req) => {
       throw error
     }
 
+    // ─── Record Discount Usage ───────────────────────────────────────────────
+    // Inserting into discount_usages fires the trigger that increments
+    // discounts.current_uses and provides an audit trail.
+    // We record one usage row per unique discount code used in this batch.
+    const discountContext: { discount_amount: number; original_amount: number } | null = body.discount_context ?? null
+    const discountCodeId: string | null = subscriptions[0]?.discount_code_id ?? null
+
+    if (discountCodeId && discountContext) {
+      const { error: usageError } = await supabaseAdmin
+        .from("discount_usages")
+        .insert({
+          discount_id: discountCodeId,
+          user_id: user.id,
+          order_id: null, // No order exists yet; orders are generated later by the delivery job
+          discount_amount_applied: discountContext.discount_amount,
+          original_amount: discountContext.original_amount,
+          final_amount: discountContext.original_amount - discountContext.discount_amount,
+          status: "applied",
+        })
+
+      if (usageError) {
+        // Log but don't roll back — subscriptions are already created.
+        // A failed usage record is preferable to losing a confirmed order.
+        console.error("⚠️ [WARN] Failed to record discount_usage:", usageError)
+      } else {
+        console.log(`🎟️ [DISCOUNT] Recorded usage of code ${discountCodeId} for user ${user.id}`)
+      }
+    }
+
     console.log(`✅ [SUCCESS] Created ${data.length} subscriptions for user ${user.id}`)
     return jsonResponse({ subscriptions: data })
 

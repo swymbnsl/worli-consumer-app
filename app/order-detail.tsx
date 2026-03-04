@@ -1,4 +1,5 @@
-import AccountSubHeader from "@/components/account/AccountSubHeader"
+import PageHeader from "@/components/ui/PageHeader"
+import { showErrorToast } from "@/components/ui/Toast"
 import { PRODUCT } from "@/constants/product"
 import { COLORS } from "@/constants/theme"
 import { useAuth } from "@/hooks/useAuth"
@@ -6,7 +7,6 @@ import { fetchOrderById, fetchProductSummary } from "@/lib/supabase-service"
 import { Order, Product as ProductType } from "@/types/database.types"
 import { formatFullDate } from "@/utils/dateUtils"
 import { formatCurrency } from "@/utils/formatters"
-import { showErrorToast } from "@/components/ui/Toast"
 import { useLocalSearchParams, useRouter } from "expo-router"
 import { Calendar, MapPin } from "lucide-react-native"
 import React, { useEffect, useState } from "react"
@@ -98,7 +98,7 @@ export default function OrderDetailScreen() {
 
   return (
     <View className="flex-1 bg-neutral-lightCream">
-      <AccountSubHeader title="Order Details" />
+      <PageHeader title="Order Details" />
 
       <ScrollView
         className="flex-1"

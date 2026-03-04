@@ -1,13 +1,14 @@
 import CartItemCard from "@/components/cart/CartItemCard"
+import DiscountCodeInput from "@/components/cart/DiscountCodeInput"
 import SubscriptionBottomSheet, {
-    SubscriptionBottomSheetRef,
+  SubscriptionBottomSheetRef,
 } from "@/components/cart/SubscriptionBottomSheet"
 import Button from "@/components/ui/Button"
 import Modal, { ConfirmModal } from "@/components/ui/Modal"
 import PageHeader from "@/components/ui/PageHeader"
 import {
-    showErrorToast,
-    showSuccessToast,
+  showErrorToast,
+  showSuccessToast,
 } from "@/components/ui/Toast"
 import { COLORS } from "@/constants/theme"
 import { CartItem } from "@/context/CartContext"
@@ -15,9 +16,11 @@ import { useAuth } from "@/hooks/useAuth"
 import { useCart } from "@/hooks/useCart"
 import { useWallet } from "@/hooks/useWallet"
 import {
-    createSubscriptions,
-    fetchProductById,
-    fetchUserAddresses,
+  createSubscriptions,
+  DiscountResult,
+  fetchProductById,
+  fetchUserAddresses,
+  validateDiscountCode,
 } from "@/lib/supabase-service"
 import { Address, Product } from "@/types/database.types"
 import { formatCurrency } from "@/utils/formatters"
@@ -25,11 +28,11 @@ import { useRouter } from "expo-router"
 import { Check, MapPin, Wallet as WalletIcon } from "lucide-react-native"
 import React, { useCallback, useEffect, useRef, useState } from "react"
 import {
-    ActivityIndicator,
-    ScrollView,
-    Text,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  ScrollView,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native"
 import Animated, { FadeInUp } from "react-native-reanimated"
 
@@ -52,6 +55,14 @@ export default function CartScreen() {
   const [showClearCartModal, setShowClearCartModal] = useState(false)
   const [showAddressModal, setShowAddressModal] = useState(false)
   const [showPlaceOrderModal, setShowPlaceOrderModal] = useState(false)
+
+  // ─── Discount code ──────────────────────────────────────────────────
+
+  const [appliedDiscount, setAppliedDiscount] = useState<DiscountResult | undefined>()
+  const [appliedDiscountCode, setAppliedDiscountCode] = useState<string | undefined>()
+
+  const discountAmount = appliedDiscount?.discount_amount ?? 0
+  const finalAmount = totalAmount - discountAmount
 
   // ─── Fetch addresses ────────────────────────────────────────────────
 
@@ -128,7 +139,7 @@ export default function CartScreen() {
     }
 
     const walletBalance = wallet?.balance ?? 0
-    if (walletBalance < totalAmount) {
+    if (walletBalance < finalAmount) {
       showErrorToast(
         "Insufficient Balance",
         "Please recharge your wallet to proceed.",
@@ -162,8 +173,16 @@ export default function CartScreen() {
         custom_quantities: item.customQuantities || null,
         delivery_time: item.preferredDeliveryTime || null,
         status: "active" as const,
+        discount_code_id: appliedDiscount?.discount_id ?? null,
+        discount_amount: appliedDiscount?.discount_amount ?? 0,
+        discount_orders_remaining: appliedDiscount?.max_discount_orders ?? null,
       }))
-      await createSubscriptions(subscriptions)
+      await createSubscriptions(
+        subscriptions,
+        appliedDiscount
+          ? { discount_amount: discountAmount, original_amount: totalAmount }
+          : null,
+      )
       clearCart()
       showSuccessToast("Success", "Your subscriptions have been placed!")
       router.back()
@@ -261,6 +280,24 @@ export default function CartScreen() {
               </Text>
             </View>
 
+            {/* Discount Code */}
+            <DiscountCodeInput
+              orderAmount={totalAmount}
+              applicableTo="subscription"
+              userId={user?.id ?? ""}
+              onApply={(result, code) => {
+                setAppliedDiscount(result)
+                setAppliedDiscountCode(code)
+              }}
+              onRemove={() => {
+                setAppliedDiscount(undefined)
+                setAppliedDiscountCode(undefined)
+              }}
+              appliedCode={appliedDiscountCode}
+              appliedResult={appliedDiscount}
+              onValidate={validateDiscountCode}
+            />
+
             {/* Delivery Address */}
             <View className="bg-white rounded-2xl p-4 mb-4 border border-neutral-lightGray">
               <View className="flex-row items-start">
@@ -331,9 +368,29 @@ export default function CartScreen() {
                 {itemCount} {itemCount === 1 ? "item" : "items"}
               </Text>
               <Text className="font-sofia-bold text-xl text-primary-navy">
-                {formatCurrency(totalAmount)}
+                {formatCurrency(finalAmount)}
               </Text>
             </View>
+            {appliedDiscount && discountAmount > 0 && (
+              <View className="flex-row items-center justify-between mb-3 -mt-2">
+                <Text className="font-comfortaa text-xs text-neutral-gray">
+                  Subtotal
+                </Text>
+                <Text className="font-comfortaa text-xs text-neutral-gray line-through">
+                  {formatCurrency(totalAmount)}
+                </Text>
+              </View>
+            )}
+            {appliedDiscount && discountAmount > 0 && (
+              <View className="flex-row items-center justify-between mb-3">
+                <Text className="font-comfortaa text-xs text-functional-success">
+                  Discount ({appliedDiscountCode})
+                </Text>
+                <Text className="font-sofia-bold text-sm text-functional-success">
+                  -{formatCurrency(discountAmount)}
+                </Text>
+              </View>
+            )}
             <Button
               title={placing ? "Placing Order..." : "Place Order"}
               onPress={handlePlaceOrderClick}
@@ -453,7 +510,11 @@ export default function CartScreen() {
         title="Confirm Order"
         description={`Place order for ${itemCount} ${
           itemCount === 1 ? "item" : "items"
-        } totaling ${formatCurrency(totalAmount)}?`}
+        } totaling ${formatCurrency(finalAmount)}${
+          discountAmount > 0
+            ? ` (saving ${formatCurrency(discountAmount)} with ${appliedDiscountCode})`
+            : ""
+        }?`}
         confirmText="Place Order"
         onConfirm={handleConfirmOrder}
       />

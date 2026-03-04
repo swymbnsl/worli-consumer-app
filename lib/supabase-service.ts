@@ -264,13 +264,16 @@ export async function createSubscription(
 
 /**
  * Create multiple subscriptions in a batch using the edge function.
+ * Pass discountContext when a promo code was applied so the edge function
+ * can record the usage (which triggers discounts.current_uses increment).
  */
 export async function createSubscriptions(
   subscriptions: SubscriptionInsert[],
+  discountContext?: { discount_amount: number; original_amount: number } | null,
 ): Promise<Subscription[]> {
   const { data, error } = await supabase.functions.invoke(
     "create-subscriptions",
-    { body: { subscriptions } },
+    { body: { subscriptions, discount_context: discountContext ?? null } },
   )
 
   if (error) {
@@ -504,4 +507,148 @@ export async function updateWalletSettings(
     .eq("user_id", userId)
 
   if (error) throw error
+}
+
+// ─── Discounts ─────────────────────────────────────────────────────────────────
+
+export interface DiscountResult {
+  valid: true
+  discount_id: string
+  discount_type: "percentage" | "flat_amount"
+  discount_value: number
+  discount_amount: number
+  final_amount: number
+  /** NULL = no order-count limit. Set to e.g. 7 means discount applies to first 7 deliveries only. */
+  max_discount_orders: number | null
+}
+
+export interface DiscountError {
+  valid: false
+  error: string
+}
+
+/**
+ * Calls the validate_discount_code Postgres function.
+ * Returns the discount breakdown if valid, or an error message if not.
+ */
+export async function validateDiscountCode(
+  code: string,
+  userId: string,
+  orderAmount: number,
+  applicableTo = "all",
+): Promise<DiscountResult | DiscountError> {
+  const { data, error } = await supabase.rpc("validate_discount_code", {
+    p_code: code,
+    p_user_id: userId,
+    p_order_amount: orderAmount,
+    p_applicable_to: applicableTo,
+  })
+
+  if (error) throw error
+
+  // data is a JSON object returned from the PL/pgSQL function
+  return data as DiscountResult | DiscountError
+}
+
+// ─── Referrals ─────────────────────────────────────────────────────────────────
+
+export interface ReferralSuccess {
+  success: true
+  /** UUID of the user whose referral code was used */
+  referrer_id: string
+  /** Wallet credit amount granted to both parties upon qualifying order */
+  reward_amount: number
+}
+
+export interface ReferralError {
+  success: false
+  error: string
+}
+
+export interface ReferralCodeCheck {
+  valid: boolean
+  /** Set when valid is false */
+  error?: string
+}
+
+/**
+ * Calls the `check_referral_code` SECURITY DEFINER Postgres function.
+ *
+ * Read-only check — does NOT apply the code. Use this for inline UI
+ * validation before form submission.
+ *
+ * Returns `{ valid: true }` if the code exists, belongs to a different user,
+ * and the caller has not already used a referral code.
+ * Returns `{ valid: false, error }` otherwise.
+ */
+export async function checkReferralCode(
+  code: string,
+): Promise<ReferralCodeCheck> {
+  const { data, error } = await supabase.rpc("check_referral_code", {
+    p_code: code.trim().toUpperCase(),
+  })
+
+  if (error) {
+    // PGRST202: function not found — migration hasn't been run yet
+    if (error.code === "PGRST202") {
+      throw new Error(
+        "check_referral_code function not found. Please run migration 20260227000003_check_referral_code_fn.sql in Supabase.",
+      )
+    }
+    throw error
+  }
+
+  return data as ReferralCodeCheck
+}
+
+/**
+ * Calls the `apply_referral_code` SECURITY DEFINER Postgres function.
+ *
+ * This single RPC call atomically:
+ *  1. Validates the code (case-insensitive, not-self, not-already-used)
+ *  2. Sets `users.referred_by` for the current user
+ *  3. Inserts a row into `referrals` with the current reward snapshot
+ *
+ * Returns a {@link ReferralSuccess} on success or a {@link ReferralError}
+ * with a human-readable message on any failure.
+ */
+export async function applyReferralCode(
+  code: string,
+): Promise<ReferralSuccess | ReferralError> {
+  const { data, error } = await supabase.rpc("apply_referral_code", {
+    p_code: code.trim().toUpperCase(),
+  })
+
+  if (error) throw error
+
+  return data as ReferralSuccess | ReferralError
+}
+
+export interface ReferralStats {
+  /** Number of people who signed up using this user's code */
+  totalReferrals: number
+  /** Sum of referrer_reward_amount where status = 'rewarded' */
+  totalEarned: number
+}
+
+/**
+ * Fetches referral stats for the given user:
+ *  - How many people they referred (all statuses)
+ *  - How much wallet credit they have earned (rewarded rows only)
+ */
+export async function getReferralStats(userId: string): Promise<ReferralStats> {
+  const { data, error } = await supabase
+    .from("referrals")
+    .select("referrer_reward_amount, status")
+    .eq("referrer_id", userId)
+
+  if (error) throw error
+
+  const rows = (data ?? []) as { referrer_reward_amount: number; status: string }[]
+  const totalReferrals = rows.length
+  const totalEarned = rows
+    .filter((r) => r.status === "rewarded")
+    .reduce((sum: number, r) => sum + (r.referrer_reward_amount ?? 0), 0)
+
+  return { totalReferrals, totalEarned }
 }

@@ -1,5 +1,5 @@
 import SubscriptionBottomSheet, {
-  SubscriptionBottomSheetRef,
+    SubscriptionBottomSheetRef,
 } from "@/components/cart/SubscriptionBottomSheet"
 import ProductImage from "@/components/common/ProductImage"
 import Button from "@/components/ui/Button"
@@ -22,7 +22,9 @@ const defaultFeatures = [
   "Eco-Friendly Packaging",
 ]
 
-const defaultNutritionalInfo = [
+type NutritionalEntry = { label: string; value: string }
+
+const defaultNutritionalInfo: NutritionalEntry[] = [
   { label: "Energy", value: "66 kcal" },
   { label: "Protein", value: "3.2g" },
   { label: "Fat", value: "3.5g" },
@@ -107,6 +109,17 @@ export default function ProductScreen() {
     )
   }
 
+  const nutritionalInfo: NutritionalEntry[] =
+    Array.isArray(product.nutritional_info) &&
+    (product.nutritional_info as NutritionalEntry[]).length > 0
+      ? (product.nutritional_info as NutritionalEntry[])
+      : defaultNutritionalInfo
+
+  const features: string[] =
+    Array.isArray(product.features) && product.features.length > 0
+      ? product.features
+      : defaultFeatures
+
   return (
     <View className="flex-1 bg-neutral-lightCream">
       {/* Header */}
@@ -156,7 +169,7 @@ export default function ProductScreen() {
           <Text className="text-xl font-sofia-bold text-primary-navy mb-5">
             Key Features
           </Text>
-          {defaultFeatures.map((feature, idx) => (
+          {features.map((feature, idx) => (
             <View key={idx} className="flex-row items-center mb-4">
               <View className="w-8 h-8 rounded-lg bg-functional-success/10 items-center justify-center mr-3">
                 <CheckCircle size={18} color={COLORS.functional.success} />
@@ -180,7 +193,7 @@ export default function ProductScreen() {
             Per 100ml serving
           </Text>
 
-          {defaultNutritionalInfo.map((nutrient, idx, arr) => (
+          {nutritionalInfo.map((nutrient, idx, arr) => (
             <View key={idx}>
               <View className="flex-row justify-between py-3">
                 <Text className="font-comfortaa text-neutral-gray text-sm">
