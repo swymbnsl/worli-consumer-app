@@ -30,22 +30,38 @@ interface PromoBannerProps {
   offers?: Offer[]
   onPressOffer?: (offer: Offer) => void
   autoScrollInterval?: number
+  showFreeSample?: boolean
+  onPressFreeSample?: () => void
 }
 
 export default function PromoBanner({
   offers = [],
   onPressOffer,
   autoScrollInterval = 4000,
+  showFreeSample = false,
+  onPressFreeSample,
 }: PromoBannerProps) {
   const carouselRef = useRef<ICarouselInstance>(null)
   const progressValue = useSharedValue<number>(0)
 
   // Create carousel items from local images
-  const carouselItems: CarouselItem[] = CAROUSEL_IMAGES.map((image, index) => ({
+  const baseItems: CarouselItem[] = CAROUSEL_IMAGES.map((image, index) => ({
     id: `carousel-${index + 1}`,
     image,
     offer: offers[index], // Link to offer if available
   }))
+
+  // Prepend free sample banner if feature is active
+  const carouselItems: CarouselItem[] = showFreeSample
+    ? [
+        {
+          id: "free-sample",
+          image: require("@/assets/images/carousel/free-sample.png"),
+          offer: undefined,
+        },
+        ...baseItems,
+      ]
+    : baseItems
 
   const onPressPagination = (index: number) => {
     carouselRef.current?.scrollTo({
@@ -65,7 +81,13 @@ export default function PromoBanner({
       >
         <TouchableOpacity
           activeOpacity={0.95}
-          onPress={() => item.offer && onPressOffer?.(item.offer)}
+          onPress={() => {
+            if (item.id === "free-sample" && onPressFreeSample) {
+              onPressFreeSample()
+            } else if (item.offer) {
+              onPressOffer?.(item.offer)
+            }
+          }}
           style={{
             flex: 1,
             borderRadius: 20,

@@ -16,11 +16,14 @@ import {
     fetchActiveOffers,
     fetchActiveProducts,
     fetchActiveSubscriptions,
+    fetchFreeSampleConfig,
     fetchHomeOrders,
     fetchUserAddresses,
+    hasClaimedFreeSample,
 } from "@/lib/supabase-service"
 import {
     Address,
+    FreeSampleConfig,
     Offer,
     Order,
     Product,
@@ -52,6 +55,7 @@ export default function HomeScreen() {
   const [defaultAddress, setDefaultAddress] = useState<Address | null>(null)
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
+  const [showFreeSampleBanner, setShowFreeSampleBanner] = useState(false)
 
   // Selected date for calendar (using local date to avoid timezone issues)
   const getTodayLocalDate = () => {
@@ -72,18 +76,27 @@ export default function HomeScreen() {
         productsData,
         offersData,
         addressesData,
+        freeSampleConfig,
+        freeSampleClaimed,
       ] = await Promise.all([
         user ? fetchHomeOrders(user.id) : Promise.resolve([]),
         user ? fetchActiveSubscriptions(user.id) : Promise.resolve([]),
         fetchActiveProducts(),
         fetchActiveOffers(),
         user ? fetchUserAddresses(user.id) : Promise.resolve([]),
+        fetchFreeSampleConfig().catch(() => null) as Promise<FreeSampleConfig | null>,
+        user ? hasClaimedFreeSample(user.id).catch(() => false) as Promise<boolean> : Promise.resolve(false),
       ])
 
       setOrders(ordersData)
       setSubscriptions(subscriptionsData)
       setProducts(productsData)
       setOffers(offersData)
+
+      // Show free sample banner if feature is enabled and user hasn't claimed
+      setShowFreeSampleBanner(
+        !!freeSampleConfig && freeSampleConfig.is_enabled && !freeSampleClaimed
+      )
 
       // First address is default (sorted by is_default desc)
       const defAddr =
@@ -117,6 +130,11 @@ export default function HomeScreen() {
       // Navigate to offer link (could be product, subscription, etc.)
       router.push(offer.link_url as any)
     }
+  }
+
+  // Handle free sample banner press
+  const handleFreeSamplePress = () => {
+    router.push("/free-sample" as any)
   }
 
   // Handle search press
@@ -180,7 +198,12 @@ export default function HomeScreen() {
 
         {/* Promotional Banners Carousel */}
         <Animated.View entering={FadeInDown.duration(400).delay(250)} className="mb-6 bg-neutral-lightCream rounded-2xl">
-          <PromoBanner offers={offers} onPressOffer={handleOfferPress} />
+          <PromoBanner
+            offers={offers}
+            onPressOffer={handleOfferPress}
+            showFreeSample={showFreeSampleBanner}
+            onPressFreeSample={handleFreeSamplePress}
+          />
         </Animated.View>
 
         <View className="px-4">

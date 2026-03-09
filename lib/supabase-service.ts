@@ -8,6 +8,7 @@ import {
   Address,
   AddressInsert,
   AddressUpdate,
+  FreeSampleConfig,
   Offer,
   Order,
   Product,
@@ -651,4 +652,66 @@ export async function getReferralStats(userId: string): Promise<ReferralStats> {
     .reduce((sum: number, r) => sum + (r.referrer_reward_amount ?? 0), 0)
 
   return { totalReferrals, totalEarned }
+}
+
+// ─── Free Samples ──────────────────────────────────────────────────────────────
+
+/**
+ * Fetch the free sample configuration.
+ * Returns null if no config row exists or feature is disabled.
+ */
+export async function fetchFreeSampleConfig(): Promise<FreeSampleConfig | null> {
+  const { data, error } = await supabase
+    .from("free_sample_config")
+    .select("*")
+    .eq("is_enabled", true)
+    .limit(1)
+    .single()
+
+  // PGRST116 = no rows found
+  if (error && error.code !== "PGRST116") throw error
+  return data
+}
+
+/**
+ * Check if the current user has already claimed their free sample.
+ */
+export async function hasClaimedFreeSample(userId: string): Promise<boolean> {
+  const { data, error } = await supabase
+    .from("users")
+    .select("claimed_free_sample")
+    .eq("id", userId)
+    .single()
+
+  if (error) throw error
+  return data?.claimed_free_sample ?? false
+}
+
+export interface FreeSampleClaimSuccess {
+  success: true
+  orders: { order_number: string; delivery_date: string; quantity: number; amount: number }[]
+  message: string
+}
+
+export interface FreeSampleClaimError {
+  success: false
+  error: string
+}
+
+/**
+ * Claims the free sample by calling the `claim_free_sample` SECURITY DEFINER
+ * Postgres function. Creates ₹0 orders for the chosen delivery dates.
+ */
+export async function claimFreeSample(
+  dates: string[],
+  addressId?: string,
+): Promise<FreeSampleClaimSuccess | FreeSampleClaimError> {
+  const { data, error } = await supabase.rpc("claim_free_sample", {
+    p_dates: dates,
+    p_address_id: addressId ?? null,
+  })
+
+  if (error) throw error
+
+  return data as FreeSampleClaimSuccess | FreeSampleClaimError
 }

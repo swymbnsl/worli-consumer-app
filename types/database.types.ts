@@ -21,6 +21,7 @@ export type Referral = Tables<"referrals">
 export type AppSetting = Tables<"app_settings">
 export type Discount = Tables<"discounts">
 export type DiscountUsage = Tables<"discount_usages">
+export type FreeSampleConfig = Tables<"free_sample_config">
 
 // Insert types for creating new records
 export type UserInsert = TablesInsert<"users">

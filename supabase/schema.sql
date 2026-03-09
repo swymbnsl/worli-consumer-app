@@ -11,6 +11,7 @@ CREATE TABLE users (
   referral_code VARCHAR(20) UNIQUE,
   -- FK to the user who referred this person. Set at signup and never changed.
   referred_by UUID REFERENCES users(id) ON DELETE SET NULL,
+  claimed_free_sample BOOLEAN NOT NULL DEFAULT false,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
@@ -919,3 +920,132 @@ COMMENT ON FUNCTION apply_referral_code IS
   'Validates a referral code, sets users.referred_by, and inserts the referrals row atomically. '
   'SECURITY DEFINER bypasses RLS safely after internal auth.uid() checks. '
   'Returns JSON: { success, error? } on failure or { success, referrer_id, reward_amount } on success.';
+
+-- ============================================
+-- FREE SAMPLE CONFIG TABLE
+-- ============================================
+
+CREATE TABLE free_sample_config (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  is_enabled BOOLEAN NOT NULL DEFAULT false,
+  product_id UUID NOT NULL REFERENCES products(id) ON DELETE RESTRICT,
+  quantity_per_day INTEGER NOT NULL DEFAULT 1,
+  trial_days INTEGER NOT NULL DEFAULT 3,
+  delivery_time VARCHAR(50) NOT NULL DEFAULT 'morning',
+  description TEXT,
+  banner_image_url TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  CONSTRAINT positive_quantity CHECK (quantity_per_day > 0),
+  CONSTRAINT positive_trial_days CHECK (trial_days > 0 AND trial_days <= 30)
+);
+
+COMMENT ON TABLE free_sample_config IS 'Single-row admin config for the free sample / trial feature.';
+COMMENT ON COLUMN users.claimed_free_sample IS 'Set to true once the user has claimed their free sample.';
+
+CREATE TRIGGER update_free_sample_config_updated_at
+  BEFORE UPDATE ON free_sample_config
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+ALTER TABLE free_sample_config ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Anyone can view free sample config"
+  ON free_sample_config FOR SELECT
+  USING (true);
+
+-- Seed default config
+INSERT INTO free_sample_config (is_enabled, product_id, quantity_per_day, trial_days, delivery_time, description)
+SELECT true, p.id, 1, 3, 'morning', 'Try our farm-fresh milk free for 3 days! 1 bottle (500ml) delivered daily.'
+FROM products p WHERE p.name = 'Fresh Milk 500ml' AND p.is_active = true LIMIT 1;
+
+-- ============================================
+-- CLAIM FREE SAMPLE FUNCTION
+-- ============================================
+
+CREATE OR REPLACE FUNCTION claim_free_sample(p_dates DATE[], p_address_id UUID DEFAULT NULL)
+RETURNS JSON
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_caller_id     UUID := auth.uid();
+  v_config        free_sample_config%ROWTYPE;
+  v_date          DATE;
+  v_order_number  TEXT;
+  v_orders        JSON[];
+  v_address_id    UUID;
+  v_random_chars  TEXT := 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  v_code          TEXT;
+  v_tomorrow      DATE := (CURRENT_DATE + INTERVAL '1 day')::DATE;
+BEGIN
+  IF v_caller_id IS NULL THEN
+    RETURN json_build_object('success', false, 'error', 'Not authenticated.');
+  END IF;
+
+  IF EXISTS (SELECT 1 FROM users WHERE id = v_caller_id AND claimed_free_sample = true) THEN
+    RETURN json_build_object('success', false, 'error', 'You have already claimed your free sample.');
+  END IF;
+
+  SELECT * INTO v_config FROM free_sample_config WHERE is_enabled = true LIMIT 1;
+  IF NOT FOUND THEN
+    RETURN json_build_object('success', false, 'error', 'Free samples are not available at this time.');
+  END IF;
+
+  IF p_dates IS NULL OR array_length(p_dates, 1) IS NULL OR array_length(p_dates, 1) = 0 THEN
+    RETURN json_build_object('success', false, 'error', 'Please select at least one delivery date.');
+  END IF;
+
+  IF array_length(p_dates, 1) > v_config.trial_days THEN
+    RETURN json_build_object('success', false, 'error', format('You can select up to %s delivery dates.', v_config.trial_days));
+  END IF;
+
+  FOREACH v_date IN ARRAY p_dates LOOP
+    IF v_date < v_tomorrow THEN
+      RETURN json_build_object('success', false, 'error', format('Delivery date %s must be tomorrow or later.', v_date));
+    END IF;
+  END LOOP;
+
+  IF (SELECT COUNT(DISTINCT d) FROM unnest(p_dates) d) != array_length(p_dates, 1) THEN
+    RETURN json_build_object('success', false, 'error', 'Duplicate delivery dates are not allowed.');
+  END IF;
+
+  IF p_address_id IS NOT NULL THEN
+    IF NOT EXISTS (SELECT 1 FROM addresses WHERE id = p_address_id AND user_id = v_caller_id) THEN
+      RETURN json_build_object('success', false, 'error', 'Invalid delivery address.');
+    END IF;
+    v_address_id := p_address_id;
+  ELSE
+    SELECT id INTO v_address_id FROM addresses WHERE user_id = v_caller_id ORDER BY is_default DESC, created_at ASC LIMIT 1;
+  END IF;
+
+  IF v_address_id IS NULL THEN
+    RETURN json_build_object('success', false, 'error', 'Please add a delivery address before claiming your free sample.');
+  END IF;
+
+  v_orders := ARRAY[]::JSON[];
+
+  FOREACH v_date IN ARRAY p_dates LOOP
+    LOOP
+      v_code := 'FS-';
+      FOR i IN 1..8 LOOP
+        v_code := v_code || substr(v_random_chars, floor(random() * length(v_random_chars) + 1)::int, 1);
+      END LOOP;
+      EXIT WHEN NOT EXISTS (SELECT 1 FROM orders WHERE order_number = v_code);
+    END LOOP;
+    v_order_number := v_code;
+
+    INSERT INTO orders (order_number, user_id, subscription_id, product_id, delivery_date, status, quantity, amount, address_id, delivery_notes)
+    VALUES (v_order_number, v_caller_id, NULL, v_config.product_id, v_date, 'scheduled', v_config.quantity_per_day, 0.00, v_address_id, 'Free sample delivery');
+
+    v_orders := v_orders || json_build_object('order_number', v_order_number, 'delivery_date', v_date, 'quantity', v_config.quantity_per_day, 'amount', 0.00)::JSON;
+  END LOOP;
+
+  UPDATE users SET claimed_free_sample = true WHERE id = v_caller_id;
+
+  RETURN json_build_object('success', true, 'orders', array_to_json(v_orders), 'message', format('Successfully claimed %s free sample deliveries!', array_length(p_dates, 1)));
+END;
+$$;
+
+COMMENT ON FUNCTION claim_free_sample IS
+  'Atomic free-sample claim. Validates eligibility, creates free orders, and sets users.claimed_free_sample = true.';

@@ -92,6 +92,10 @@ export default function RootLayout() {
                       name="add-address"
                       options={{ headerShown: false }}
                     />
+                    <Stack.Screen
+                      name="free-sample"
+                      options={{ headerShown: false }}
+                    />
                   </Stack>
                   <Toast />
                 </BottomSheetModalProvider>
