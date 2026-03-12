@@ -825,6 +825,7 @@ INSERT INTO app_settings (setting_key, setting_value, description)
 VALUES 
 ('order_modification_cutoff_time', '19:00', 'Time after which orders cannot be modified for next day (24-hour format)'),
 ('min_wallet_balance', '100', 'Minimum wallet balance required'),
+('min_wallet_recharge', '350', 'Minimum wallet recharge amount'),
 ('max_unreturned_bottles', '5', 'Maximum number of unreturned bottles allowed'),
 ('referral_reward_amount', '50', 'Reward amount for successful referrals'),
 ('delivery_charge', '0', 'Delivery charge per order');

@@ -1,7 +1,9 @@
 import Button from "@/components/ui/Button"
 import { showErrorToast } from "@/components/ui/Toast"
+import { useAuth } from "@/hooks/useAuth"
 import { useWallet } from "@/hooks/useWallet"
 import { RazorpayError } from "@/lib/razorpay-service"
+import { calculateMonthlySubscriptionCost, fetchAppSetting } from "@/lib/supabase-service"
 import { formatCurrency } from "@/utils/formatters"
 import {
   CheckCircle,
@@ -9,24 +11,66 @@ import {
   ShieldCheck,
   XCircle,
 } from "lucide-react-native"
-import React, { useState } from "react"
+import React, { useEffect, useState } from "react"
 import { Text, TextInput, TouchableOpacity, View } from "react-native"
 
 type PaymentStatus = "idle" | "processing" | "success" | "failed"
 
 export default function RechargeModal() {
+  const { user } = useAuth()
   const { rechargeWithRazorpay } = useWallet()
   const [amount, setAmount] = useState("")
   const [paymentStatus, setPaymentStatus] = useState<PaymentStatus>("idle")
   const [lastPaymentId, setLastPaymentId] = useState<string | null>(null)
-
-  const quickAmounts = [
-    { value: 500, recommended: false },
-    { value: 1000, recommended: false },
+  
+  const [minRecharge, setMinRecharge] = useState<number>(350)
+  const [suggestedAmounts, setSuggestedAmounts] = useState<{value: number, recommended: boolean, label?: string}[]>([
+    { value: 1500, recommended: false },
     { value: 2000, recommended: true },
-    { value: 3000, recommended: false },
-    { value: 5000, recommended: false },
-  ]
+    { value: 2500, recommended: false },
+  ])
+
+  useEffect(() => {
+    async function loadConfig() {
+      try {
+        const minValStr = await fetchAppSetting('min_wallet_recharge')
+        if (minValStr) {
+          const val = parseInt(minValStr, 10)
+          if (!isNaN(val) && val > 0) setMinRecharge(val)
+        }
+      } catch (error) {
+        console.log("Error loading config", error)
+      }
+    }
+    loadConfig()
+  }, [])
+
+  useEffect(() => {
+    async function loadSuggestions() {
+      if (!user) return
+      try {
+        const monthlyCost = await calculateMonthlySubscriptionCost(user.id)
+        if (monthlyCost > 0) {
+          if (monthlyCost < 1500) {
+            setSuggestedAmounts([
+              { value: 1500, recommended: false },
+              { value: 2000, recommended: true },
+              { value: 2500, recommended: false },
+            ])
+          } else {
+            setSuggestedAmounts([
+              { value: monthlyCost, recommended: true, label: "1 Month" },
+              { value: monthlyCost * 3, recommended: false, label: "3 Months" },
+              { value: monthlyCost * 6, recommended: false, label: "6 Months" },
+            ])
+          }
+        }
+      } catch (error) {
+        console.error("Error setting suggestions", error)
+      }
+    }
+    loadSuggestions()
+  }, [user])
 
   const isLoading = paymentStatus === "processing"
 
@@ -38,8 +82,8 @@ export default function RechargeModal() {
       return
     }
 
-    if (amountNum < 100) {
-      showErrorToast("Minimum Amount", "Minimum recharge amount is ₹100")
+    if (amountNum < minRecharge) {
+      showErrorToast("Minimum Amount", `Minimum recharge amount is ₹${minRecharge}`)
       return
     }
 
@@ -154,13 +198,13 @@ export default function RechargeModal() {
           />
         </View>
         <Text className="font-comfortaa text-xs text-neutral-gray mt-1 ml-1">
-          Min ₹100 • Max ₹50,000
+          Min ₹{minRecharge} • Max ₹50,000
         </Text>
       </View>
 
       {/* Quick Amount Buttons */}
       <View className="flex-row flex-wrap gap-2 mb-6">
-        {quickAmounts.map((item) => (
+        {suggestedAmounts.map((item) => (
           <TouchableOpacity
             key={item.value}
             className={`px-4 py-2.5 rounded-full border-2 ${
@@ -182,7 +226,7 @@ export default function RechargeModal() {
                     : "text-neutral-darkGray"
               }`}
             >
-              {formatCurrency(item.value)}
+              {item.label ? `${item.label} (${formatCurrency(item.value)})` : formatCurrency(item.value)}
             </Text>
           </TouchableOpacity>
         ))}
@@ -196,7 +240,7 @@ export default function RechargeModal() {
             : `Pay ${amount ? formatCurrency(parseInt(amount)) : ""}`
         }
         onPress={handleRecharge}
-        disabled={isLoading || !amount || parseInt(amount) < 100}
+        disabled={isLoading || !amount || parseInt(amount) < minRecharge}
         isLoading={isLoading}
         variant="navy"
         className="mb-4"

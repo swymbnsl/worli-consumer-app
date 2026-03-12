@@ -614,44 +614,73 @@ export async function checkReferralCode(
  * with a human-readable message on any failure.
  */
 export async function applyReferralCode(
+  userId: string,
   code: string,
-): Promise<ReferralSuccess | ReferralError> {
+): Promise<boolean> {
   const { data, error } = await supabase.rpc("apply_referral_code", {
-    p_code: code.trim().toUpperCase(),
+    p_user_id: userId,
+    p_code: code,
   })
 
-  if (error) throw error
-
-  return data as ReferralSuccess | ReferralError
+  // Returns true if applied (user updated + referral created)
+  return !error && !!data
 }
 
-export interface ReferralStats {
-  /** Number of people who signed up using this user's code */
-  totalReferrals: number
-  /** Sum of referrer_reward_amount where status = 'rewarded' */
-  totalEarned: number
-}
-
-/**
- * Fetches referral stats for the given user:
- *  - How many people they referred (all statuses)
- *  - How much wallet credit they have earned (rewarded rows only)
- */
-export async function getReferralStats(userId: string): Promise<ReferralStats> {
+export async function fetchAppSetting(key: string): Promise<string | null> {
   const { data, error } = await supabase
-    .from("referrals")
-    .select("referrer_reward_amount, status")
-    .eq("referrer_id", userId)
+    .from("app_settings")
+    .select("setting_value")
+    .eq("setting_key", key)
+    .single()
+    
+  if (error && error.code !== "PGRST116") {
+    console.error("Error fetching app setting:", error)
+  }
+  return data?.setting_value || null
+}
 
-  if (error) throw error
+export async function calculateMonthlySubscriptionCost(userId: string): Promise<number> {
+  const { data: subs, error } = await supabase
+    .from("subscriptions")
+    .select("*, product:products(price)")
+    .eq("user_id", userId)
+    .eq("status", "active")
 
-  const rows = (data ?? []) as { referrer_reward_amount: number; status: string }[]
-  const totalReferrals = rows.length
-  const totalEarned = rows
-    .filter((r) => r.status === "rewarded")
-    .reduce((sum: number, r) => sum + (r.referrer_reward_amount ?? 0), 0)
+  if (error) {
+    console.error("Error fetching subscriptions for cost calculation:", error)
+    return 0
+  }
+  if (!subs || subs.length === 0) return 0
 
-  return { totalReferrals, totalEarned }
+  let totalCost = 0
+  for (const sub of subs) {
+    const price = (sub.product as any)?.price || 0
+    if (price === 0) continue
+
+    const qty = sub.quantity || 1
+    
+    if (sub.frequency === "daily") {
+      totalCost += qty * price * 30
+    } else if (sub.frequency === "alternate") {
+      totalCost += qty * price * 15
+    } else if (sub.frequency === "custom" && sub.custom_quantities) {
+      let weeklyTotal = 0
+      try {
+        const cq = typeof sub.custom_quantities === 'string' 
+          ? JSON.parse(sub.custom_quantities) 
+          : sub.custom_quantities
+          
+        for (const key in cq) {
+          weeklyTotal += (Number(cq[key]) || 0) * price
+        }
+        totalCost += (weeklyTotal / 7) * 30
+      } catch (e) {
+        console.error("Error parsing custom quantities", e)
+      }
+    }
+  }
+
+  return Math.round(totalCost)
 }
 
 // ─── Free Samples ──────────────────────────────────────────────────────────────

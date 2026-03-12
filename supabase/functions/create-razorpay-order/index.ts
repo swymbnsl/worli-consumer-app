@@ -126,10 +126,34 @@ Deno.serve(async (req) => {
     // Amount is in rupees from the client
     const amountInRupees = amount
     console.log("✓ Amount in rupees:", amountInRupees)
+    
+    // Fetch min wallet recharge from app_settings
+    let minRechargeAmount = 350
+    try {
+      const authHeader = req.headers.get("Authorization")
+      const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+        global: { headers: { Authorization: authHeader || "" } },
+      })
+      
+      const { data: settingData } = await supabase
+        .from('app_settings')
+        .select('setting_value')
+        .eq('setting_key', 'min_wallet_recharge')
+        .single()
+        
+      if (settingData && settingData.setting_value) {
+        const parsed = parseInt(settingData.setting_value, 10)
+        if (!isNaN(parsed) && parsed > 0) {
+          minRechargeAmount = parsed
+        }
+      }
+    } catch (e) {
+      console.log("Could not fetch min_wallet_recharge, defaulting to 350", e)
+    }
 
-    if (amountInRupees < 100) {
-      console.log("✗ Amount below minimum:", amountInRupees)
-      return jsonResponse({ error: "Minimum recharge amount is ₹100" }, 400)
+    if (amountInRupees < minRechargeAmount) {
+      console.log(`✗ Amount below minimum (${minRechargeAmount}):`, amountInRupees)
+      return jsonResponse({ error: `Minimum recharge amount is ₹${minRechargeAmount}` }, 400)
     }
 
     if (amountInRupees > 50000) {
