@@ -1,8 +1,12 @@
 import {
+    AutoPayMandateResponse,
     cancelAutoPayMandate,
+    CheckoutOptions,
     initiateWalletRecharge,
     RazorpayPaymentResult,
+    openRazorpayCheckout,
     setupAutoPayMandate,
+    verifyAutoPayMandate,
 } from "@/lib/razorpay-service"
 import {
     createTransaction,
@@ -217,7 +221,30 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({
 
     try {
       // Call edge function which creates Razorpay customer, plan & subscription
-      await setupAutoPayMandate(rechargeAmount, triggerAmount)
+      const mandateResponse = await setupAutoPayMandate(rechargeAmount, triggerAmount)
+
+      // Open Razorpay Checkout for the user to authorize the mandate
+      const paymentResult = await openRazorpayCheckout({
+        subscriptionId: mandateResponse.subscription_id,
+        name: "Worli Dairy App",
+        description: `Auto-recharge ₹${rechargeAmount} setup`,
+        prefill: {
+          name: user.full_name || user.email?.split("@")[0] || "",
+          email: user.email || "",
+          contact: user.phone_number || "",
+        },
+      }) as unknown as {
+        razorpay_payment_id: string
+        razorpay_subscription_id: string
+        razorpay_signature: string
+      }
+
+      // Verify the signature to activate it
+      const verified = await verifyAutoPayMandate(paymentResult)
+
+      if (!verified) {
+        throw new Error("AutoPay verification failed.")
+      }
 
       // Edge function already updates the wallet DB, just refresh local state
       await fetchWallet()

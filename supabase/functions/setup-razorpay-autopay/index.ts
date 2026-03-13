@@ -177,17 +177,29 @@ Deno.serve(async (req: Request) => {
 
     if (!customerId) {
       try {
-        const customer = await razorpay.customers.create({
+        const customerPayload = {
           name:
             user.user_metadata?.full_name ||
             user.email?.split("@")[0] ||
             "Customer",
           email: user.email || "",
-          contact: user.phone || user.user_metadata?.phone || "",
+          contact: user.phone || user.phone_number || user.user_metadata?.phone || "",
+          fail_existing: 0, // IMPORTANT: Returns existing customer instead of erroring if they exist
           notes: { supabase_user_id: userId },
-        })
+        }
+        
+        console.log("Creating/Fetching Customer with:", customerPayload)
+        
+        const customer = await razorpay.customers.create(customerPayload)
         customerId = customer.id
-        console.log("Created Razorpay customer:", customerId)
+        console.log("Created/Fetched Razorpay customer:", customerId)
+
+        // Also update the database so we don't have to keep relying on fail_existing
+        await supabaseAdmin
+          .from("wallets")
+          .update({ razorpay_customer_id: customerId })
+          .eq("user_id", userId)
+          
       } catch (custErr) {
         console.error("Customer creation error:", custErr)
         return jsonResponse(
@@ -262,9 +274,10 @@ Deno.serve(async (req: Request) => {
       .update({
         razorpay_customer_id: customerId,
         razorpay_subscription_id: subscription.id as string,
-        auto_recharge_enabled: true,
         auto_recharge_amount: recharge_amount,
         auto_recharge_trigger_amount: trigger_amount,
+        // Intentionally NOT setting auto_recharge_enabled to true yet.
+        // It should be enabled after the user authorizes the mandate in checkout.
       })
       .eq("user_id", userId)
 

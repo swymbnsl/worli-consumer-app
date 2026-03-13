@@ -41,11 +41,12 @@ export interface AutoPayMandateResponse {
 }
 
 export interface CheckoutOptions {
-  amount: number // in rupees (will be converted to paise)
+  amount?: number // in rupees (will be converted to paise)
   currency?: string
   name?: string
   description?: string
-  orderId: string
+  orderId?: string
+  subscriptionId?: string
   prefill?: {
     name?: string
     email?: string
@@ -58,7 +59,7 @@ export interface CheckoutOptions {
 }
 
 // ─────────────────────────────────────────
-// Create Razorpay Order via Supabase Edge Function
+// Create Order via Supabase Edge Function
 // ─────────────────────────────────────────
 export const createRazorpayOrder = async (
   amount: number,
@@ -86,13 +87,11 @@ export const createRazorpayOrder = async (
 export const openRazorpayCheckout = async (
   options: CheckoutOptions,
 ): Promise<RazorpayPaymentResult> => {
-  const razorpayOptions = {
+  const razorpayOptions: any = {
     key: RAZORPAY_KEY_ID,
-    amount: Math.round(options.amount * 100).toString(), // Amount in paise
     currency: options.currency || "INR",
     name: options.name || "Worli Dairy App",
     description: options.description || "Wallet Recharge",
-    order_id: options.orderId,
     prefill: {
       name: options.prefill?.name || "",
       email: options.prefill?.email || "",
@@ -102,6 +101,16 @@ export const openRazorpayCheckout = async (
       color: options.theme?.color || "#101B53", // primary-navy
     },
     notes: options.notes || {},
+  }
+
+  if (options.amount !== undefined) {
+    razorpayOptions.amount = Math.round(options.amount * 100).toString() // Amount in paise
+  }
+
+  if (options.subscriptionId) {
+    razorpayOptions.subscription_id = options.subscriptionId
+  } else if (options.orderId) {
+    razorpayOptions.order_id = options.orderId
   }
 
   try {
@@ -131,6 +140,34 @@ export const verifyPayment = async (
 
   if (error) {
     throw new Error(`Payment verification failed: ${error.message}`)
+  }
+
+  return data?.verified === true
+}
+
+// ─────────────────────────────────────────
+// Verify AutoPay Mandate via Supabase Edge Function
+// ─────────────────────────────────────────
+export const verifyAutoPayMandate = async (
+  paymentResult: {
+    razorpay_payment_id: string
+    razorpay_subscription_id: string
+    razorpay_signature: string
+  },
+): Promise<boolean> => {
+  const { data, error } = await supabase.functions.invoke(
+    "verify-razorpay-autopay",
+    {
+      body: {
+        razorpay_payment_id: paymentResult.razorpay_payment_id,
+        razorpay_subscription_id: paymentResult.razorpay_subscription_id,
+        razorpay_signature: paymentResult.razorpay_signature,
+      },
+    },
+  )
+
+  if (error) {
+    throw new Error(`AutoPay verification failed: ${error.message}`)
   }
 
   return data?.verified === true
