@@ -1,10 +1,10 @@
 import { supabase } from "@/lib/supabase"
 import { useUserStore } from "@/stores/user-store"
 import {
-  DeliveryPreference,
-  User,
-  UserPreference,
-  Wallet,
+    DeliveryPreference,
+    User,
+    UserPreference,
+    Wallet,
 } from "@/types/database.types"
 import { AuthChangeEvent, Session } from "@supabase/supabase-js"
 import React, { createContext, useEffect, useState } from "react"
@@ -58,41 +58,84 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     deliveryPreference,
   } = useUserStore()
 
+  const isInvalidRefreshTokenError = (error: unknown): boolean => {
+    const message =
+      typeof error === "object" && error !== null && "message" in error
+        ? String((error as { message?: unknown }).message)
+        : String(error)
+
+    return /invalid\s+refresh\s+token/i.test(message)
+  }
+
+  const clearAuthState = () => {
+    clearUser()
+    setSession(null)
+    setLoading(false)
+  }
+
   useEffect(() => {
-    // Check active sessions
-    supabase.auth
-      .getSession()
-      .then(
-        ({
+    let isMounted = true
+
+    const initializeSession = async () => {
+      try {
+        const {
           data: { session: currentSession },
-        }: {
-          data: { session: Session | null }
-        }) => {
-          setSession(currentSession)
-          if (currentSession?.user) {
-            fetchUserAndWallet(currentSession.user.id)
-          } else {
-            setLoading(false)
+          error,
+        } = await supabase.auth.getSession()
+
+        if (error) {
+          if (isInvalidRefreshTokenError(error)) {
+            // Ensure stale local auth state is removed when refresh token is no longer valid.
+            await supabase.auth.signOut({ scope: "local" })
+            if (isMounted) clearAuthState()
+            return
           }
-        },
-      )
+
+          throw error
+        }
+
+        if (!isMounted) return
+
+        setSession(currentSession)
+        if (currentSession?.user) {
+          await fetchUserAndWallet(currentSession.user.id)
+        } else {
+          setLoading(false)
+        }
+      } catch (error) {
+        console.error("Auth init error:", error)
+        if (isMounted) clearAuthState()
+      }
+    }
+
+    // Check active sessions
+    initializeSession()
 
     // Listen for auth changes
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(
-      (_event: AuthChangeEvent, newSession: Session | null) => {
+      async (event: AuthChangeEvent, newSession: Session | null) => {
+        if (!isMounted) return
+
+        if (event === "SIGNED_OUT" || !newSession?.user) {
+          clearAuthState()
+          return
+        }
+
         setSession(newSession)
-        if (newSession?.user) {
-          fetchUserAndWallet(newSession.user.id)
+        if (newSession.user) {
+          await fetchUserAndWallet(newSession.user.id)
         } else {
-          clearUser()
           setLoading(false)
         }
       },
     )
 
-    return () => subscription.unsubscribe()
+    return () => {
+      isMounted = false
+      subscription.unsubscribe()
+    }
   }, [])
 
   const fetchUserAndWallet = async (userId: string) => {

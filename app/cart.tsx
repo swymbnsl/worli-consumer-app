@@ -1,26 +1,27 @@
 import CartItemCard from "@/components/cart/CartItemCard"
 import DiscountCodeInput from "@/components/cart/DiscountCodeInput"
 import SubscriptionBottomSheet, {
-  SubscriptionBottomSheetRef,
+    SubscriptionBottomSheetRef,
 } from "@/components/cart/SubscriptionBottomSheet"
 import Button from "@/components/ui/Button"
 import Modal, { ConfirmModal } from "@/components/ui/Modal"
 import PageHeader from "@/components/ui/PageHeader"
 import {
-  showErrorToast,
-  showSuccessToast,
+    showErrorToast,
+    showSuccessToast,
 } from "@/components/ui/Toast"
 import { COLORS } from "@/constants/theme"
 import { CartItem } from "@/context/CartContext"
 import { useAuth } from "@/hooks/useAuth"
 import { useCart } from "@/hooks/useCart"
 import { useWallet } from "@/hooks/useWallet"
+import { cancelAbandonedCartReminder } from "@/lib/notification-service"
 import {
-  createSubscriptions,
-  DiscountResult,
-  fetchProductById,
-  fetchUserAddresses,
-  validateDiscountCode,
+    createSubscriptions,
+    DiscountResult,
+    fetchProductById,
+    fetchUserAddresses,
+    validateDiscountCode,
 } from "@/lib/supabase-service"
 import { Address, Product } from "@/types/database.types"
 import { formatCurrency } from "@/utils/formatters"
@@ -28,11 +29,11 @@ import { useRouter } from "expo-router"
 import { Check, MapPin, Wallet as WalletIcon } from "lucide-react-native"
 import React, { useCallback, useEffect, useRef, useState } from "react"
 import {
-  ActivityIndicator,
-  ScrollView,
-  Text,
-  TouchableOpacity,
-  View,
+    ActivityIndicator,
+    ScrollView,
+    Text,
+    TouchableOpacity,
+    View,
 } from "react-native"
 import Animated, { FadeInUp } from "react-native-reanimated"
 
@@ -183,6 +184,7 @@ export default function CartScreen() {
           ? { discount_amount: discountAmount, original_amount: totalAmount }
           : null,
       )
+      cancelAbandonedCartReminder(user.id).catch(console.error);
       clearCart()
       showSuccessToast("Success", "Your subscriptions have been placed!")
       router.back()
