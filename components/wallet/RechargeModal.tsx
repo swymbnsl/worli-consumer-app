@@ -1,15 +1,21 @@
+import DiscountCodeInput from "@/components/cart/DiscountCodeInput"
 import Button from "@/components/ui/Button"
 import { showErrorToast } from "@/components/ui/Toast"
 import { useAuth } from "@/hooks/useAuth"
 import { useWallet } from "@/hooks/useWallet"
 import { RazorpayError } from "@/lib/razorpay-service"
-import { calculateMonthlySubscriptionCost, fetchAppSetting } from "@/lib/supabase-service"
+import {
+    calculateMonthlySubscriptionCost,
+    DiscountResult,
+    fetchAppSetting,
+    validateDiscountCode,
+} from "@/lib/supabase-service"
 import { formatCurrency } from "@/utils/formatters"
 import {
-  CheckCircle,
-  CreditCard,
-  ShieldCheck,
-  XCircle,
+    CheckCircle,
+    CreditCard,
+    ShieldCheck,
+    XCircle,
 } from "lucide-react-native"
 import React, { useEffect, useState } from "react"
 import { Text, TextInput, TouchableOpacity, View } from "react-native"
@@ -22,6 +28,9 @@ export default function RechargeModal() {
   const [amount, setAmount] = useState("")
   const [paymentStatus, setPaymentStatus] = useState<PaymentStatus>("idle")
   const [lastPaymentId, setLastPaymentId] = useState<string | null>(null)
+  const [appliedDiscount, setAppliedDiscount] = useState<DiscountResult | undefined>()
+  const [appliedDiscountCode, setAppliedDiscountCode] = useState<string | undefined>()
+  const [discountBaseAmount, setDiscountBaseAmount] = useState<number | undefined>()
   
   const [minRecharge, setMinRecharge] = useState<number>(350)
   const [suggestedAmounts, setSuggestedAmounts] = useState<{value: number, recommended: boolean, label?: string}[]>([
@@ -36,7 +45,7 @@ export default function RechargeModal() {
         const minValStr = await fetchAppSetting('min_wallet_recharge')
         if (minValStr) {
           const val = parseInt(minValStr, 10)
-          if (!isNaN(val) && val > 0) setMinRecharge(val)
+          if (!isNaN(val) && val > 0) setMinRecharge(Math.max(350, val))
         }
       } catch (error) {
         console.log("Error loading config", error)
@@ -73,10 +82,21 @@ export default function RechargeModal() {
   }, [user])
 
   const isLoading = paymentStatus === "processing"
+  const amountNum = parseInt(amount) || 0
+
+  useEffect(() => {
+    if (!appliedDiscount || !discountBaseAmount) return
+    if (amountNum !== discountBaseAmount) {
+      setAppliedDiscount(undefined)
+      setAppliedDiscountCode(undefined)
+      setDiscountBaseAmount(undefined)
+    }
+  }, [amountNum, appliedDiscount, discountBaseAmount])
+
+  const discountAmount = appliedDiscount?.discount_amount ?? 0
+  const finalPayableAmount = Math.max(0, amountNum - discountAmount)
 
   const handleRecharge = async () => {
-    const amountNum = parseInt(amount)
-
     if (!amountNum || amountNum <= 0) {
       showErrorToast("Invalid Amount", "Please enter a valid amount")
       return
@@ -94,7 +114,7 @@ export default function RechargeModal() {
 
     setPaymentStatus("processing")
     try {
-      const result = await rechargeWithRazorpay(amountNum)
+      const result = await rechargeWithRazorpay(finalPayableAmount)
       setPaymentStatus("success")
       setLastPaymentId(result.razorpay_payment_id)
 
@@ -102,6 +122,9 @@ export default function RechargeModal() {
       setTimeout(() => {
         setPaymentStatus("idle")
         setAmount("")
+        setAppliedDiscount(undefined)
+        setAppliedDiscountCode(undefined)
+        setDiscountBaseAmount(undefined)
         setLastPaymentId(null)
       }, 3000)
     } catch (error) {
@@ -232,15 +255,67 @@ export default function RechargeModal() {
         ))}
       </View>
 
+      {/* Discount Code */}
+      <DiscountCodeInput
+        orderAmount={amountNum}
+        applicableTo="wallet_recharge"
+        userId={user?.id ?? ""}
+        disabled={amountNum < minRecharge}
+        onApply={(result, code) => {
+          setAppliedDiscount(result)
+          setAppliedDiscountCode(code)
+          setDiscountBaseAmount(amountNum)
+        }}
+        onRemove={() => {
+          setAppliedDiscount(undefined)
+          setAppliedDiscountCode(undefined)
+          setDiscountBaseAmount(undefined)
+        }}
+        appliedCode={appliedDiscountCode}
+        appliedResult={appliedDiscount}
+        onValidate={validateDiscountCode}
+      />
+
+      {amountNum < minRecharge && (
+        <Text className="font-comfortaa text-xs text-neutral-gray -mt-2 mb-4 ml-1">
+          Enter at least ₹{minRecharge} to enable discount code
+        </Text>
+      )}
+
+      {appliedDiscount && discountAmount > 0 && (
+        <View className="bg-primary-cream/20 rounded-xl p-3 mb-4 border border-primary-cream/60">
+          <View className="flex-row items-center justify-between mb-1">
+            <Text className="font-comfortaa text-xs text-neutral-gray">Recharge Amount</Text>
+            <Text className="font-comfortaa text-xs text-neutral-gray line-through">
+              {formatCurrency(amountNum)}
+            </Text>
+          </View>
+          <View className="flex-row items-center justify-between mb-1">
+            <Text className="font-comfortaa text-xs text-functional-success">
+              Discount ({appliedDiscountCode})
+            </Text>
+            <Text className="font-sofia-bold text-xs text-functional-success">
+              -{formatCurrency(discountAmount)}
+            </Text>
+          </View>
+          <View className="flex-row items-center justify-between">
+            <Text className="font-sofia-bold text-sm text-primary-navy">Payable</Text>
+            <Text className="font-sofia-bold text-base text-primary-navy">
+              {formatCurrency(finalPayableAmount)}
+            </Text>
+          </View>
+        </View>
+      )}
+
       {/* Pay Button */}
       <Button
         title={
           isLoading
             ? "Opening Razorpay..."
-            : `Pay ${amount ? formatCurrency(parseInt(amount)) : ""}`
+            : `Pay ${amount ? formatCurrency(finalPayableAmount) : ""}`
         }
         onPress={handleRecharge}
-        disabled={isLoading || !amount || parseInt(amount) < minRecharge}
+        disabled={isLoading || !amount || amountNum < minRecharge}
         isLoading={isLoading}
         variant="navy"
         className="mb-4"

@@ -1,7 +1,7 @@
 import { COLORS } from "@/constants/theme"
 import { DiscountError, DiscountResult } from "@/lib/supabase-service"
 import { formatCurrency } from "@/utils/formatters"
-import { CheckCircle, Clock, Tag, X } from "lucide-react-native"
+import { CheckCircle, Tag, X } from "lucide-react-native"
 import React, { useState } from "react"
 import {
     ActivityIndicator,
@@ -19,6 +19,7 @@ interface DiscountCodeInputProps {
   onRemove: () => void
   appliedCode?: string
   appliedResult?: DiscountResult
+  disabled?: boolean
   onValidate: (
     code: string,
     userId: string,
@@ -35,6 +36,7 @@ export default function DiscountCodeInput({
   onRemove,
   appliedCode,
   appliedResult,
+  disabled = false,
   onValidate,
 }: DiscountCodeInputProps) {
   const [code, setCode] = useState("")
@@ -109,25 +111,6 @@ export default function DiscountCodeInput({
                   : ""}
               </Text>
 
-              {/* Order-count validity strip */}
-              {appliedResult.max_discount_orders != null && (
-                <View
-                  className="flex-row items-center mt-2 px-2.5 py-1.5 rounded-lg"
-                  style={{ backgroundColor: COLORS.functional.success + "18" }}
-                >
-                  <Clock size={11} color={COLORS.functional.success} strokeWidth={2.5} />
-                  <Text
-                    className="font-comfortaa text-xs ml-1.5"
-                    style={{ color: COLORS.functional.success }}
-                  >
-                    Valid for first{" "}
-                    <Text className="font-sofia-bold">
-                      {appliedResult.max_discount_orders} deliver{appliedResult.max_discount_orders === 1 ? "y" : "ies"}
-                    </Text>
-                    {" "}only · reverts to full price after
-                  </Text>
-                </View>
-              )}
             </View>
           </View>
           <TouchableOpacity
@@ -143,7 +126,13 @@ export default function DiscountCodeInput({
 
   // ── Input state ────────────────────────────────────────────────────
   return (
-    <View className="bg-white rounded-2xl p-4 mb-4 border border-neutral-lightGray">
+    <View
+      className="rounded-2xl p-4 mb-4 border border-neutral-lightGray"
+      style={{
+        backgroundColor: disabled ? COLORS.neutral.lightGray + "40" : COLORS.neutral.white,
+        opacity: disabled ? 0.7 : 1,
+      }}
+    >
       <View className="flex-row items-center mb-1">
         <Tag size={16} color={COLORS.primary.navy} />
         <Text className="font-sofia-bold text-sm text-primary-navy ml-2">
@@ -166,15 +155,15 @@ export default function DiscountCodeInput({
           onSubmitEditing={handleApply}
           className="flex-1 border border-neutral-lightGray rounded-xl px-3 py-3 font-sofia-bold text-sm text-primary-navy"
           style={{ letterSpacing: 1.5 }}
-          editable={!loading}
+          editable={!loading && !disabled}
         />
         <TouchableOpacity
           onPress={handleApply}
-          disabled={loading || !code.trim()}
+          disabled={loading || disabled || !code.trim()}
           className="rounded-xl px-4 py-3 items-center justify-center"
           style={{
             backgroundColor:
-              code.trim() && !loading
+              code.trim() && !loading && !disabled
                 ? COLORS.primary.navy
                 : COLORS.neutral.lightGray,
             minWidth: 76,
