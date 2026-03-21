@@ -159,7 +159,22 @@ Deno.serve(async (req) => {
 
     if (existingTxn) {
       console.log(`Duplicate verification for payment ${razorpay_payment_id}`)
-      return jsonResponse({ verified: true, duplicate: true })
+      // Retry-safe referral payout attempt. If previous run credited wallet but failed
+      // after that, this ensures referral bonus can still be processed.
+      const { data: referralData, error: referralError } = await supabaseAdmin.rpc(
+        "payout_referral_on_recharge",
+        {
+          p_referee_id: user.id,
+          p_recharge_payment_id: razorpay_payment_id,
+          p_recharge_amount: amountInRupees,
+        },
+      )
+
+      if (referralError) {
+        console.error("Referral payout retry failed on duplicate callback:", referralError)
+      }
+
+      return jsonResponse({ verified: true, duplicate: true, referral: referralData ?? null })
     }
 
     // Get current wallet
@@ -210,6 +225,21 @@ Deno.serve(async (req) => {
       throw txnError
     }
 
+    // 8. Trigger referral reward payout on referee's next successful recharge.
+    // This is intentionally non-blocking for recharge success.
+    const { data: referralData, error: referralError } = await supabaseAdmin.rpc(
+      "payout_referral_on_recharge",
+      {
+        p_referee_id: user.id,
+        p_recharge_payment_id: razorpay_payment_id,
+        p_recharge_amount: amountInRupees,
+      },
+    )
+
+    if (referralError) {
+      console.error("Referral payout failed after recharge success:", referralError)
+    }
+
     console.log(
       `Payment verified & wallet credited: user=${user.id}, amount=₹${amountInRupees}, payment=${razorpay_payment_id}`,
     )
@@ -219,6 +249,7 @@ Deno.serve(async (req) => {
       amount: amountInRupees,
       new_balance: newBalance,
       payment_id: razorpay_payment_id,
+      referral: referralData ?? null,
     })
   } catch (error) {
     console.error("verify-razorpay-payment error:", error)

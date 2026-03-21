@@ -75,7 +75,7 @@ export default function ReferScreen() {
         await updateUser({ referred_by: result.referrer_id } as any)
         showSuccessToast(
           "Referral Applied! 🎉",
-          `You'll both earn ₹${result.reward_amount} when your first order delivers.`,
+          `You'll both earn ₹${result.reward_amount} on your first wallet recharge.`,
         )
         setInputCode("")
         loadStats()
@@ -214,7 +214,7 @@ export default function ReferScreen() {
                 <CheckCircle size={20} color={COLORS.primary.navy} />
               </View>
               <Text className="flex-1 font-comfortaa text-sm text-primary-navy leading-5">
-                Referral code applied! Wallet credits will be added after your first delivery.
+                Referral code applied! Wallet credits will be added on your first recharge.
               </Text>
             </View>
           ) : (

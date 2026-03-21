@@ -557,7 +557,7 @@ export interface ReferralSuccess {
   success: true
   /** UUID of the user whose referral code was used */
   referrer_id: string
-  /** Wallet credit amount granted to both parties upon qualifying order */
+  /** Wallet credit amount granted to both parties upon first successful recharge */
   reward_amount: number
 }
 
@@ -614,16 +614,48 @@ export async function checkReferralCode(
  * with a human-readable message on any failure.
  */
 export async function applyReferralCode(
-  userId: string,
   code: string,
-): Promise<boolean> {
+): Promise<ReferralSuccess | ReferralError> {
   const { data, error } = await supabase.rpc("apply_referral_code", {
-    p_user_id: userId,
-    p_code: code,
+    p_code: code.trim().toUpperCase(),
   })
 
-  // Returns true if applied (user updated + referral created)
-  return !error && !!data
+  if (error) {
+    return {
+      success: false,
+      error: error.message || "Unable to apply referral code right now.",
+    }
+  }
+
+  return data as ReferralSuccess | ReferralError
+}
+
+/**
+ * Returns pending referral bonus amount for the current referee.
+ * Uses referral row status (server truth) instead of local transaction history.
+ */
+export async function getPendingReferralBonusAmount(
+  refereeId: string,
+): Promise<number> {
+  const { data, error } = await supabase
+    .from("referrals")
+    .select("referee_reward_amount, expires_at")
+    .eq("referee_id", refereeId)
+    .eq("status", "pending")
+    .maybeSingle()
+
+  if (error) {
+    console.error("Failed to fetch pending referral bonus:", error)
+    return 0
+  }
+
+  if (!data) return 0
+
+  if (data.expires_at && new Date(data.expires_at).getTime() < Date.now()) {
+    return 0
+  }
+
+  return Number(data.referee_reward_amount) || 0
 }
 
 export async function fetchAppSetting(key: string): Promise<string | null> {
@@ -743,4 +775,40 @@ export async function claimFreeSample(
   if (error) throw error
 
   return data as FreeSampleClaimSuccess | FreeSampleClaimError
+}
+
+export interface ReferralStats {
+  totalReferrals: number
+  totalEarned: number
+}
+
+interface ReferralStatsRow {
+  referrer_reward_amount: number | string | null
+  status: string | null
+}
+
+export async function getReferralStats(userId: string): Promise<ReferralStats> {
+  const { data: statsData, error: statsError } = await supabase
+    .from("referrals")
+    .select("referrer_reward_amount, status")
+    .eq("referrer_id", userId)
+
+  if (statsError) {
+    console.error("Failed to fetch referral stats:", statsError)
+    return { totalReferrals: 0, totalEarned: 0 }
+  }
+
+  const rows: ReferralStatsRow[] = statsData ?? []
+  const totalReferrals = rows.length
+
+  // Compute total earned by summing rewards where status is 'rewarded'
+  const totalEarned = rows
+    .filter((r: ReferralStatsRow) => r.status === "rewarded")
+    .reduce(
+      (sum: number, r: ReferralStatsRow) =>
+        sum + (Number(r.referrer_reward_amount) || 0),
+      0,
+    )
+
+  return { totalReferrals, totalEarned }
 }

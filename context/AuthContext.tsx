@@ -145,42 +145,127 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         .from("users")
         .select("*")
         .eq("id", userId)
-        .single()
+        .maybeSingle()
 
       if (userError) throw userError
+      if (!userData) {
+        // User record doesn't exist yet (e.g., just created account before completing profile)
+        setLoading(false)
+        return
+      }
       setUser(userData)
 
-      // Fetch wallet
-      const { data: walletData } = await supabase
+      // Fetch wallet (or create if doesn't exist)
+      const { data: walletData, error: walletError } = await supabase
         .from("wallets")
         .select("*")
         .eq("user_id", userId)
-        .single()
+        .maybeSingle()
+
+      if (walletError) throw walletError
 
       if (walletData) {
         setWallet(walletData)
+      } else {
+        // Create default wallet if it doesn't exist
+        const { data: newWallet, error: newWalletError } = await supabase
+          .from("wallets")
+          .upsert(
+            {
+              user_id: userId,
+              balance: 0,
+              low_balance_threshold: 100,
+              auto_recharge_enabled: false,
+            },
+            { onConflict: "user_id" },
+          )
+          .select()
+          .maybeSingle()
+
+        if (newWalletError) {
+          console.error("Error creating/fetching wallet:", newWalletError)
+        }
+
+        if (newWallet) {
+          setWallet(newWallet)
+        }
       }
 
-      // Fetch user preferences
-      const { data: prefData } = await supabase
+      // Fetch user preferences (or create if doesn't exist)
+      const { data: prefData, error: prefError } = await supabase
         .from("user_preferences")
         .select("*")
         .eq("user_id", userId)
-        .single()
+        .maybeSingle()
+
+      if (prefError) throw prefError
 
       if (prefData) {
         setUserPreference(prefData)
+      } else {
+        // Create default preferences if they don't exist
+        const { data: newPref, error: newPrefError } = await supabase
+          .from("user_preferences")
+          .upsert(
+            {
+              user_id: userId,
+              language: "en",
+              notifications_enabled: true,
+              sms_notifications: true,
+              push_notifications: true,
+            },
+            { onConflict: "user_id" },
+          )
+          .select()
+          .maybeSingle()
+
+        if (newPrefError) {
+          console.error(
+            "Error creating/fetching user preferences:",
+            newPrefError,
+          )
+        }
+
+        if (newPref) {
+          setUserPreference(newPref)
+        }
       }
 
-      // Fetch delivery preferences
-      const { data: deliveryPrefData } = await supabase
+      // Fetch delivery preferences (or create if doesn't exist)
+      const { data: deliveryPrefData, error: deliveryPrefError } = await supabase
         .from("delivery_preferences")
         .select("*")
         .eq("user_id", userId)
-        .single()
+        .maybeSingle()
+
+      if (deliveryPrefError) throw deliveryPrefError
 
       if (deliveryPrefData) {
         setDeliveryPreference(deliveryPrefData)
+      } else {
+        // Create default delivery preferences if they don't exist
+        const { data: newDelPref, error: newDelPrefError } = await supabase
+          .from("delivery_preferences")
+          .upsert(
+            {
+              user_id: userId,
+              ring_doorbell: true,
+            },
+            { onConflict: "user_id" },
+          )
+          .select()
+          .maybeSingle()
+
+        if (newDelPrefError) {
+          console.error(
+            "Error creating/fetching delivery preferences:",
+            newDelPrefError,
+          )
+        }
+
+        if (newDelPref) {
+          setDeliveryPreference(newDelPref)
+        }
       }
     } catch (error) {
       console.error("Error fetching user data:", error)
@@ -268,7 +353,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
           .from("users")
           .select("*")
           .eq("id", data.user.id)
-          .single()
+          .maybeSingle()
 
         // If user doesn't exist, create them
         if (!existingUser) {

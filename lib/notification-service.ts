@@ -28,45 +28,26 @@ export interface ScheduleNotificationParams {
 }
 
 /**
- * Schedules a notification event, deduplicates pending notifications for same user/event.
+ * Schedules a notification event, atomically upserts to prevent race conditions.
+ * Updates existing pending notification for same user/event, or inserts new one.
  */
 export async function scheduleNotification(params: ScheduleNotificationParams): Promise<void> {
   if (!validatePhoneNumber(params.phone_number)) {
     throw new Error('Phone number must be in E.164 format');
   }
 
-  // Deduplication: check for existing pending notification
-  // We cancel the old one instead of returning, so that we reset the clock on updates.
-  const { data: existing, error: findError } = await supabase
-    .from('notification_queue')
-    .select('id')
-    .eq('user_id', params.user_id)
-    .eq('event_type', params.event_type)
-    .eq('status', 'pending');
+  // Use atomic upsert function to prevent duplicate key violations
+  const { data, error } = await supabase.rpc('upsert_notification_queue', {
+    p_user_id: params.user_id,
+    p_phone_number: params.phone_number,
+    p_event_type: params.event_type,
+    p_template_id: params.template_id,
+    p_payload: params.payload,
+    p_scheduled_at: params.scheduled_at,
+  });
 
-  if (findError) throw findError;
-  
-  if (existing && existing.length > 0) {
-    // If the event exists, we cancel it to restart the timer.
-    await cancelNotification(params.user_id, params.event_type);
-  }
-
-  // Insert new notification
-  const { error: insertError } = await supabase
-    .from('notification_queue')
-    .insert([
-      {
-        user_id: params.user_id,
-        phone_number: params.phone_number,
-        event_type: params.event_type,
-        template_id: params.template_id,
-        payload: params.payload,
-        status: 'pending',
-        scheduled_at: params.scheduled_at,
-      },
-    ]);
-
-  if (insertError) throw insertError;
+  if (error) throw error;
+  if (!data) throw new Error('Failed to upsert notification');
 }
 
 /**

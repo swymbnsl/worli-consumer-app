@@ -8,12 +8,14 @@ import {
     calculateMonthlySubscriptionCost,
     DiscountResult,
     fetchAppSetting,
+    getPendingReferralBonusAmount,
     validateDiscountCode,
 } from "@/lib/supabase-service"
 import { formatCurrency } from "@/utils/formatters"
 import {
     CheckCircle,
     CreditCard,
+    Gift,
     ShieldCheck,
     XCircle,
 } from "lucide-react-native"
@@ -31,6 +33,7 @@ export default function RechargeModal() {
   const [appliedDiscount, setAppliedDiscount] = useState<DiscountResult | undefined>()
   const [appliedDiscountCode, setAppliedDiscountCode] = useState<string | undefined>()
   const [discountBaseAmount, setDiscountBaseAmount] = useState<number | undefined>()
+  const [referralBonusAmount, setReferralBonusAmount] = useState<number>(0)
   
   const [minRecharge, setMinRecharge] = useState<number>(350)
   const [suggestedAmounts, setSuggestedAmounts] = useState<{value: number, recommended: boolean, label?: string}[]>([
@@ -53,6 +56,26 @@ export default function RechargeModal() {
     }
     loadConfig()
   }, [])
+
+  // Check if user has referral bonus to show
+  useEffect(() => {
+    async function checkReferralBonus() {
+      if (!user?.id || !user?.referred_by) {
+        setReferralBonusAmount(0)
+        return
+      }
+
+      try {
+        const reward = await getPendingReferralBonusAmount(user.id)
+        setReferralBonusAmount(reward > 0 ? reward : 0)
+      } catch (error) {
+        console.error("Error fetching referral reward", error)
+        setReferralBonusAmount(0)
+      }
+    }
+
+    checkReferralBonus()
+  }, [user?.id, user?.referred_by])
 
   useEffect(() => {
     async function loadSuggestions() {
@@ -203,6 +226,23 @@ export default function RechargeModal() {
       <Text className="font-comfortaa text-sm text-neutral-gray mb-6">
         Add money to your wallet via Razorpay
       </Text>
+
+      {/* Referral Bonus Notice */}
+      {referralBonusAmount > 0 && (
+        <View className="bg-secondary-skyBlue/10 border border-secondary-skyBlue/30 rounded-xl p-3 mb-5 flex-row items-start gap-3">
+          <View className="w-6 h-6 rounded-full bg-secondary-skyBlue/20 items-center justify-center mt-0.5 shrink-0">
+            <Gift size={14} color="#4A90E2" />
+          </View>
+          <View className="flex-1">
+            <Text className="font-sofia-bold text-xs text-secondary-skyBlue mb-0.5">
+              Referral Bonus!
+            </Text>
+            <Text className="font-comfortaa text-xs text-secondary-skyBlue">
+              Complete this recharge and get {formatCurrency(referralBonusAmount)} bonus for you and your referrer.
+            </Text>
+          </View>
+        </View>
+      )}
 
       {/* Amount Input */}
       <View className="mb-4">

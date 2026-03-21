@@ -107,7 +107,7 @@ export default function CompleteProfileScreen() {
           if (result.success) {
             showSuccessToast(
               "Referral Applied! 🎉",
-              `You’ll both earn ₹${result.reward_amount} when your first order is delivered.`,
+              `You’ll both earn ₹${result.reward_amount} on your first wallet recharge.`,
             )
           } else {
             // Non-fatal: show the reason but still continue to home

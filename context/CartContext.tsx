@@ -74,7 +74,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({
   const { user } = useAuth()
   const [items, setItems] = useState<CartItem[]>([])
 
-  // Fetch cart items from DB on mount
+  // Fetch cart items from DB on mount, joined with product data
   useEffect(() => {
     if (!user?.id) {
       setItems([])
@@ -82,29 +82,50 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({
     }
 
     (async () => {
+      // Join cart_items with products table to fetch product details
       const { data, error } = await supabase
         .from("cart_items")
-        .select("*")
+        .select(`
+          id,
+          product_id,
+          quantity,
+          frequency,
+          start_date,
+          interval_days,
+          custom_quantities,
+          preferred_delivery_time,
+          address_id,
+          products:product_id (
+            id,
+            name,
+            price,
+            image_url,
+            volume
+          )
+        `)
         .eq("user_id", user.id)
 
       if (!error && data) {
         setItems(
-          data.map((row: any) => ({
-            id: row.id,
-            productId: row.product_id,
-            productName: row.product_name || "",
-            productPrice: row.product_price || 0,
-            productImage: row.product_image || null,
-            productVolume: row.product_volume || null,
-            quantity: row.quantity,
-            frequency: row.frequency,
-            startDate: row.start_date,
-            intervalDays: row.interval_days,
-            customQuantities: row.custom_quantities,
-            preferredDeliveryTime: row.preferred_delivery_time,
-            addressId: row.address_id,
-            addressName: row.address_name || "",
-          })),
+          data.map((row: any) => {
+            const product = row.products;
+            return {
+              id: row.id,
+              productId: row.product_id,
+              productName: product?.name || "",
+              productPrice: product?.price || 0,
+              productImage: product?.image_url || null,
+              productVolume: product?.volume || null,
+              quantity: row.quantity,
+              frequency: row.frequency,
+              startDate: row.start_date,
+              intervalDays: row.interval_days,
+              customQuantities: row.custom_quantities,
+              preferredDeliveryTime: row.preferred_delivery_time,
+              addressId: row.address_id,
+              addressName: row.address_name || "",
+            };
+          }),
         );
       }
     })()
