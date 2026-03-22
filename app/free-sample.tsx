@@ -237,10 +237,7 @@ export default function FreeSampleScreen() {
                 className={`flex-row items-center py-3 ${idx < selectedDates.length - 1 ? "border-b border-neutral-lightGray" : ""}`}
               >
                 <View className="w-8 h-8 rounded-lg bg-functional-success/10 items-center justify-center mr-3">
-                  <Calendar
-                    size={16}
-                    color={COLORS.functional.success}
-                  />
+                  <Calendar size={16} color={COLORS.functional.success} />
                 </View>
                 <Text className="font-comfortaa text-sm text-primary-navy flex-1">
                   {formatDateForDisplay(date)}
@@ -448,14 +445,14 @@ export default function FreeSampleScreen() {
           </View>
 
           <Text className="font-comfortaa text-xs text-neutral-gray mb-4">
-            Choose up to {maxDates} date{maxDates > 1 ? "s" : ""} for your free deliveries
+            Choose up to {maxDates} date{maxDates > 1 ? "s" : ""} for your free
+            deliveries
           </Text>
 
           <View className="flex-row flex-wrap gap-2">
             {availableDates.map((dateStr) => {
               const isSelected = selectedDates.includes(dateStr)
-              const isDisabled =
-                !isSelected && selectedDates.length >= maxDates
+              const isDisabled = !isSelected && selectedDates.length >= maxDates
 
               return (
                 <TouchableOpacity
@@ -489,7 +486,8 @@ export default function FreeSampleScreen() {
 
           {/* Selected dates summary */}
           {selectedDates.length > 0 && (
-            <View className="bg-white rounded-2xl p-4 mt-4"
+            <View
+              className="bg-white rounded-2xl p-4 mt-4"
               style={{
                 shadowColor: "#000",
                 shadowOffset: { width: 0, height: 1 },
@@ -508,10 +506,7 @@ export default function FreeSampleScreen() {
                 >
                   <View className="flex-row items-center">
                     <View className="w-6 h-6 rounded-md bg-primary-navy/10 items-center justify-center mr-2">
-                      <Calendar
-                        size={12}
-                        color={COLORS.primary.navy}
-                      />
+                      <Calendar size={12} color={COLORS.primary.navy} />
                     </View>
                     <Text className="font-comfortaa text-xs text-primary-navy">
                       {formatDateForDisplay(date)}
@@ -569,7 +564,10 @@ export default function FreeSampleScreen() {
         title="Select Address"
         description="Choose a delivery location"
       >
-        <ScrollView className="max-h-96 w-full" showsVerticalScrollIndicator={false}>
+        <ScrollView
+          className="max-h-96 w-full"
+          showsVerticalScrollIndicator={false}
+        >
           {addresses.length === 0 ? (
             <Text className="text-center font-comfortaa text-neutral-gray py-4">
               No addresses found. Please add one in your profile.

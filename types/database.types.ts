@@ -33,6 +33,7 @@ export type TransactionInsert = TablesInsert<"transactions">
 export type DiscountInsert = TablesInsert<"discounts">
 export type DiscountUsageInsert = TablesInsert<"discount_usages">
 export type ReferralInsert = TablesInsert<"referrals">
+export type FreeSampleConfigInsert = TablesInsert<"free_sample_config">
 
 // Update types for updating existing records
 export type UserUpdate = TablesUpdate<"users">
@@ -42,3 +43,4 @@ export type WalletUpdate = TablesUpdate<"wallets">
 export type DiscountUpdate = TablesUpdate<"discounts">
 export type DiscountUsageUpdate = TablesUpdate<"discount_usages">
 export type ReferralUpdate = TablesUpdate<"referrals">
+export type FreeSampleConfigUpdate = TablesUpdate<"free_sample_config">

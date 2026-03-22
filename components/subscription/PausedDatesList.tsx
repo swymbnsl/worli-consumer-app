@@ -1,39 +1,35 @@
-import { X } from 'lucide-react-native';
-import React from 'react';
-import { Text, TouchableOpacity, View } from 'react-native';
-import {
-  showErrorToast,
-  showSuccessToast,
-} from '@/components/ui/Toast';
-import { BORDER_RADIUS, COLORS, SHADOWS, SPACING } from '@/constants/theme';
-import { supabase } from '@/lib/supabase';
-import { formatFullDate } from '@/utils/dateUtils';
+import { showErrorToast, showSuccessToast } from "@/components/ui/Toast"
+import { BORDER_RADIUS, COLORS, SHADOWS, SPACING } from "@/constants/theme"
+import { updateSubscriptionPausedDates } from "@/lib/supabase-service"
+import { formatFullDate } from "@/utils/dateUtils"
+import { X } from "lucide-react-native"
+import React from "react"
+import { Text, TouchableOpacity, View } from "react-native"
 
 interface PausedDatesListProps {
-  pausedDates: string[];
-  subscriptionId: string;
-  onUpdate: () => void;
+  pausedDates: string[]
+  subscriptionId: string
+  onUpdate: () => void
 }
 
-export default function PausedDatesList({ pausedDates, subscriptionId, onUpdate }: PausedDatesListProps) {
+export default function PausedDatesList({
+  pausedDates,
+  subscriptionId,
+  onUpdate,
+}: PausedDatesListProps) {
   const handleRemovePause = async (date: string) => {
     try {
-      const newPausedDates = pausedDates.filter(d => d !== date);
-      
-      const { error } = await supabase
-        .from('subscriptions')
-        .update({ paused_dates: newPausedDates })
-        .eq('id', subscriptionId);
+      const newPausedDates = pausedDates.filter((d) => d !== date)
 
-      if (error) throw error;
+      await updateSubscriptionPausedDates(subscriptionId, newPausedDates)
 
-      onUpdate();
-      showSuccessToast('Success', 'Pause removed successfully');
+      onUpdate()
+      showSuccessToast("Success", "Pause removed successfully")
     } catch (error) {
-      console.error('Error removing pause:', error);
-      showErrorToast('Error', 'Failed to remove pause');
+      console.error("Error removing pause:", error)
+      showErrorToast("Error", "Failed to remove pause")
     }
-  };
+  }
 
   return (
     <View
@@ -49,7 +45,7 @@ export default function PausedDatesList({ pausedDates, subscriptionId, onUpdate 
       <Text
         style={{
           fontSize: 18,
-          fontWeight: '700',
+          fontWeight: "700",
           color: COLORS.secondary,
           marginBottom: 16,
         }}
@@ -60,9 +56,9 @@ export default function PausedDatesList({ pausedDates, subscriptionId, onUpdate 
         <View
           key={idx}
           style={{
-            flexDirection: 'row',
-            justifyContent: 'space-between',
-            alignItems: 'center',
+            flexDirection: "row",
+            justifyContent: "space-between",
+            alignItems: "center",
             paddingVertical: 14,
             borderBottomWidth: idx < pausedDates.length - 1 ? 1 : 0,
             borderBottomColor: COLORS.border,
@@ -72,7 +68,7 @@ export default function PausedDatesList({ pausedDates, subscriptionId, onUpdate 
             style={{
               color: COLORS.secondary,
               fontSize: 14,
-              fontWeight: '500',
+              fontWeight: "500",
             }}
           >
             {formatFullDate(date)}
@@ -83,5 +79,5 @@ export default function PausedDatesList({ pausedDates, subscriptionId, onUpdate 
         </View>
       ))}
     </View>
-  );
+  )
 }

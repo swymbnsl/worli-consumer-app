@@ -1,10 +1,24 @@
 import { supabase } from "@/lib/supabase"
+import {
+  createUser,
+  fetchDeliveryPreferences,
+  fetchUserById,
+  fetchUserPreferences,
+  fetchWallet,
+  insertDeliveryPreferencesDb,
+  insertUserPreferencesDb,
+  updateDeliveryPreferencesDb,
+  updateUserDb,
+  updateUserPreferencesDb,
+  upsertUserPreferences,
+  upsertWallet,
+} from "@/lib/supabase-service"
 import { useUserStore } from "@/stores/user-store"
 import {
-    DeliveryPreference,
-    User,
-    UserPreference,
-    Wallet,
+  DeliveryPreference,
+  User,
+  UserPreference,
+  Wallet,
 } from "@/types/database.types"
 import { AuthChangeEvent, Session } from "@supabase/supabase-js"
 import React, { createContext, useEffect, useState } from "react"
@@ -141,131 +155,67 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const fetchUserAndWallet = async (userId: string) => {
     try {
       // Fetch user
-      const { data: userData, error: userError } = await supabase
-        .from("users")
-        .select("*")
-        .eq("id", userId)
-        .maybeSingle()
-
-      if (userError) throw userError
-      if (!userData) {
-        // User record doesn't exist yet (e.g., just created account before completing profile)
-        setLoading(false)
-        return
+      try {
+        const userData = await fetchUserById(userId)
+        if (!userData) {
+          // User record doesn't exist yet (e.g., just created account before completing profile)
+          setLoading(false)
+          return
+        }
+        setUser(userData)
+      } catch (userError) {
+        throw userError
       }
-      setUser(userData)
 
       // Fetch wallet (or create if doesn't exist)
-      const { data: walletData, error: walletError } = await supabase
-        .from("wallets")
-        .select("*")
-        .eq("user_id", userId)
-        .maybeSingle()
-
-      if (walletError) throw walletError
-
-      if (walletData) {
-        setWallet(walletData)
-      } else {
-        // Create default wallet if it doesn't exist
-        const { data: newWallet, error: newWalletError } = await supabase
-          .from("wallets")
-          .upsert(
-            {
-              user_id: userId,
-              balance: 0,
-              low_balance_threshold: 100,
-              auto_recharge_enabled: false,
-            },
-            { onConflict: "user_id" },
-          )
-          .select()
-          .maybeSingle()
-
-        if (newWalletError) {
-          console.error("Error creating/fetching wallet:", newWalletError)
+      try {
+        const walletData = await fetchWallet(userId)
+        if (walletData) {
+          setWallet(walletData)
         }
-
-        if (newWallet) {
-          setWallet(newWallet)
+      } catch (walletError) {
+        // Create default wallet if it doesn't exist
+        try {
+          const newWallet = await upsertWallet({
+            user_id: userId,
+            balance: 0,
+            low_balance_threshold: 100,
+            auto_recharge_enabled: false,
+          })
+          if (newWallet) {
+            setWallet(newWallet)
+          }
+        } catch (newWalletError) {
+          console.error("Error creating/fetching wallet:", newWalletError)
         }
       }
 
       // Fetch user preferences (or create if doesn't exist)
-      const { data: prefData, error: prefError } = await supabase
-        .from("user_preferences")
-        .select("*")
-        .eq("user_id", userId)
-        .maybeSingle()
-
-      if (prefError) throw prefError
-
-      if (prefData) {
-        setUserPreference(prefData)
-      } else {
-        // Create default preferences if they don't exist
-        const { data: newPref, error: newPrefError } = await supabase
-          .from("user_preferences")
-          .upsert(
-            {
+      try {
+        const prefData = await fetchUserPreferences(userId)
+        if (prefData) {
+          setUserPreference(prefData)
+        } else {
+          try {
+            const newPref = await upsertUserPreferences({
               user_id: userId,
               language: "en",
               notifications_enabled: true,
               sms_notifications: true,
               push_notifications: true,
-            },
-            { onConflict: "user_id" },
-          )
-          .select()
-          .maybeSingle()
-
-        if (newPrefError) {
-          console.error(
-            "Error creating/fetching user preferences:",
-            newPrefError,
-          )
+            })
+            if (newPref) {
+              setUserPreference(newPref)
+            }
+          } catch (newPrefError) {
+            console.error(
+              "Error creating/fetching user preferences:",
+              newPrefError,
+            )
+          }
         }
-
-        if (newPref) {
-          setUserPreference(newPref)
-        }
-      }
-
-      // Fetch delivery preferences (or create if doesn't exist)
-      const { data: deliveryPrefData, error: deliveryPrefError } = await supabase
-        .from("delivery_preferences")
-        .select("*")
-        .eq("user_id", userId)
-        .maybeSingle()
-
-      if (deliveryPrefError) throw deliveryPrefError
-
-      if (deliveryPrefData) {
-        setDeliveryPreference(deliveryPrefData)
-      } else {
-        // Create default delivery preferences if they don't exist
-        const { data: newDelPref, error: newDelPrefError } = await supabase
-          .from("delivery_preferences")
-          .upsert(
-            {
-              user_id: userId,
-              ring_doorbell: true,
-            },
-            { onConflict: "user_id" },
-          )
-          .select()
-          .maybeSingle()
-
-        if (newDelPrefError) {
-          console.error(
-            "Error creating/fetching delivery preferences:",
-            newDelPrefError,
-          )
-        }
-
-        if (newDelPref) {
-          setDeliveryPreference(newDelPref)
-        }
+      } catch (prefError) {
+        throw prefError
       }
     } catch (error) {
       console.error("Error fetching user data:", error)
@@ -316,6 +266,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
           email: null,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
+          referral_code: "DEVUSER123",
+          referred_by: null,
         }
 
         const mockWallet: Wallet = {
@@ -349,43 +301,39 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
       if (data.user) {
         // Check if user exists in users table
-        const { data: existingUser } = await supabase
-          .from("users")
-          .select("*")
-          .eq("id", data.user.id)
-          .maybeSingle()
+        try {
+          const existingUser = await fetchUserById(data.user.id)
 
-        // If user doesn't exist, create them
-        if (!existingUser) {
-          const newUser = {
-            id: data.user.id,
-            phone_number: phone,
-            full_name: null,
-            email: data.user.email || null,
+          // If user doesn't exist, create them
+          if (!existingUser) {
+            const newUser = {
+              id: data.user.id,
+              phone_number: phone,
+              full_name: null,
+              email: data.user.email || null,
+            }
+
+            try {
+              await createUser(newUser)
+            } catch (insertError) {
+              console.error("Error creating user:", insertError)
+              return false
+            }
+
+            // Create wallet for new user
+            try {
+              await upsertWallet({
+                user_id: data.user.id,
+                balance: 0,
+                low_balance_threshold: 100,
+                auto_recharge_enabled: false,
+              })
+            } catch (walletError) {
+              console.error("Error creating wallet:", walletError)
+            }
           }
-
-          const { error: insertError } = await supabase
-            .from("users")
-            .insert([newUser])
-
-          if (insertError) {
-            console.error("Error creating user:", insertError)
-            return false
-          }
-
-          // Create wallet for new user
-          const { error: walletError } = await supabase.from("wallets").insert([
-            {
-              user_id: data.user.id,
-              balance: 0,
-              low_balance_threshold: 100,
-              auto_recharge_enabled: false,
-            },
-          ])
-
-          if (walletError) {
-            console.error("Error creating wallet:", walletError)
-          }
+        } catch (error) {
+          console.error("Error checking user:", error)
         }
 
         await fetchUserAndWallet(data.user.id)
@@ -413,12 +361,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     if (!user) return false
 
     try {
-      const { error } = await supabase
-        .from("users")
-        .update(updates)
-        .eq("id", user.id)
-
-      if (error) throw error
+      await updateUserDb(user.id, updates)
 
       setUser({ ...user, ...updates } as User)
       return true
@@ -435,27 +378,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
     try {
       // Check if preferences exist
-      const { data: existing } = await supabase
-        .from("user_preferences")
-        .select("id")
-        .eq("user_id", user.id)
-        .single()
+      const existing = await fetchUserPreferences(user.id)
 
       if (existing) {
         // Update existing
-        const { error } = await supabase
-          .from("user_preferences")
-          .update(updates)
-          .eq("user_id", user.id)
-
-        if (error) throw error
+        await updateUserPreferencesDb(user.id, updates)
       } else {
         // Create new
-        const { error } = await supabase
-          .from("user_preferences")
-          .insert({ user_id: user.id, ...updates })
-
-        if (error) throw error
+        await insertUserPreferencesDb({ user_id: user.id, ...updates })
       }
 
       setUserPreference({ ...userPreference, ...updates } as UserPreference)
@@ -473,27 +403,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
     try {
       // Check if preferences exist
-      const { data: existing } = await supabase
-        .from("delivery_preferences")
-        .select("id")
-        .eq("user_id", user.id)
-        .single()
+      const existing = await fetchDeliveryPreferences(user.id)
 
       if (existing) {
         // Update existing
-        const { error } = await supabase
-          .from("delivery_preferences")
-          .update(updates)
-          .eq("user_id", user.id)
-
-        if (error) throw error
+        await updateDeliveryPreferencesDb(user.id, updates)
       } else {
         // Create new
-        const { error } = await supabase
-          .from("delivery_preferences")
-          .insert({ user_id: user.id, ...updates })
-
-        if (error) throw error
+        await insertDeliveryPreferencesDb({ user_id: user.id, ...updates })
       }
 
       setDeliveryPreference({

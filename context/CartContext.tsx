@@ -1,6 +1,15 @@
 import { useAuth } from "@/hooks/useAuth"
-import { cancelAbandonedCartReminder, queueAbandonedCartReminder } from "@/lib/notification-service"
-import { supabase } from "@/lib/supabase"
+import {
+  cancelAbandonedCartReminder,
+  queueAbandonedCartReminder,
+} from "@/lib/notification-service"
+import {
+  clearUserCart,
+  deleteCartItem,
+  fetchCartItems,
+  insertCartItem,
+  updateCartItemDb,
+} from "@/lib/supabase-service"
 import React, { createContext, useEffect, useMemo, useState } from "react"
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
@@ -81,34 +90,12 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({
       return
     }
 
-    (async () => {
-      // Join cart_items with products table to fetch product details
-      const { data, error } = await supabase
-        .from("cart_items")
-        .select(`
-          id,
-          product_id,
-          quantity,
-          frequency,
-          start_date,
-          interval_days,
-          custom_quantities,
-          preferred_delivery_time,
-          address_id,
-          products:product_id (
-            id,
-            name,
-            price,
-            image_url,
-            volume
-          )
-        `)
-        .eq("user_id", user.id)
-
-      if (!error && data) {
+    ;(async () => {
+      try {
+        const data = await fetchCartItems(user.id)
         setItems(
           data.map((row: any) => {
-            const product = row.products;
+            const product = row.products
             return {
               id: row.id,
               productId: row.product_id,
@@ -123,10 +110,11 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({
               customQuantities: row.custom_quantities,
               preferredDeliveryTime: row.preferred_delivery_time,
               addressId: row.address_id,
-              addressName: row.address_name || "",
-            };
+            }
           }),
-        );
+        )
+      } catch (error) {
+        console.error("Error fetching cart items:", error)
       }
     })()
   }, [user?.id])
@@ -134,57 +122,69 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({
   const addItem = async (item: Omit<CartItem, "id">) => {
     if (!user?.id) return
 
-    // Insert into DB
-    const { data, error } = await supabase
-      .from("cart_items")
-      .insert([
-        {
-          user_id: user.id,
-          product_id: item.productId,
-          quantity: item.quantity,
-          frequency: item.frequency,
-          start_date: item.startDate,
-          interval_days: item.intervalDays,
-          custom_quantities: item.customQuantities,
-          preferred_delivery_time: item.preferredDeliveryTime,
-          address_id: item.addressId,
-        },
-      ])
-      .select()
+    try {
+      const data = await insertCartItem({
+        user_id: user.id,
+        product_id: item.productId,
+        quantity: item.quantity,
+        frequency: item.frequency,
+        start_date: item.startDate,
+        interval_days: item.intervalDays,
+        custom_quantities: item.customQuantities,
+        preferred_delivery_time: item.preferredDeliveryTime,
+        address_id: item.addressId,
+      })
 
-    if (!error && data && data[0]) {
-      const newItems = [
-        ...items,
-        {
-          ...item,
-          id: data[0].id,
-        },
-      ];
-      setItems(newItems);
-      
-      // Update abandoned cart timer
-      const newTotal = newItems.reduce((sum, i) => sum + getItemTotal(i), 0);
-      if (user.phone_number) {
-        queueAbandonedCartReminder(user.id, user.phone_number, newTotal, newItems.length).catch(console.error);
+      if (data) {
+        const newItems = [
+          ...items,
+          {
+            ...item,
+            id: data.id,
+          },
+        ]
+        setItems(newItems)
+
+        // Update abandoned cart timer
+        const newTotal = newItems.reduce((sum, i) => sum + getItemTotal(i), 0)
+        if (user.phone_number) {
+          queueAbandonedCartReminder(
+            user.id,
+            user.phone_number,
+            newTotal,
+            newItems.length,
+          ).catch(console.error)
+        }
       }
+    } catch (error) {
+      console.error("Error adding item to cart:", error)
     }
   }
 
   const removeItem = async (itemId: string) => {
     if (!user?.id) return
 
-    // Remove from DB
-    await supabase.from("cart_items").delete().eq("id", itemId)
-    
-    const newItems = items.filter((i) => i.id !== itemId);
-    setItems(newItems)
-    
-    // Manage abandoned cart timer
-    if (newItems.length === 0) {
-      cancelAbandonedCartReminder(user.id).catch(console.error);
-    } else if (user.phone_number) {
-      const newTotal = newItems.reduce((sum, i) => sum + getItemTotal(i), 0);
-      queueAbandonedCartReminder(user.id, user.phone_number, newTotal, newItems.length).catch(console.error);
+    try {
+      // Remove from DB
+      await deleteCartItem(itemId)
+
+      const newItems = items.filter((i) => i.id !== itemId)
+      setItems(newItems)
+
+      // Manage abandoned cart timer
+      if (newItems.length === 0) {
+        cancelAbandonedCartReminder(user.id).catch(console.error)
+      } else if (user.phone_number) {
+        const newTotal = newItems.reduce((sum, i) => sum + getItemTotal(i), 0)
+        queueAbandonedCartReminder(
+          user.id,
+          user.phone_number,
+          newTotal,
+          newItems.length,
+        ).catch(console.error)
+      }
+    } catch (error) {
+      console.error("Error removing item from cart:", error)
     }
   }
 
@@ -210,31 +210,40 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({
       Object.entries(dbUpdates).filter(([, value]) => value !== undefined),
     )
 
-    // Update DB
-    const { error } = await supabase
-      .from("cart_items")
-      .update(filteredDbUpdates)
-      .eq("id", itemId)
-      .eq("user_id", user.id)
+    try {
+      // Update DB
+      await updateCartItemDb(user.id, itemId, filteredDbUpdates)
 
-    if (error) return
+      const newItems = items.map((i) =>
+        i.id === itemId ? { ...i, ...updates } : i,
+      )
+      setItems(newItems)
 
-    const newItems = items.map((i) => (i.id === itemId ? { ...i, ...updates } : i));
-    setItems(newItems)
-    
-    // Update abandoned cart timer
-    if (user.phone_number) {
-      const newTotal = newItems.reduce((sum, i) => sum + getItemTotal(i), 0);
-      queueAbandonedCartReminder(user.id, user.phone_number, newTotal, newItems.length).catch(console.error);
+      // Update abandoned cart timer
+      if (user.phone_number) {
+        const newTotal = newItems.reduce((sum, i) => sum + getItemTotal(i), 0)
+        queueAbandonedCartReminder(
+          user.id,
+          user.phone_number,
+          newTotal,
+          newItems.length,
+        ).catch(console.error)
+      }
+    } catch (error) {
+      console.error("Error updating item in cart:", error)
     }
   }
 
   const clearCart = async () => {
     if (!user?.id) return
 
-    await supabase.from("cart_items").delete().eq("user_id", user.id)
-    setItems([])
-    cancelAbandonedCartReminder(user.id).catch(console.error);
+    try {
+      await clearUserCart(user.id)
+      setItems([])
+      cancelAbandonedCartReminder(user.id).catch(console.error)
+    } catch (error) {
+      console.error("Error clearing cart:", error)
+    }
   }
 
   const itemCount = items.length

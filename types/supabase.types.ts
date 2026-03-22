@@ -182,12 +182,80 @@ export type Database = {
           },
         ]
       }
+      cart_items: {
+        Row: {
+          address_id: string | null
+          created_at: string
+          custom_quantities: Json | null
+          frequency: string | null
+          id: string
+          interval_days: number | null
+          preferred_delivery_time: string | null
+          product_id: string
+          quantity: number
+          start_date: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          address_id?: string | null
+          created_at?: string
+          custom_quantities?: Json | null
+          frequency?: string | null
+          id?: string
+          interval_days?: number | null
+          preferred_delivery_time?: string | null
+          product_id: string
+          quantity: number
+          start_date?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          address_id?: string | null
+          created_at?: string
+          custom_quantities?: Json | null
+          frequency?: string | null
+          id?: string
+          interval_days?: number | null
+          preferred_delivery_time?: string | null
+          product_id?: string
+          quantity?: number
+          start_date?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cart_items_address_id_fkey"
+            columns: ["address_id"]
+            isOneToOne: false
+            referencedRelation: "addresses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cart_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cart_items_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       delivery_preferences: {
         Row: {
           created_at: string | null
           hand_delivery: boolean | null
           id: string
           leave_at_door: boolean | null
+          preference_type: string | null
           preferred_delivery_time: string | null
           ring_doorbell: boolean | null
           special_instructions: string | null
@@ -199,6 +267,7 @@ export type Database = {
           hand_delivery?: boolean | null
           id?: string
           leave_at_door?: boolean | null
+          preference_type?: string | null
           preferred_delivery_time?: string | null
           ring_doorbell?: boolean | null
           special_instructions?: string | null
@@ -210,6 +279,7 @@ export type Database = {
           hand_delivery?: boolean | null
           id?: string
           leave_at_door?: boolean | null
+          preference_type?: string | null
           preferred_delivery_time?: string | null
           ring_doorbell?: boolean | null
           special_instructions?: string | null
@@ -405,6 +475,112 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: []
+      }
+      free_sample_config: {
+        Row: {
+          banner_image_url: string | null
+          created_at: string | null
+          delivery_time: string
+          description: string | null
+          id: string
+          is_enabled: boolean
+          product_id: string
+          quantity_per_day: number
+          trial_days: number
+          updated_at: string | null
+        }
+        Insert: {
+          banner_image_url?: string | null
+          created_at?: string | null
+          delivery_time?: string
+          description?: string | null
+          id?: string
+          is_enabled?: boolean
+          product_id: string
+          quantity_per_day?: number
+          trial_days?: number
+          updated_at?: string | null
+        }
+        Update: {
+          banner_image_url?: string | null
+          created_at?: string | null
+          delivery_time?: string
+          description?: string | null
+          id?: string
+          is_enabled?: boolean
+          product_id?: string
+          quantity_per_day?: number
+          trial_days?: number
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "free_sample_config_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notification_queue: {
+        Row: {
+          created_at: string
+          error_message: string | null
+          event_type: Database["public"]["Enums"]["notification_event_type"]
+          id: string
+          payload: Json | null
+          phone_number: string
+          retry_count: number
+          scheduled_at: string
+          sent_at: string | null
+          status: Database["public"]["Enums"]["notification_status"]
+          template_id: string
+          updated_at: string
+          user_id: string
+          whatsapp_message_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          error_message?: string | null
+          event_type: Database["public"]["Enums"]["notification_event_type"]
+          id?: string
+          payload?: Json | null
+          phone_number: string
+          retry_count?: number
+          scheduled_at: string
+          sent_at?: string | null
+          status?: Database["public"]["Enums"]["notification_status"]
+          template_id: string
+          updated_at?: string
+          user_id: string
+          whatsapp_message_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          error_message?: string | null
+          event_type?: Database["public"]["Enums"]["notification_event_type"]
+          id?: string
+          payload?: Json | null
+          phone_number?: string
+          retry_count?: number
+          scheduled_at?: string
+          sent_at?: string | null
+          status?: Database["public"]["Enums"]["notification_status"]
+          template_id?: string
+          updated_at?: string
+          user_id?: string
+          whatsapp_message_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notification_queue_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       notifications: {
         Row: {
@@ -755,7 +931,6 @@ export type Database = {
           delivery_time: string | null
           discount_amount: number | null
           discount_code_id: string | null
-          discount_orders_remaining: number | null
           end_date: string | null
           frequency: string | null
           id: string
@@ -774,7 +949,6 @@ export type Database = {
           delivery_time?: string | null
           discount_amount?: number | null
           discount_code_id?: string | null
-          discount_orders_remaining?: number | null
           end_date?: string | null
           frequency?: string | null
           id?: string
@@ -793,7 +967,6 @@ export type Database = {
           delivery_time?: string | null
           discount_amount?: number | null
           discount_code_id?: string | null
-          discount_orders_remaining?: number | null
           end_date?: string | null
           frequency?: string | null
           id?: string
@@ -1017,6 +1190,7 @@ export type Database = {
       }
       users: {
         Row: {
+          claimed_free_sample: boolean
           created_at: string | null
           email: string | null
           full_name: string | null
@@ -1027,6 +1201,7 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          claimed_free_sample?: boolean
           created_at?: string | null
           email?: string | null
           full_name?: string | null
@@ -1037,6 +1212,7 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          claimed_free_sample?: boolean
           created_at?: string | null
           email?: string | null
           full_name?: string | null
@@ -1065,6 +1241,8 @@ export type Database = {
           created_at: string | null
           id: string
           low_balance_threshold: number | null
+          razorpay_customer_id: string | null
+          razorpay_subscription_id: string | null
           updated_at: string | null
           user_id: string | null
         }
@@ -1076,6 +1254,8 @@ export type Database = {
           created_at?: string | null
           id?: string
           low_balance_threshold?: number | null
+          razorpay_customer_id?: string | null
+          razorpay_subscription_id?: string | null
           updated_at?: string | null
           user_id?: string | null
         }
@@ -1087,6 +1267,8 @@ export type Database = {
           created_at?: string | null
           id?: string
           low_balance_threshold?: number | null
+          razorpay_customer_id?: string | null
+          razorpay_subscription_id?: string | null
           updated_at?: string | null
           user_id?: string | null
         }
@@ -1105,10 +1287,48 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      apply_referral_code: { Args: { p_code: string }; Returns: Json }
+      check_referral_code: { Args: { p_code: string }; Returns: Json }
+      claim_free_sample: {
+        Args: { p_address_id?: string; p_dates: string[] }
+        Returns: Json
+      }
+      payout_referral_on_recharge: {
+        Args: {
+          p_recharge_amount: number
+          p_recharge_payment_id: string
+          p_referee_id: string
+        }
+        Returns: Json
+      }
+      upsert_notification_queue: {
+        Args: {
+          p_event_type: Database["public"]["Enums"]["notification_event_type"]
+          p_payload: Json
+          p_phone_number: string
+          p_scheduled_at: string
+          p_template_id: string
+          p_user_id: string
+        }
+        Returns: string
+      }
+      validate_discount_code: {
+        Args: {
+          p_applicable_to?: string
+          p_code: string
+          p_order_amount: number
+          p_user_id: string
+        }
+        Returns: Json
+      }
     }
     Enums: {
-      [_ in never]: never
+      notification_event_type:
+        | "abandoned_cart"
+        | "delivery_reminder"
+        | "subscription_renewal"
+        | "general"
+      notification_status: "pending" | "sent" | "failed" | "cancelled"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1238,6 +1458,14 @@ export const Constants = {
     Enums: {},
   },
   public: {
-    Enums: {},
+    Enums: {
+      notification_event_type: [
+        "abandoned_cart",
+        "delivery_reminder",
+        "subscription_renewal",
+        "general",
+      ],
+      notification_status: ["pending", "sent", "failed", "cancelled"],
+    },
   },
 } as const

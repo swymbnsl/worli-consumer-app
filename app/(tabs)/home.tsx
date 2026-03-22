@@ -1,43 +1,43 @@
 import SubscriptionBottomSheet, {
-    SubscriptionBottomSheetRef,
+  SubscriptionBottomSheetRef,
 } from "@/components/cart/SubscriptionBottomSheet"
 import {
-    CalendarLegend,
-    CategoriesGrid,
-    DateStrip,
-    PromoBanner,
-    TodayDeliveryCard,
+  CalendarLegend,
+  CategoriesGrid,
+  DateStrip,
+  PromoBanner,
+  TodayDeliveryCard,
 } from "@/components/home"
 import Header from "@/components/ui/Header"
 import { COLORS } from "@/constants/theme"
 import { useAuth } from "@/hooks/useAuth"
 import { useCart } from "@/hooks/useCart"
 import {
-    fetchActiveOffers,
-    fetchActiveProducts,
-    fetchActiveSubscriptions,
-    fetchFreeSampleConfig,
-    fetchHomeOrders,
-    fetchUserAddresses,
-    hasClaimedFreeSample,
+  fetchActiveOffers,
+  fetchActiveProducts,
+  fetchActiveSubscriptions,
+  fetchFreeSampleConfig,
+  fetchHomeOrders,
+  fetchUserAddresses,
+  hasClaimedFreeSample,
 } from "@/lib/supabase-service"
 import {
-    Address,
-    FreeSampleConfig,
-    Offer,
-    Order,
-    Product,
-    Subscription,
+  Address,
+  FreeSampleConfig,
+  Offer,
+  Order,
+  Product,
+  Subscription,
 } from "@/types/database.types"
 import { useRouter } from "expo-router"
 import { ShoppingCart } from "lucide-react-native"
 import React, { useCallback, useEffect, useRef, useState } from "react"
 import {
-    RefreshControl,
-    ScrollView,
-    Text,
-    TouchableOpacity,
-    View,
+  RefreshControl,
+  ScrollView,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native"
 import Animated, { FadeInDown } from "react-native-reanimated"
 
@@ -84,8 +84,14 @@ export default function HomeScreen() {
         fetchActiveProducts(),
         fetchActiveOffers(),
         user ? fetchUserAddresses(user.id) : Promise.resolve([]),
-        fetchFreeSampleConfig().catch(() => null) as Promise<FreeSampleConfig | null>,
-        user ? hasClaimedFreeSample(user.id).catch(() => false) as Promise<boolean> : Promise.resolve(false),
+        fetchFreeSampleConfig().catch(
+          () => null,
+        ) as Promise<FreeSampleConfig | null>,
+        user
+          ? (hasClaimedFreeSample(user.id).catch(
+              () => false,
+            ) as Promise<boolean>)
+          : Promise.resolve(false),
       ])
 
       setOrders(ordersData)
@@ -95,7 +101,7 @@ export default function HomeScreen() {
 
       // Show free sample banner if feature is enabled and user hasn't claimed
       setShowFreeSampleBanner(
-        !!freeSampleConfig && freeSampleConfig.is_enabled && !freeSampleClaimed
+        !!freeSampleConfig && freeSampleConfig.is_enabled && !freeSampleClaimed,
       )
 
       // First address is default (sorted by is_default desc)
@@ -189,7 +195,10 @@ export default function HomeScreen() {
         </View>
 
         {/* Today's Delivery Status Card */}
-        <Animated.View entering={FadeInDown.duration(400).delay(200)} className="px-4 mb-5 bg-neutral-lightCream rounded-2xl">
+        <Animated.View
+          entering={FadeInDown.duration(400).delay(200)}
+          className="px-4 mb-5 bg-neutral-lightCream rounded-2xl"
+        >
           <TodayDeliveryCard
             selectedDate={selectedDate}
             order={selectedDateOrder}
@@ -197,7 +206,10 @@ export default function HomeScreen() {
         </Animated.View>
 
         {/* Promotional Banners Carousel */}
-        <Animated.View entering={FadeInDown.duration(400).delay(250)} className="mb-6 bg-neutral-lightCream rounded-2xl">
+        <Animated.View
+          entering={FadeInDown.duration(400).delay(250)}
+          className="mb-6 bg-neutral-lightCream rounded-2xl"
+        >
           <PromoBanner
             offers={offers}
             onPressOffer={handleOfferPress}

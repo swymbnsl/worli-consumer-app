@@ -221,6 +221,21 @@ export async function updateSubscription(
 }
 
 /**
+ * Update a subscription's paused dates
+ */
+export async function updateSubscriptionPausedDates(
+  subscriptionId: string,
+  pausedDates: string[],
+): Promise<void> {
+  const { error } = await supabase
+    .from("subscriptions")
+    .update({ paused_dates: pausedDates })
+    .eq("id", subscriptionId)
+
+  if (error) throw error
+}
+
+/**
  * Check if an address has any active subscriptions.
  */
 export async function hasActiveSubscriptionsForAddress(
@@ -488,9 +503,7 @@ export async function updateWalletBalance(
 export async function createTransaction(
   transaction: TransactionInsert,
 ): Promise<void> {
-  const { error } = await supabase
-    .from("transactions")
-    .insert([transaction])
+  const { error } = await supabase.from("transactions").insert([transaction])
 
   if (error) throw error
 }
@@ -664,14 +677,16 @@ export async function fetchAppSetting(key: string): Promise<string | null> {
     .select("setting_value")
     .eq("setting_key", key)
     .single()
-    
+
   if (error && error.code !== "PGRST116") {
     console.error("Error fetching app setting:", error)
   }
   return data?.setting_value || null
 }
 
-export async function calculateMonthlySubscriptionCost(userId: string): Promise<number> {
+export async function calculateMonthlySubscriptionCost(
+  userId: string,
+): Promise<number> {
   const { data: subs, error } = await supabase
     .from("subscriptions")
     .select("*, product:products(price)")
@@ -690,7 +705,7 @@ export async function calculateMonthlySubscriptionCost(userId: string): Promise<
     if (price === 0) continue
 
     const qty = sub.quantity || 1
-    
+
     if (sub.frequency === "daily") {
       totalCost += qty * price * 30
     } else if (sub.frequency === "alternate") {
@@ -698,10 +713,11 @@ export async function calculateMonthlySubscriptionCost(userId: string): Promise<
     } else if (sub.frequency === "custom" && sub.custom_quantities) {
       let weeklyTotal = 0
       try {
-        const cq = typeof sub.custom_quantities === 'string' 
-          ? JSON.parse(sub.custom_quantities) 
-          : sub.custom_quantities
-          
+        const cq =
+          typeof sub.custom_quantities === "string"
+            ? JSON.parse(sub.custom_quantities)
+            : sub.custom_quantities
+
         for (const key in cq) {
           weeklyTotal += (Number(cq[key]) || 0) * price
         }
@@ -750,7 +766,12 @@ export async function hasClaimedFreeSample(userId: string): Promise<boolean> {
 
 export interface FreeSampleClaimSuccess {
   success: true
-  orders: { order_number: string; delivery_date: string; quantity: number; amount: number }[]
+  orders: {
+    order_number: string
+    delivery_date: string
+    quantity: number
+    amount: number
+  }[]
   message: string
 }
 
@@ -811,4 +832,269 @@ export async function getReferralStats(userId: string): Promise<ReferralStats> {
     )
 
   return { totalReferrals, totalEarned }
+}
+
+// ─── Users & Auth ─────────────────────────────────────────────────────────
+
+/**
+ * Fetch a user by ID.
+ */
+export async function fetchUserById(userId: string) {
+  const { data, error } = await supabase
+    .from("users")
+    .select("*")
+    .eq("id", userId)
+    .maybeSingle()
+
+  if (error) throw error
+  return data
+}
+
+/**
+ * Create a new user.
+ */
+export async function createUser(user: any) {
+  const { data, error } = await supabase.from("users").insert([user])
+
+  if (error) throw error
+  return data
+}
+
+/**
+ * Update user details.
+ */
+export async function updateUserDb(userId: string, updates: any) {
+  const { data, error } = await supabase
+    .from("users")
+    .update(updates)
+    .eq("id", userId)
+
+  if (error) throw error
+  return data
+}
+
+// ─── Wallets ────────────────────────────────────────────────────────────────
+
+/**
+ * Upsert wallet for a user.
+ */
+export async function upsertWallet(walletData: any) {
+  const { data, error } = await supabase
+    .from("wallets")
+    .upsert(walletData, { onConflict: "user_id" })
+    .select()
+    .maybeSingle()
+
+  if (error) throw error
+  return data
+}
+
+// ─── Preferences ────────────────────────────────────────────────────────────
+
+/**
+ * Fetch user preferences.
+ */
+export async function fetchUserPreferences(userId: string) {
+  const { data, error } = await supabase
+    .from("user_preferences")
+    .select("*")
+    .eq("user_id", userId)
+    .maybeSingle()
+
+  if (error) throw error
+  return data
+}
+
+/**
+ * Upsert user preferences.
+ */
+export async function upsertUserPreferences(prefData: any) {
+  const { data, error } = await supabase
+    .from("user_preferences")
+    .upsert(prefData, { onConflict: "user_id" })
+    .select()
+    .maybeSingle()
+
+  if (error) throw error
+  return data
+}
+
+/**
+ * Update user preferences.
+ */
+export async function updateUserPreferencesDb(userId: string, updates: any) {
+  const { error } = await supabase
+    .from("user_preferences")
+    .update(updates)
+    .eq("user_id", userId)
+
+  if (error) throw error
+}
+
+/**
+ * Insert user preferences.
+ */
+export async function insertUserPreferencesDb(prefData: any) {
+  const { error } = await supabase.from("user_preferences").insert([prefData])
+
+  if (error) throw error
+}
+
+/**
+ * Fetch delivery preferences.
+ */
+export async function fetchDeliveryPreferences(userId: string) {
+  const { data, error } = await supabase
+    .from("delivery_preferences")
+    .select("*")
+    .eq("user_id", userId)
+    .maybeSingle()
+
+  if (error) throw error
+  return data
+}
+
+/**
+ * Upsert delivery preferences.
+ */
+export async function upsertDeliveryPreferences(prefData: any) {
+  const { data, error } = await supabase
+    .from("delivery_preferences")
+    .upsert(prefData, { onConflict: "user_id" })
+    .select()
+    .maybeSingle()
+
+  if (error) throw error
+  return data
+}
+
+/**
+ * Update delivery preferences.
+ */
+export async function updateDeliveryPreferencesDb(
+  userId: string,
+  updates: any,
+) {
+  const { error } = await supabase
+    .from("delivery_preferences")
+    .update(updates)
+    .eq("user_id", userId)
+
+  if (error) throw error
+}
+
+/**
+ * Insert delivery preferences.
+ */
+export async function insertDeliveryPreferencesDb(prefData: any) {
+  const { error } = await supabase
+    .from("delivery_preferences")
+    .insert([prefData])
+
+  if (error) throw error
+}
+
+// ─── Cart ───────────────────────────────────────────────────────────────────
+
+/**
+ * Fetch cart items for a user.
+ */
+export async function fetchCartItems(userId: string) {
+  const { data, error } = await supabase
+    .from("cart_items")
+    .select(
+      `
+      id,
+      product_id,
+      quantity,
+      frequency,
+      start_date,
+      interval_days,
+      custom_quantities,
+      preferred_delivery_time,
+      address_id,
+      products:product_id (
+        id,
+        name,
+        price,
+        image_url,
+        volume
+      )
+    `,
+    )
+    .eq("user_id", userId)
+
+  if (error) throw error
+  return data || []
+}
+
+/**
+ * Add item to cart.
+ */
+export async function insertCartItem(itemData: any) {
+  const { data, error } = await supabase
+    .from("cart_items")
+    .insert([itemData])
+    .select(
+      `
+      id,
+      product_id,
+      quantity,
+      frequency,
+      start_date,
+      interval_days,
+      custom_quantities,
+      preferred_delivery_time,
+      address_id,
+      products:product_id (
+        id,
+        name,
+        price,
+        image_url,
+        volume
+      )
+    `,
+    )
+    .single()
+
+  if (error) throw error
+  return data
+}
+
+/**
+ * Remove item from cart.
+ */
+export async function deleteCartItem(itemId: string) {
+  const { error } = await supabase.from("cart_items").delete().eq("id", itemId)
+
+  if (error) throw error
+}
+
+/**
+ * Clear user cart.
+ */
+export async function clearUserCart(userId: string) {
+  const { error } = await supabase
+    .from("cart_items")
+    .delete()
+    .eq("user_id", userId)
+
+  if (error) throw error
+}
+
+/**
+ * Update cart item.
+ */
+export async function updateCartItemDb(
+  userId: string,
+  itemId: string,
+  updates: any,
+) {
+  const { error } = await supabase
+    .from("cart_items")
+    .update(updates)
+    .eq("id", itemId)
+    .eq("user_id", userId)
+
+  if (error) throw error
 }
