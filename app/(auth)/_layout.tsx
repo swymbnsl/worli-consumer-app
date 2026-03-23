@@ -1,12 +1,12 @@
 import { COLORS } from "@/constants/theme"
 import { useAuth } from "@/hooks/useAuth"
-import { useUserStore } from "@/stores/user-store"
+import { useAuthStore } from "@/stores/auth-store"
 import { Redirect, Stack } from "expo-router"
 import { ActivityIndicator, View } from "react-native"
 
 export default function AuthLayout() {
   const { isLoggedIn, loading, isProfileComplete } = useAuth()
-  const user = useUserStore((s) => s.user)
+  const user = useAuthStore((s) => s.user)
 
   // Show loading state while checking auth
   if (loading) {

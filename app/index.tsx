@@ -1,13 +1,13 @@
 import { COLORS } from "@/constants/theme"
 import { useAuth } from "@/hooks/useAuth"
-import { useUserStore } from "@/stores/user-store"
+import { useAuthStore } from "@/stores/auth-store"
 import { router } from "expo-router"
 import { useEffect } from "react"
 import { ActivityIndicator, View } from "react-native"
 
 export default function Index() {
   const { isLoggedIn, loading } = useAuth()
-  const user = useUserStore((s) => s.user)
+  const user = useAuthStore((s) => s.user)
 
   useEffect(() => {
     const route = async () => {

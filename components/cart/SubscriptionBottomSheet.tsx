@@ -7,7 +7,7 @@ import {
   CartItem,
   CustomQuantities,
   SubscriptionFrequency,
-} from "@/context/CartContext"
+} from "@/stores/cart-store"
 import { useAuth } from "@/hooks/useAuth"
 import { useCart } from "@/hooks/useCart"
 import { checkDuplicateSubscription, fetchUserAddresses } from "@/lib/supabase-service"

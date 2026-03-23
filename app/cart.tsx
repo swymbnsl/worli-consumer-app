@@ -10,7 +10,7 @@ import {
     showSuccessToast,
 } from "@/components/ui/Toast"
 import { COLORS } from "@/constants/theme"
-import { CartItem } from "@/context/CartContext"
+import { CartItem } from "@/stores/cart-store"
 import { useAuth } from "@/hooks/useAuth"
 import { useCart } from "@/hooks/useCart"
 import { useWallet } from "@/hooks/useWallet"

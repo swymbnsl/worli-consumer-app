@@ -5,7 +5,7 @@ import {
     showErrorToast,
     showSuccessToast,
 } from "@/components/ui/Toast"
-import { CartItem } from "@/context/CartContext"
+import { CartItem } from "@/stores/cart-store"
 import { fetchProductById, updateSubscription } from "@/lib/supabase-service"
 import { Subscription } from "@/types/database.types"
 import React, { useEffect, useRef } from "react"

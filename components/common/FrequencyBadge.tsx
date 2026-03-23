@@ -1,4 +1,4 @@
-import { CartItem } from "@/context/CartContext"
+import { CartItem } from "@/stores/cart-store"
 import React from "react"
 import { Text, View } from "react-native"
 

@@ -1,8 +1,8 @@
 import { Toast } from "@/components/ui/Toast"
-import { AuthProvider } from "@/context/AuthContext"
-import { CartProvider } from "@/context/CartContext"
-import { NetworkProvider } from "@/context/NetworkContext"
-import { WalletProvider } from "@/context/WalletContext"
+import { OfflineScreen } from "@/components/common"
+import { useNetworkStore, startNetworkPolling, stopNetworkPolling } from "@/stores/network-store"
+import { useAuthStore } from "@/stores/auth-store"
+import { useCartStore } from "@/stores/cart-store"
 import { initNtpSync } from "@/utils/ntpTime"
 import { BottomSheetModalProvider } from "@gorhom/bottom-sheet"
 import { useFonts } from "expo-font"
@@ -26,10 +26,27 @@ export default function RootLayout() {
     "Comfortaa-Regular": require("../assets/fonts/Comfortaa-Regular.ttf"),
   })
 
+  const { isConnected, checkConnection } = useNetworkStore()
+  const { initializeSession, user } = useAuthStore()
+  const { fetchCart } = useCartStore()
+
   useEffect(() => {
     // Initialize NTP time sync for tamper-proof ordering cutoff
     initNtpSync()
+    
+    // Initialize Zustand stores
+    startNetworkPolling()
+    initializeSession()
+
+    return () => {
+      stopNetworkPolling()
+    }
   }, [])
+
+  // Sync cart when user changes
+  useEffect(() => {
+    fetchCart()
+  }, [user?.id, fetchCart])
 
   useEffect(() => {
     if (error) console.error("Font loading error:", error)
@@ -42,6 +59,10 @@ export default function RootLayout() {
     return null
   }
 
+  if (!isConnected) {
+    return <OfflineScreen onRetry={checkConnection} isLoading={!isConnected} />
+  }
+
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
@@ -50,59 +71,21 @@ export default function RootLayout() {
           edges={["top", "bottom"]}
         >
           <StatusBar barStyle="dark-content" backgroundColor="white" />
-          <NetworkProvider>
-            <AuthProvider>
-              <WalletProvider>
-                <CartProvider>
-                  <BottomSheetModalProvider>
-                    <Stack screenOptions={{ headerShown: false, animation: "fade" }}>
-                    <Stack.Screen
-                      name="index"
-                      options={{ headerShown: false }}
-                    />
-                    <Stack.Screen
-                      name="onboarding"
-                      options={{ headerShown: false }}
-                    />
-                    <Stack.Screen
-                      name="(auth)"
-                      options={{ headerShown: false }}
-                    />
-                    <Stack.Screen
-                      name="complete-profile"
-                      options={{ headerShown: false }}
-                    />
-                    <Stack.Screen
-                      name="(tabs)"
-                      options={{ headerShown: false }}
-                    />
-                    <Stack.Screen
-                      name="cart"
-                      options={{ headerShown: false }}
-                    />
-                    <Stack.Screen
-                      name="product"
-                      options={{ headerShown: false }}
-                    />
-                    <Stack.Screen
-                      name="order-detail"
-                      options={{ headerShown: false }}
-                    />
-                    <Stack.Screen
-                      name="add-address"
-                      options={{ headerShown: false }}
-                    />
-                    <Stack.Screen
-                      name="free-sample"
-                      options={{ headerShown: false }}
-                    />
-                  </Stack>
-                  <Toast />
-                </BottomSheetModalProvider>
-              </CartProvider>
-            </WalletProvider>
-          </AuthProvider>
-          </NetworkProvider>
+          <BottomSheetModalProvider>
+            <Stack screenOptions={{ headerShown: false, animation: "fade" }}>
+              <Stack.Screen name="index" options={{ headerShown: false }} />
+              <Stack.Screen name="onboarding" options={{ headerShown: false }} />
+              <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+              <Stack.Screen name="complete-profile" options={{ headerShown: false }} />
+              <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+              <Stack.Screen name="cart" options={{ headerShown: false }} />
+              <Stack.Screen name="product" options={{ headerShown: false }} />
+              <Stack.Screen name="order-detail" options={{ headerShown: false }} />
+              <Stack.Screen name="add-address" options={{ headerShown: false }} />
+              <Stack.Screen name="free-sample" options={{ headerShown: false }} />
+            </Stack>
+            <Toast />
+          </BottomSheetModalProvider>
         </SafeAreaView>
       </SafeAreaProvider>
     </GestureHandlerRootView>
