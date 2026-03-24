@@ -4,6 +4,7 @@ import {
   fetchTransactions as fetchTransactionsSvc,
   fetchWallet as fetchWalletSvc,
   updateWalletBalance,
+  deductWalletBalanceRpc,
   updateWalletSettings as updateWalletSettingsSvc,
   upsertWallet,
 } from "@/lib/supabase-service"
@@ -157,24 +158,12 @@ export const useWalletStore = create<WalletState>((set, get) => ({
     if (!user || !wallet) return false
 
     try {
-      const newBalance = Number(wallet.balance) - amount
-      if (newBalance < 0) return false
-
-      await updateWalletBalance(user.id, newBalance)
-
-      await createTransaction({
-        transaction_id: `TXN${Date.now()}`,
-        user_id: user.id,
-        wallet_id: wallet.id,
-        type: "debit",
-        amount: amount,
-        status: "success",
-        description: description,
-        balance_before: wallet.balance,
-        balance_after: newBalance,
-      })
-      await get().refreshWallet()
-      return true
+      const result = await deductWalletBalanceRpc(user.id, amount, description)
+      if (result.success) {
+        await get().refreshWallet()
+        return true
+      }
+      return false
     } catch (e) {
       console.error("Deduct Error:", e)
       return false

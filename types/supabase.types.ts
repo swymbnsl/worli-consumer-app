@@ -1293,6 +1293,14 @@ export type Database = {
         Args: { p_address_id?: string; p_dates: string[] }
         Returns: Json
       }
+      deduct_wallet_balance: {
+        Args: {
+          p_amount: number
+          p_description: string
+          p_user_id: string
+        }
+        Returns: Json
+      }
       payout_referral_on_recharge: {
         Args: {
           p_recharge_amount: number

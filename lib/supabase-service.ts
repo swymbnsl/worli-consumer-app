@@ -482,8 +482,35 @@ export async function fetchTransactions(
   return data || []
 }
 
+// ─── RPC Migrations (Secure Logic) ──────────────────────────────────
+
 /**
- * Update wallet balance.
+ * Deduct from wallet securely via RPC.
+ */
+export async function deductWalletBalanceRpc(
+  userId: string,
+  amount: number,
+  description: string,
+): Promise<{ success: boolean; new_balance?: number; transaction_id?: string; error?: string }> {
+  try {
+    const { data, error } = await supabase.rpc("deduct_wallet_balance", {
+      p_user_id: userId,
+      p_amount: amount,
+      p_description: description,
+    })
+
+    if (error) throw error
+
+    // data is returned as JSON from the RPC
+    return data as any
+  } catch (err: any) {
+    console.error("RPC deduct_wallet_balance failed:", err)
+    return { success: false, error: err.message }
+  }
+}
+
+/**
+ * Update wallet balance (DEPRECATED: Use RPCs instead to prevent client-side spoofing).
  */
 export async function updateWalletBalance(
   userId: string,
