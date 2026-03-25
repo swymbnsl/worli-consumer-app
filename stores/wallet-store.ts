@@ -1,22 +1,20 @@
-import { create } from "zustand"
 import {
-  createTransaction,
-  fetchTransactions as fetchTransactionsSvc,
-  fetchWallet as fetchWalletSvc,
-  updateWalletBalance,
-  deductWalletBalanceRpc,
-  updateWalletSettings as updateWalletSettingsSvc,
-  upsertWallet,
+    cancelAutoPayMandate,
+    initiateWalletRecharge,
+    openRazorpayCheckout,
+    RazorpayPaymentResult,
+    setupAutoPayMandate,
+    verifyAutoPayMandate,
+} from "@/lib/razorpay-service"
+import {
+    deductWalletBalanceRpc,
+    fetchTransactions as fetchTransactionsSvc,
+    fetchWallet as fetchWalletSvc,
+    updateWalletSettings as updateWalletSettingsSvc,
+    upsertWallet
 } from "@/lib/supabase-service"
 import { Transaction, Wallet } from "@/types/database.types"
-import {
-  cancelAutoPayMandate,
-  initiateWalletRecharge,
-  openRazorpayCheckout,
-  RazorpayPaymentResult,
-  setupAutoPayMandate,
-  verifyAutoPayMandate,
-} from "@/lib/razorpay-service"
+import { create } from "zustand"
 import { useAuthStore } from "./auth-store"
 
 interface WalletState {
@@ -30,7 +28,6 @@ interface WalletState {
   fetchWallet: () => Promise<void>
   fetchTransactions: () => Promise<void>
   refreshWallet: () => Promise<void>
-  rechargeWallet: (amount: number) => Promise<boolean>
   rechargeWithRazorpay: (amount: number) => Promise<RazorpayPaymentResult>
   deductFromWallet: (amount: number, description: string) => Promise<boolean>
   updateWalletSettings: (settings: Partial<Wallet>) => Promise<boolean>
@@ -109,33 +106,6 @@ export const useWalletStore = create<WalletState>((set, get) => ({
   refreshWallet: async () => {
     await get().fetchWallet()
     await get().fetchTransactions()
-  },
-
-  rechargeWallet: async (amount: number) => {
-    const { user } = useAuthStore.getState()
-    const { wallet } = get()
-    if (!user || !wallet) return false
-
-    try {
-      const newBalance = Number(wallet.balance) + amount
-      await updateWalletBalance(user.id, newBalance)
-      await createTransaction({
-        transaction_id: `TXN${Date.now()}`,
-        user_id: user.id,
-        wallet_id: wallet.id,
-        type: "credit",
-        amount: amount,
-        status: "success",
-        description: "Wallet recharge",
-        balance_before: wallet.balance,
-        balance_after: newBalance,
-      })
-      await get().refreshWallet()
-      return true
-    } catch (e) {
-      console.error("Recharge error:", e)
-      return false
-    }
   },
 
   rechargeWithRazorpay: async (amount: number) => {

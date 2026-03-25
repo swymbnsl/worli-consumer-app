@@ -1,7 +1,15 @@
-import { CustomTextInputProps } from "@/types/ui-components.types"
 import React from "react"
-import { TextInput as RNTextInput, Text, View } from "react-native"
+import { TextInput as RNTextInput, Text, TextInputProps, View } from "react-native"
 import Animated, { FadeInUp } from "react-native-reanimated"
+
+export interface CustomTextInputProps extends TextInputProps {
+  label?: string
+  prefix?: string
+  suffix?: string
+  animationDelay?: number
+  error?: string
+  containerClassName?: string
+}
 
 export default function TextInput({
   label,

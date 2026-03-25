@@ -1,7 +1,16 @@
-import { InfoCardProps } from "@/types/ui-components.types"
 import React from "react"
 import { ActivityIndicator, Text, View } from "react-native"
 import Animated, { FadeInUp } from "react-native-reanimated"
+
+export interface InfoCardProps {
+  label: string
+  value: string
+  animationDelay?: number
+  variant?: "default" | "large" | "compact"
+  isLoading?: boolean
+  backgroundColor?: string
+  icon?: React.ReactNode
+}
 
 export default function InfoCard({
   label,

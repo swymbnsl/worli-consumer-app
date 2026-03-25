@@ -1,10 +1,17 @@
 import { COLORS } from "@/constants/theme"
-import { PageHeaderProps } from "@/types/ui-components.types"
 import { useRouter } from "expo-router"
 import { ChevronLeft } from "lucide-react-native"
 import React from "react"
 import { Text, TouchableOpacity, View } from "react-native"
 import Animated, { FadeInDown } from "react-native-reanimated"
+
+export interface PageHeaderProps {
+  title: string
+  showBackButton?: boolean
+  disabled?: boolean
+  onBackPress?: () => void
+  rightComponent?: React.ReactNode
+}
 
 export default function PageHeader({
   title,

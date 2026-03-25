@@ -2,38 +2,69 @@ import { Mail, MapPin, MessageCircle, Phone } from "lucide-react-native"
 import React from "react"
 import { Linking, ScrollView, Text, TouchableOpacity, View } from "react-native"
 
+import { fetchAppSetting } from "@/lib/supabase-service"
+
 export default function ContactScreen() {
+  const [phone, setPhone] = React.useState("+91 1800-123-4567")
+  const [email, setEmail] = React.useState("support@worlimilk.com")
+  const [address, setAddress] = React.useState("Worli Dairy Farm, 123 Dairy Road,\n Mumbai, Maharashtra 400018")
+  const [mapUrl, setMapUrl] = React.useState("https://maps.google.com/?q=Worli+Dairy+Farm+Mumbai")
+  const [whatsappPhone, setWhatsappPhone] = React.useState("+91 1800-123-4567")
+  const [whatsappUrl, setWhatsappUrl] = React.useState("https://wa.me/918001234567")
+
+  React.useEffect(() => {
+    const loadSettings = async () => {
+      const p = await fetchAppSetting("contact_phone")
+      if (p) setPhone(p)
+
+      const e = await fetchAppSetting("contact_email")
+      if (e) setEmail(e)
+
+      const a = await fetchAppSetting("contact_address")
+      if (a) setAddress(a.replace(/\\n/g, "\n"))
+
+      const mUrl = await fetchAppSetting("contact_map_url")
+      if (mUrl) setMapUrl(mUrl)
+
+      const wPhone = await fetchAppSetting("contact_whatsapp_phone")
+      if (wPhone) setWhatsappPhone(wPhone)
+
+      const wUrl = await fetchAppSetting("contact_whatsapp")
+      if (wUrl) setWhatsappUrl(wUrl)
+    }
+    loadSettings()
+  }, [])
+
   const contactInfo = [
     {
       icon: Phone,
       label: "Phone",
-      value: "+91 1800-123-4567",
-      action: () => Linking.openURL("tel:+918001234567"),
+      value: phone,
+      action: () => Linking.openURL(`tel:${phone.replace(/[^0-9+]/g, "")}`),
       actionLabel: "Call",
       actionColor: "#4285F4",
     },
     {
       icon: Mail,
       label: "Mail",
-      value: "support@worlimilk.com",
-      action: () => Linking.openURL("mailto:support@worlimilk.com"),
+      value: email,
+      action: () => Linking.openURL(`mailto:${email}`),
       actionLabel: "Mail",
       actionColor: "#EA4335",
     },
     {
       icon: MapPin,
       label: "Address",
-      value: "Worli Dairy Farm, 123 Dairy Road,\nMumbai, Maharashtra 400018",
-      action: () =>
-        Linking.openURL("https://maps.google.com/?q=Worli+Dairy+Farm+Mumbai"),
+      value: address,
+      action: () => Linking.openURL(mapUrl),
       actionLabel: "Directions",
       actionColor: "#638C5F",
     },
     {
       icon: MessageCircle,
       label: "WhatsApp",
-      value: "+91 1800-123-4567",
-      action: () => Linking.openURL("https://wa.me/918001234567"),
+      value: whatsappPhone,
+      action: () => Linking.openURL(whatsappUrl),
       actionLabel: "WhatsApp",
       actionColor: "#25D366",
     },

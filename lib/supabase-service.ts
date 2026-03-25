@@ -509,20 +509,7 @@ export async function deductWalletBalanceRpc(
   }
 }
 
-/**
- * Update wallet balance (DEPRECATED: Use RPCs instead to prevent client-side spoofing).
- */
-export async function updateWalletBalance(
-  userId: string,
-  newBalance: number,
-): Promise<void> {
-  const { error } = await supabase
-    .from("wallets")
-    .update({ balance: newBalance })
-    .eq("user_id", userId)
 
-  if (error) throw error
-}
 
 /**
  * Create a transaction record.
