@@ -4,20 +4,20 @@ import { Product, Subscription } from "@/types/database.types"
 import { formatDate } from "@/utils/dateUtils"
 import { formatCurrency } from "@/utils/formatters"
 import {
-    Calendar,
-    Edit3,
-    PauseCircle,
-    Repeat,
-    Tag,
-    Trash2,
+  Calendar,
+  Edit3,
+  PauseCircle,
+  Repeat,
+  Tag,
+  Trash2,
 } from "lucide-react-native"
 import React, { useEffect, useState } from "react"
 import {
-    ActivityIndicator,
-    Image,
-    Text,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Image,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native"
 import Animated, { FadeInUp } from "react-native-reanimated"
 
@@ -64,22 +64,14 @@ export default function SubscriptionCard({
   const dailyCost = (product?.price || 0) * (subscription.quantity || 1)
 
   // ─── Discount helpers ──────────────────────────────────────────────
-  const remaining = subscription.discount_orders_remaining ?? null
-  const hasActiveDiscount =
-    !!subscription.discount_code_id &&
-    (remaining === null || remaining > 0)
+  const hasActiveDiscount = !!subscription.discount_code_id
 
   const discountedDailyCost = hasActiveDiscount
     ? Math.max(0, dailyCost - (subscription.discount_amount ?? 0))
     : dailyCost
 
-  // Approximate date the discount expires (daily = 1 delivery / day)
-  const discountEndDateLabel = (() => {
-    if (!hasActiveDiscount || remaining === null) return null
-    const end = new Date()
-    end.setDate(end.getDate() + remaining - 1)
-    return end.toLocaleDateString("en-IN", { day: "numeric", month: "short" })
-  })()
+  // Since discount_orders_remaining is not in the schema, we'll simplify this
+  const discountEndDateLabel = null
 
   const frequencyLabel =
     (subscription.frequency || "daily").charAt(0).toUpperCase() +
@@ -202,11 +194,7 @@ export default function SubscriptionCard({
           >
             <Tag size={12} color={COLORS.functional.success} strokeWidth={2.5} />
             <Text className="font-comfortaa text-xs ml-2" style={{ color: COLORS.functional.success }}>
-              {remaining === null
-                ? `Saving ${formatCurrency(subscription.discount_amount ?? 0)}/order · unlimited orders`
-                : `Saving ${formatCurrency(subscription.discount_amount ?? 0)}/order · ${remaining} deliver${remaining === 1 ? "y" : "ies"} left${
-                    discountEndDateLabel ? ` · until ${discountEndDateLabel}` : ""
-                  }`}
+              Saving {formatCurrency(subscription.discount_amount ?? 0)}/order
             </Text>
           </View>
         )}

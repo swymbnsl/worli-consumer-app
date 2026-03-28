@@ -1,36 +1,37 @@
 import CartItemCard from "@/components/cart/CartItemCard"
 import SubscriptionBottomSheet, {
-    SubscriptionBottomSheetRef,
+  SubscriptionBottomSheetRef,
 } from "@/components/cart/SubscriptionBottomSheet"
 import Button from "@/components/ui/Button"
 import Modal, { ConfirmModal } from "@/components/ui/Modal"
 import PageHeader from "@/components/ui/PageHeader"
 import {
-    showErrorToast,
-    showSuccessToast,
+  showErrorToast,
+  showSuccessToast,
 } from "@/components/ui/Toast"
 import { COLORS } from "@/constants/theme"
-import { CartItem } from "@/stores/cart-store"
 import { useAuth } from "@/hooks/useAuth"
 import { useCart } from "@/hooks/useCart"
 import { useWallet } from "@/hooks/useWallet"
 import { cancelAbandonedCartReminder } from "@/lib/notification-service"
 import {
-    createSubscriptions,
-    fetchProductById,
-    fetchUserAddresses,
+  createSubscriptions,
+  fetchProductById,
+  fetchUserAddresses,
 } from "@/lib/supabase-service"
+import { CartItem } from "@/stores/cart-store"
 import { Address, Product } from "@/types/database.types"
 import { formatCurrency } from "@/utils/formatters"
 import { useRouter } from "expo-router"
 import { Check, MapPin, Wallet as WalletIcon } from "lucide-react-native"
 import React, { useCallback, useEffect, useRef, useState } from "react"
 import {
-    ActivityIndicator,
-    ScrollView,
-    Text,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  ScrollView,
+  Switch,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native"
 import Animated, { FadeInUp } from "react-native-reanimated"
 
@@ -41,7 +42,7 @@ export default function CartScreen() {
   const { items, removeItem, updateItem, clearCart, totalAmount, itemCount } =
     useCart()
   const { user } = useAuth()
-  const { wallet } = useWallet()
+  const { wallet, rechargeWithRazorpay } = useWallet()
 
   const subscriptionSheetRef = useRef<SubscriptionBottomSheetRef>(null)
 
@@ -53,6 +54,13 @@ export default function CartScreen() {
   const [showClearCartModal, setShowClearCartModal] = useState(false)
   const [showAddressModal, setShowAddressModal] = useState(false)
   const [showPlaceOrderModal, setShowPlaceOrderModal] = useState(false)
+  const [useWalletBalance, setUseWalletBalance] = useState(true)
+
+  // ─── Computations ───────────────────────────────────────────────────
+
+  const walletBalance = wallet?.balance ?? 0
+  const walletUtilized = useWalletBalance ? Math.min(totalAmount, walletBalance) : 0
+  const amountToPayViaGateway = totalAmount - walletUtilized
 
   // ─── Fetch addresses ────────────────────────────────────────────────
 
@@ -128,19 +136,32 @@ export default function CartScreen() {
       return false
     }
 
-    const walletBalance = wallet?.balance ?? 0
-    if (walletBalance < totalAmount) {
-      showErrorToast(
-        "Insufficient Balance",
-        "Please recharge your wallet to proceed.",
-      )
-      return false
+    // We no longer block checkout for insufficient balance, 
+    // as we dynamically charge via Gateway using Razorpay.
+    return true
+  }
+
+  const checkCutoffErrors = () => {
+    // Basic client-side cutoff check to prevent invalid payments
+    const IST_OFFSET_MS = 5.5 * 60 * 60 * 1000
+    const nowIst = new Date(Date.now() + IST_OFFSET_MS)
+    const isPastCutoff = nowIst.getUTCHours() >= 19
+
+    const tomorrow = new Date(nowIst)
+    tomorrow.setUTCDate(tomorrow.getUTCDate() + 1)
+    const tomorrowStr = tomorrow.toISOString().split("T")[0]
+
+    for (const item of items) {
+      if (item.frequency === "buy_once" && item.startDate === tomorrowStr && isPastCutoff) {
+        showErrorToast("Cutoff Passed", `It is past 7 PM, so next-day delivery for "${item.productName}" is closed.`)
+        return false
+      }
     }
     return true
   }
 
   const handlePlaceOrderClick = () => {
-    if (validateOrder()) {
+    if (validateOrder() && checkCutoffErrors()) {
       setShowPlaceOrderModal(true)
     }
   }
@@ -152,6 +173,20 @@ export default function CartScreen() {
     setShowPlaceOrderModal(false)
     
     try {
+      // 1. Pay via Gateway if required
+      if (amountToPayViaGateway > 0) {
+        try {
+          await rechargeWithRazorpay(amountToPayViaGateway)
+        } catch (error: any) {
+             if (error?.code !== 2) {
+                showErrorToast("Payment Failed", error?.description || "Gateway payment failed.")
+             }
+             setPlacing(false)
+             return // Stop flow if payment fails or user cancels
+        }
+      }
+
+      // 2. Wallet is now funded, create subscriptions
       const subscriptions = items.map((item) => ({
         user_id: user.id,
         product_id: item.productId,
@@ -170,7 +205,13 @@ export default function CartScreen() {
       showSuccessToast("Success", "Your subscriptions have been placed!")
       router.back()
     } catch (err: any) {
-      showErrorToast("Error", err.message || "Failed to place order.")
+      const msg = err.message || "Failed to place order."
+      if (amountToPayViaGateway > 0) {
+          // If Razorpay succeeded but DB creation failed, notify user
+          showErrorToast("Order Failed", `${msg}. Don't worry, your payment of ${formatCurrency(amountToPayViaGateway)} is safely in your wallet.`)
+      } else {
+          showErrorToast("Error", msg)
+      }
     } finally {
       setPlacing(false)
     }
@@ -182,10 +223,6 @@ export default function CartScreen() {
     if (items.length === 0) return
     setShowClearCartModal(true)
   }
-
-  // ─── Wallet Balance ─────────────────────────────────────────────────
-
-  const walletBalance = wallet?.balance ?? 0
 
   // ─── Main Render ────────────────────────────────────────────────────
 
@@ -248,21 +285,6 @@ export default function CartScreen() {
               </Animated.View>
             ))}
 
-            {/* Subscriptions Total */}
-            <View className="flex-row justify-between items-center mt-4 mb-6 px-1">
-              <View className="flex-row items-center">
-                <Text className="font-sofia-bold text-base text-primary-navy">
-                  Subscriptions amount
-                </Text>
-                <Text className="font-comfortaa text-xs text-neutral-gray ml-1">
-                  (i)
-                </Text>
-              </View>
-              <Text className="font-sofia-bold text-lg text-primary-navy">
-                {formatCurrency(totalAmount)}
-              </Text>
-            </View>
-
             {/* Delivery Address */}
             <View className="bg-white rounded-2xl p-4 mb-4 border border-neutral-lightGray">
               <View className="flex-row items-start">
@@ -301,18 +323,56 @@ export default function CartScreen() {
               </View>
             </View>
 
-            {/* Wallet Balance */}
+            {/* Wallet Selection */}
             <View className="bg-white rounded-2xl p-4 mb-4 border border-neutral-lightGray">
               <View className="flex-row items-center justify-between">
                 <View className="flex-row items-center">
                   <WalletIcon size={20} color={COLORS.primary.navy} />
                   <Text className="font-sofia-bold text-sm text-primary-navy ml-3">
-                    Wallet Balance
+                    Use Worli Wallet
                   </Text>
                 </View>
-                <Text className="font-sofia-bold text-base text-functional-success">
-                  {formatCurrency(walletBalance)}
-                </Text>
+                <Switch
+                  value={useWalletBalance}
+                  onValueChange={setUseWalletBalance}
+                  trackColor={{ false: COLORS.neutral.lightGray, true: COLORS.primary.navy }}
+                  thumbColor={COLORS.neutral.white}
+                  disabled={walletBalance === 0}
+                />
+              </View>
+              {useWalletBalance && walletBalance > 0 && (
+                 <Text className="font-comfortaa text-xs text-neutral-darkGray mt-2 ml-8">
+                   Current Balance: {formatCurrency(walletBalance)}
+                 </Text>
+              )}
+              {walletBalance === 0 && (
+                 <Text className="font-comfortaa text-xs text-functional-error mt-2 ml-8">
+                   No balance available
+                 </Text>
+              )}
+            </View>
+
+            {/* Bill Details */}
+            <View className="bg-white rounded-2xl p-4 mb-4 border border-neutral-lightGray">
+              <Text className="font-sofia-bold text-sm text-primary-navy mb-3">Bill details</Text>
+              
+              <View className="flex-row items-center justify-between mb-2">
+                 <Text className="font-comfortaa text-sm text-neutral-darkGray">Item total</Text>
+                 <Text className="font-comfortaa text-sm text-primary-navy">{formatCurrency(totalAmount)}</Text>
+              </View>
+
+              {walletUtilized > 0 && (
+                <View className="flex-row items-center justify-between mb-2">
+                   <Text className="font-comfortaa text-sm text-functional-success">Wallet balance applied</Text>
+                   <Text className="font-comfortaa text-sm text-functional-success">-{formatCurrency(walletUtilized)}</Text>
+                </View>
+              )}
+
+              <View className="h-px bg-neutral-lightGray/60 my-2" />
+              
+              <View className="flex-row items-center justify-between">
+                 <Text className="font-sofia-bold text-base text-primary-navy">To Pay</Text>
+                 <Text className="font-sofia-bold text-base text-primary-navy">{formatCurrency(amountToPayViaGateway)}</Text>
               </View>
             </View>
           </ScrollView>
@@ -329,15 +389,20 @@ export default function CartScreen() {
             }}
           >
             <View className="flex-row items-center justify-between mb-4">
-              <Text className="font-comfortaa text-sm text-neutral-darkGray">
-                {itemCount} {itemCount === 1 ? "item" : "items"}
-              </Text>
+              <View>
+                <Text className="font-comfortaa text-sm text-neutral-darkGray">
+                  {amountToPayViaGateway > 0 ? "To Pay" : "Total Amount"}
+                </Text>
+                <Text className="font-comfortaa text-[10px] text-neutral-error mt-0.5">
+                  {itemCount} {itemCount === 1 ? "item" : "items"}
+                </Text>
+              </View>
               <Text className="font-sofia-bold text-xl text-primary-navy">
-                {formatCurrency(totalAmount)}
+                {formatCurrency(amountToPayViaGateway > 0 ? amountToPayViaGateway : totalAmount)}
               </Text>
             </View>
             <Button
-              title={placing ? "Placing Order..." : "Place Order"}
+              title={placing ? "Processing..." : (amountToPayViaGateway > 0 ? `Pay ${formatCurrency(amountToPayViaGateway)} & Place Order` : "Place Order")}
               onPress={handlePlaceOrderClick}
               variant="navy"
               size="large"
@@ -452,11 +517,11 @@ export default function CartScreen() {
       <ConfirmModal
         visible={showPlaceOrderModal}
         onClose={() => setShowPlaceOrderModal(false)}
-        title="Confirm Order"
+        title={amountToPayViaGateway > 0 ? "Confirm Payment & Order" : "Confirm Order"}
         description={`Place order for ${itemCount} ${
           itemCount === 1 ? "item" : "items"
-        } totaling ${formatCurrency(totalAmount)}?`}
-        confirmText="Place Order"
+        }${amountToPayViaGateway > 0 ? ` by paying joining fee of ${formatCurrency(amountToPayViaGateway)}` : ` totaling ${formatCurrency(totalAmount)}`}?`}
+        confirmText={amountToPayViaGateway > 0 ? `Pay ${formatCurrency(amountToPayViaGateway)}` : "Place Order"}
         onConfirm={handleConfirmOrder}
       />
     </View>
