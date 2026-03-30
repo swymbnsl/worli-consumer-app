@@ -30,9 +30,18 @@ export interface CartItem {
   preferredDeliveryTime?: string
   addressId?: string
   addressName?: string
+  // Prepaid subscription fields
+  durationMonths?: number
+  totalBottles?: number
+  totalAmount?: number // Total prepaid amount
 }
 
 export const getItemTotal = (item: CartItem): number => {
+  // For prepaid subscriptions, use the pre-calculated total amount
+  if (item.totalAmount !== undefined && item.totalAmount > 0) {
+    return item.totalAmount
+  }
+  
   if (item.frequency === "custom" && item.customQuantities) {
     const totalQty = Object.values(item.customQuantities).reduce((s, q) => s + q, 0)
     return item.productPrice * totalQty
@@ -79,6 +88,9 @@ export const useCartStore = create<CartState>((set, get) => ({
           customQuantities: row.custom_quantities,
           preferredDeliveryTime: row.preferred_delivery_time,
           addressId: row.address_id,
+          durationMonths: row.duration_months,
+          totalBottles: row.total_bottles,
+          totalAmount: row.total_amount,
         }
       })
       set({ items: formattedItems })
@@ -102,6 +114,9 @@ export const useCartStore = create<CartState>((set, get) => ({
         custom_quantities: item.customQuantities,
         preferred_delivery_time: item.preferredDeliveryTime,
         address_id: item.addressId,
+        duration_months: item.durationMonths,
+        total_bottles: item.totalBottles,
+        total_amount: item.totalAmount,
       })
 
       if (data) {
@@ -152,6 +167,9 @@ export const useCartStore = create<CartState>((set, get) => ({
       custom_quantities: updates.customQuantities,
       preferred_delivery_time: updates.preferredDeliveryTime,
       address_id: updates.addressId,
+      duration_months: updates.durationMonths,
+      total_bottles: updates.totalBottles,
+      total_amount: updates.totalAmount,
     }
 
     const filteredDbUpdates = Object.fromEntries(

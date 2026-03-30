@@ -7,7 +7,11 @@ import RazorpayCheckout from "react-native-razorpay"
 import { supabase } from "./supabase"
 
 // Razorpay key from environment variables
-const RAZORPAY_KEY_ID = process.env.EXPO_PUBLIC_RAZORPAY_KEY_ID!
+const RAZORPAY_KEY_ID = process.env.EXPO_PUBLIC_RAZORPAY_KEY_ID
+
+if (!RAZORPAY_KEY_ID) {
+  console.error('RAZORPAY_KEY_ID is not configured in environment variables')
+}
 
 // Types
 export interface RazorpayPaymentResult {
@@ -59,34 +63,15 @@ export interface CheckoutOptions {
 }
 
 // ─────────────────────────────────────────
-// Create Order via Supabase Edge Function
-// ─────────────────────────────────────────
-export const createRazorpayOrder = async (
-  amount: number,
-  userId: string,
-): Promise<CreateOrderResponse> => {
-  const { data, error } = await supabase.functions.invoke(
-    "create-razorpay-order",
-    {
-      body: {
-        amount, // in rupees – edge function handles paise conversion
-      },
-    },
-  )
-
-  if (error) {
-    throw new Error(`Failed to create order: ${error.message}`)
-  }
-
-  return data
-}
-
-// ─────────────────────────────────────────
 // Open Razorpay Checkout
 // ─────────────────────────────────────────
 export const openRazorpayCheckout = async (
   options: CheckoutOptions,
 ): Promise<RazorpayPaymentResult> => {
+  if (!RAZORPAY_KEY_ID) {
+    throw new Error("Razorpay is not configured. Please contact support.")
+  }
+
   const razorpayOptions: any = {
     key: RAZORPAY_KEY_ID,
     currency: options.currency || "INR",
@@ -119,30 +104,6 @@ export const openRazorpayCheckout = async (
   } catch (error) {
     throw error as RazorpayError
   }
-}
-
-// ─────────────────────────────────────────
-// Verify Payment via Supabase Edge Function
-// ─────────────────────────────────────────
-export const verifyPayment = async (
-  paymentResult: RazorpayPaymentResult,
-): Promise<boolean> => {
-  const { data, error } = await supabase.functions.invoke(
-    "verify-razorpay-payment",
-    {
-      body: {
-        razorpay_payment_id: paymentResult.razorpay_payment_id,
-        razorpay_order_id: paymentResult.razorpay_order_id,
-        razorpay_signature: paymentResult.razorpay_signature,
-      },
-    },
-  )
-
-  if (error) {
-    throw new Error(`Payment verification failed: ${error.message}`)
-  }
-
-  return data?.verified === true
 }
 
 // ─────────────────────────────────────────
@@ -217,45 +178,4 @@ export const cancelAutoPayMandate = async (): Promise<boolean> => {
   }
 
   return data?.cancelled === true
-}
-
-// ─────────────────────────────────────────
-// Full Recharge Flow (convenience method)
-// ─────────────────────────────────────────
-export const initiateWalletRecharge = async (
-  amount: number,
-  userId: string,
-  userDetails: {
-    name?: string
-    email?: string
-    phone?: string
-  },
-): Promise<RazorpayPaymentResult> => {
-  // Step 1: Create order on server
-  const order = await createRazorpayOrder(amount, userId)
-
-  // Step 2: Open Razorpay checkout
-  const paymentResult = await openRazorpayCheckout({
-    amount,
-    orderId: order.order_id,
-    description: `Wallet Recharge - ₹${amount}`,
-    prefill: {
-      name: userDetails.name || "",
-      email: userDetails.email || "",
-      contact: userDetails.phone || "",
-    },
-    notes: {
-      user_id: userId,
-      purpose: "wallet_recharge",
-    },
-  })
-
-  // Step 3: Verify payment on server
-  const verified = await verifyPayment(paymentResult)
-
-  if (!verified) {
-    throw new Error("Payment verification failed. Please contact support.")
-  }
-
-  return paymentResult
 }

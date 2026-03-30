@@ -1,11 +1,14 @@
 import {
     cancelAutoPayMandate,
-    initiateWalletRecharge,
     openRazorpayCheckout,
     RazorpayPaymentResult,
     setupAutoPayMandate,
     verifyAutoPayMandate,
 } from "@/lib/razorpay-service"
+import {
+    initiateWalletRecharge,
+    verifyWalletRecharge,
+} from "@/lib/checkout-service"
 import {
     deductWalletBalanceRpc,
     fetchTransactions as fetchTransactionsSvc,
@@ -112,10 +115,30 @@ export const useWalletStore = create<WalletState>((set, get) => ({
     const { user } = useAuthStore.getState()
     if (!user) throw new Error("User not logged in")
 
-    const paymentResult = await initiateWalletRecharge(amount, user.id, {
-      name: user.full_name || undefined,
-      email: user.email || undefined,
-      phone: user.phone_number || undefined,
+    // Step 1: Initiate recharge (creates Razorpay order)
+    const initResult = await initiateWalletRecharge(amount)
+    
+    // Step 2: Open Razorpay checkout
+    const paymentResult = await openRazorpayCheckout({
+      amount,
+      orderId: initResult.order_id,
+      description: `Wallet Recharge - ₹${amount}`,
+      prefill: {
+        name: user.full_name || undefined,
+        email: user.email || undefined,
+        contact: user.phone_number || undefined,
+      },
+      notes: {
+        user_id: user.id,
+        purpose: "wallet_recharge",
+      },
+    })
+
+    // Step 3: Verify payment and credit wallet
+    await verifyWalletRecharge({
+      razorpay_payment_id: paymentResult.razorpay_payment_id,
+      razorpay_order_id: paymentResult.razorpay_order_id,
+      razorpay_signature: paymentResult.razorpay_signature,
     })
 
     await get().refreshWallet()

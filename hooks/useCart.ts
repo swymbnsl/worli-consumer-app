@@ -1,4 +1,4 @@
-import { useCartStore } from "@/stores/cart-store"
+import { useCartStore, getItemTotal } from "@/stores/cart-store"
 
 export const useCart = () => {
   const store = useCartStore()
@@ -6,13 +6,6 @@ export const useCart = () => {
   return {
     ...store,
     itemCount: store.items.length,
-    totalAmount: store.items.reduce((sum, i) => {
-      // Inline simple getItemTotal logic for the hook or export it
-      if (i.frequency === "custom" && i.customQuantities) {
-        const totalQty = Object.values(i.customQuantities).reduce((s, q) => s + q, 0)
-        return sum + (i.productPrice * totalQty)
-      }
-      return sum + (i.productPrice * i.quantity)
-    }, 0)
+    totalAmount: store.items.reduce((sum, item) => sum + getItemTotal(item), 0)
   }
 }

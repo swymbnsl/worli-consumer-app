@@ -10,7 +10,7 @@ import {
 } from "@/stores/cart-store"
 import { useAuth } from "@/hooks/useAuth"
 import { useCart } from "@/hooks/useCart"
-import { checkDuplicateSubscription, fetchUserAddresses } from "@/lib/supabase-service"
+import { checkDuplicateSubscription, fetchUserAddresses, fetchDurationDiscounts } from "@/lib/supabase-service"
 import { Address, Product } from "@/types/database.types"
 import { formatCurrency } from "@/utils/formatters"
 import {
@@ -30,6 +30,7 @@ import { Calendar, Check, ChevronDown, Clock, MapPin, Minus, Plus } from "lucide
 import React, {
   forwardRef,
   useCallback,
+  useEffect,
   useImperativeHandle,
   useMemo,
   useRef,
@@ -56,6 +57,51 @@ const FREQUENCY_TABS: { value: SubscriptionFrequency; label: string }[] = [
 const INTERVAL_OPTIONS = [2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 30]
 
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
+
+// Calculate total bottles for a subscription
+export const calculateTotalBottles = (
+  frequency: SubscriptionFrequency,
+  quantity: number,
+  durationMonths: number,
+  intervalDays?: number,
+  customQuantities?: CustomQuantities,
+): number => {
+  if (frequency === "buy_once") {
+    return quantity
+  }
+  
+  if (frequency === "daily") {
+    return quantity * 30 * durationMonths
+  }
+  
+  if (frequency === "custom" && customQuantities) {
+    const weeklyTotal = Object.values(customQuantities).reduce((sum, qty) => sum + qty, 0)
+    // ~4.3 weeks per month, rounded to 4 for simplicity
+    return weeklyTotal * 4 * durationMonths
+  }
+  
+  if (frequency === "on_interval" && intervalDays) {
+    const deliveriesPerMonth = Math.floor(30 / intervalDays)
+    return quantity * deliveriesPerMonth * durationMonths
+  }
+  
+  return quantity * 30 * durationMonths
+}
+
+// Calculate total price for subscription
+export const calculateSubscriptionTotal = (
+  pricePerBottle: number,
+  totalBottles: number,
+  durationMonths: number,
+  durationOptions: { value: number; discount: number }[],
+): { subtotal: number; discount: number; total: number } => {
+  const subtotal = pricePerBottle * totalBottles
+  const durationOption = durationOptions.find(d => d.value === durationMonths)
+  const discountPercent = durationOption?.discount || 0
+  const discount = Math.round((subtotal * discountPercent) / 100)
+  const total = subtotal - discount
+  return { subtotal, discount, total }
+}
 
 
 const getDefaultStartDate = (freq: SubscriptionFrequency = "daily") => {
@@ -109,6 +155,23 @@ const SubscriptionBottomSheet = forwardRef<
   })
   const [showDatePicker, setShowDatePicker] = useState(false)
   const [preferredDeliveryTime, setPreferredDeliveryTime] = useState<string>("06:00-07:00")
+  const [durationMonths, setDurationMonths] = useState(1) // Subscription duration
+  const [durationOptions, setDurationOptions] = useState<{ value: number; label: string; discount: number }[]>([
+    { value: 1, label: "1 Month", discount: 0 },
+    { value: 3, label: "3 Months", discount: 5 },
+    { value: 6, label: "6 Months", discount: 10 },
+  ])
+  
+  // Computed: total bottles and pricing
+  const totalBottles = useMemo(() => {
+    if (!product) return 0
+    return calculateTotalBottles(frequency, quantity, durationMonths, intervalDays, customQuantities)
+  }, [frequency, quantity, durationMonths, intervalDays, customQuantities, product])
+  
+  const pricing = useMemo(() => {
+    if (!product) return { subtotal: 0, discount: 0, total: 0 }
+    return calculateSubscriptionTotal(product.price, totalBottles, durationMonths, durationOptions)
+  }, [product, totalBottles, durationMonths, durationOptions])
 
   // Address state
   const [addresses, setAddresses] = useState<Address[]>([])
@@ -116,6 +179,29 @@ const SubscriptionBottomSheet = forwardRef<
   const [showAddressPicker, setShowAddressPicker] = useState(false)
 
   const snapPoints = useMemo(() => ["70%", "92%"], [])
+
+  // ─── Fetch duration discounts from database ─────────────────────────
+  
+  useEffect(() => {
+    const loadDurationDiscounts = async () => {
+      try {
+        const discounts = await fetchDurationDiscounts()
+        if (discounts.length > 0) {
+          const options = discounts.map(d => ({
+            value: d.duration_months,
+            label: `${d.duration_months} ${d.duration_months === 1 ? "Month" : "Months"}`,
+            discount: d.discount_percent,
+          }))
+          setDurationOptions(options)
+        }
+      } catch (error) {
+        console.error('Failed to load duration discounts:', error)
+        // Keep default values if fetch fails
+      }
+    }
+    
+    loadDurationDiscounts()
+  }, [])
 
   // ─── Imperative Handle ───────────────────────────────────────────────
 
@@ -160,6 +246,7 @@ const SubscriptionBottomSheet = forwardRef<
           },
         )
         setPreferredDeliveryTime(editItem.preferredDeliveryTime || "06:00-07:00")
+        setDurationMonths(editItem.durationMonths || 1)
       } else {
         setEditingItem(null)
         setFrequency("daily")
@@ -178,6 +265,7 @@ const SubscriptionBottomSheet = forwardRef<
           6: 1,
         })
         setPreferredDeliveryTime("06:00-07:00")
+        setDurationMonths(1)
       }
       setShowDatePicker(false)
       setShowAddressPicker(false)
@@ -243,6 +331,9 @@ const SubscriptionBottomSheet = forwardRef<
   const handleAddToCart = async () => {
     if (!product) return
 
+    // For buy_once, don't apply duration
+    const effectiveDuration = frequency === "buy_once" ? 1 : durationMonths
+
     const payload: Omit<CartItem, "id"> = {
       productId: product.id,
       productName: product.name,
@@ -257,6 +348,10 @@ const SubscriptionBottomSheet = forwardRef<
       preferredDeliveryTime,
       addressId: selectedAddress?.id,
       addressName: selectedAddress?.name || undefined,
+      // Prepaid subscription fields
+      durationMonths: effectiveDuration,
+      totalBottles: totalBottles,
+      totalAmount: pricing.total,
     }
 
     // Check for 7 PM cutoff — show confirmation if needed
@@ -588,6 +683,45 @@ const SubscriptionBottomSheet = forwardRef<
             </View>
           )}
 
+          {/* ─── Subscription Duration (not for buy_once) ──────────── */}
+          {frequency !== "buy_once" && (
+            <View className="mb-6">
+              <Text className="font-sofia-bold text-base text-neutral-black mb-4">
+                Subscription Duration
+              </Text>
+              <View className="flex-row gap-3">
+                {durationOptions.map((option) => {
+                  const isSelected = durationMonths === option.value
+                  return (
+                    <TouchableOpacity
+                      key={option.value}
+                      className={`flex-1 py-3 rounded-xl border-2 items-center ${
+                        isSelected
+                          ? "bg-primary-navy/5 border-primary-navy"
+                          : "bg-white border-neutral-lightGray"
+                      }`}
+                      onPress={() => setDurationMonths(option.value)}
+                      activeOpacity={0.7}
+                    >
+                      <Text
+                        className={`font-sofia-bold text-sm ${
+                          isSelected ? "text-primary-navy" : "text-neutral-black"
+                        }`}
+                      >
+                        {option.label}
+                      </Text>
+                      {option.discount > 0 && (
+                        <Text className="font-comfortaa text-xs text-functional-success mt-1">
+                          Save {option.discount}%
+                        </Text>
+                      )}
+                    </TouchableOpacity>
+                  )
+                })}
+              </View>
+            </View>
+          )}
+
           {/* ─── Date & Quantity Row ───────────────────────────────── */}
           <View className="flex-row items-end mb-6">
             {/* Date */}
@@ -651,6 +785,49 @@ const SubscriptionBottomSheet = forwardRef<
             </View>
           )}
 
+          {/* ─── Pricing Summary ───────────────────────────────────── */}
+          <View className="bg-neutral-lightCream rounded-xl p-4 mb-6">
+            <View className="flex-row justify-between mb-2">
+              <Text className="font-comfortaa text-sm text-neutral-darkGray">
+                Total Bottles
+              </Text>
+              <Text className="font-sofia-bold text-sm text-neutral-black">
+                {totalBottles} {totalBottles === 1 ? "bottle" : "bottles"}
+              </Text>
+            </View>
+            
+            <View className="flex-row justify-between mb-2">
+              <Text className="font-comfortaa text-sm text-neutral-darkGray">
+                Subtotal ({formatCurrency(product?.price || 0)}/bottle)
+              </Text>
+              <Text className="font-sofia-bold text-sm text-neutral-black">
+                {formatCurrency(pricing.subtotal)}
+              </Text>
+            </View>
+            
+            {pricing.discount > 0 && (
+              <View className="flex-row justify-between mb-2">
+                <Text className="font-comfortaa text-sm text-functional-success">
+                  Duration Discount
+                </Text>
+                <Text className="font-sofia-bold text-sm text-functional-success">
+                  -{formatCurrency(pricing.discount)}
+                </Text>
+              </View>
+            )}
+            
+            <View className="h-px bg-neutral-lightGray my-2" />
+            
+            <View className="flex-row justify-between">
+              <Text className="font-sofia-bold text-base text-primary-navy">
+                Total Amount
+              </Text>
+              <Text className="font-sofia-bold text-base text-primary-navy">
+                {formatCurrency(pricing.total)}
+              </Text>
+            </View>
+          </View>
+
           {/* ─── Add To Cart Button ───────────────────────────────── */}
           <Button
             title={
@@ -658,7 +835,7 @@ const SubscriptionBottomSheet = forwardRef<
                 ? "Update Subscription"
                 : editingItem
                   ? "Update Cart"
-                  : "Add to Cart"
+                  : `Add to Cart - ${formatCurrency(pricing.total)}`
             }
             onPress={handleAddToCart}
             variant="navy"

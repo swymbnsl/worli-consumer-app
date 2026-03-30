@@ -88,7 +88,24 @@ export default function CartItemCard({
           {item.frequency === "buy_once" ? "Delivery" : "Start Date"}:{" "}
           <Text className="font-sofia-bold">{formatDate(item.startDate)}</Text>
         </Text>
+        
+        {/* Duration & Bottles (for subscriptions) */}
+        {item.durationMonths && item.durationMonths > 0 && item.frequency !== "buy_once" && (
+          <Text className="font-comfortaa text-xs text-neutral-darkGray ml-3">
+            Duration:{" "}
+            <Text className="font-sofia-bold">{item.durationMonths} month{item.durationMonths > 1 ? "s" : ""}</Text>
+          </Text>
+        )}
       </View>
+
+      {/* Total Bottles Row */}
+      {item.totalBottles && item.totalBottles > 1 && (
+        <View className="flex-row items-center mt-1">
+          <Text className="font-comfortaa text-xs text-functional-success">
+            {item.totalBottles} bottles prepaid
+          </Text>
+        </View>
+      )}
 
       {/* Address Row */}
       {item.addressName && (

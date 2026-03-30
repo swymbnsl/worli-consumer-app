@@ -302,6 +302,114 @@ export async function createSubscriptions(
   return data?.subscriptions || []
 }
 
+/**
+ * Create a prepaid subscription with secure wallet deduction using RPC.
+ * This function atomically:
+ * 1. Deducts wallet balance (if use_wallet is true)
+ * 2. Creates a debit transaction
+ * 3. Creates the subscription with bottle credits
+ */
+export interface CreatePrepaidSubscriptionParams {
+  user_id: string
+  product_id: string
+  address_id: string
+  duration_months: number
+  quantity: number
+  frequency: string
+  start_date: string
+  interval_days?: number | null
+  custom_quantities?: Record<string, number> | null
+  delivery_time?: string
+  use_wallet: boolean
+  total_amount: number
+  razorpay_payment_id?: string | null
+  razorpay_amount?: number
+}
+
+export interface CreatePrepaidSubscriptionResult {
+  success: boolean
+  subscription_id: string
+  total_bottles: number
+  amount_paid: number
+  wallet_deducted: number
+  razorpay_paid: number
+  transaction_id: string | null
+  new_wallet_balance: number
+}
+
+export async function createPrepaidSubscription(
+  params: CreatePrepaidSubscriptionParams,
+): Promise<CreatePrepaidSubscriptionResult> {
+  const { data, error } = await supabase.rpc("create_prepaid_subscription", {
+    p_user_id: params.user_id,
+    p_product_id: params.product_id,
+    p_address_id: params.address_id,
+    p_duration_months: params.duration_months,
+    p_quantity: params.quantity,
+    p_frequency: params.frequency,
+    p_start_date: params.start_date,
+    p_interval_days: params.interval_days ?? null,
+    p_custom_quantities: params.custom_quantities ?? null,
+    p_delivery_time: params.delivery_time ?? "morning",
+    p_use_wallet: params.use_wallet,
+    p_total_amount: params.total_amount,
+    p_razorpay_payment_id: params.razorpay_payment_id ?? null,
+    p_razorpay_amount: params.razorpay_amount ?? 0,
+  })
+
+  if (error) {
+    // Parse the error message from PostgreSQL exception
+    const match = error.message?.match(/ERROR:\s*(.+?)(?:\s*CONTEXT:|$)/i)
+    const message = match?.[1] || error.message || "Failed to create subscription"
+    throw new Error(message)
+  }
+
+  if (!data?.success) {
+    throw new Error("Failed to create subscription")
+  }
+
+  return data as CreatePrepaidSubscriptionResult
+}
+
+/**
+ * Create multiple prepaid subscriptions (batch).
+ * Each subscription is created atomically with its own wallet deduction.
+ */
+export async function createPrepaidSubscriptions(
+  subscriptions: CreatePrepaidSubscriptionParams[],
+): Promise<CreatePrepaidSubscriptionResult[]> {
+  const results: CreatePrepaidSubscriptionResult[] = []
+
+  for (const sub of subscriptions) {
+    const result = await createPrepaidSubscription(sub)
+    results.push(result)
+  }
+
+  return results
+}
+
+/**
+ * Fetch subscription duration discounts from database.
+ */
+export interface DurationDiscount {
+  id: string
+  duration_months: number
+  discount_percent: number
+  display_label: string | null
+  is_active: boolean
+}
+
+export async function fetchDurationDiscounts(): Promise<DurationDiscount[]> {
+  const { data, error } = await supabase
+    .from("subscription_duration_discounts")
+    .select("*")
+    .eq("is_active", true)
+    .order("duration_months", { ascending: true })
+
+  if (error) throw error
+  return data || []
+}
+
 // ─── Addresses ─────────────────────────────────────────────────────────────────
 
 /**
@@ -1027,6 +1135,9 @@ export async function fetchCartItems(userId: string) {
       custom_quantities,
       preferred_delivery_time,
       address_id,
+      duration_months,
+      total_bottles,
+      total_amount,
       products:product_id (
         id,
         name,
@@ -1060,6 +1171,9 @@ export async function insertCartItem(itemData: any) {
       custom_quantities,
       preferred_delivery_time,
       address_id,
+      duration_months,
+      total_bottles,
+      total_amount,
       products:product_id (
         id,
         name,

@@ -1,0 +1,412 @@
+// ============================================================================
+// Supabase Edge Function: wallet-recharge
+// Handles direct wallet recharges (separate from cart checkout)
+// Consolidates: create-razorpay-order + verify-razorpay-payment
+// ============================================================================
+// Deploy: supabase functions deploy wallet-recharge --no-verify-jwt --project-ref mrbjduttwiciolhhabpa
+
+import { createClient } from "npm:@supabase/supabase-js@2"
+import Razorpay from "npm:razorpay@2.9.6"
+import { validatePaymentVerification } from "npm:razorpay@2.9.6/dist/utils/razorpay-utils.js"
+
+// ─── Environment Variables ───────────────────────────────────────────────────
+const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!
+const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!
+const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+const RAZORPAY_KEY_ID = Deno.env.get("RAZORPAY_KEY_ID")!
+const RAZORPAY_KEY_SECRET = Deno.env.get("RAZORPAY_KEY_SECRET")!
+
+const razorpay = new Razorpay({
+  key_id: RAZORPAY_KEY_ID,
+  key_secret: RAZORPAY_KEY_SECRET,
+})
+
+// ─── CORS Headers ────────────────────────────────────────────────────────────
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+}
+
+// ─── Rate Limiting ───────────────────────────────────────────────────────────
+const rateLimit = new Map<string, { count: number; resetAt: number }>()
+const RATE_LIMIT_WINDOW_MS = 60_000 // 1 minute
+const RATE_LIMIT_MAX = 10 // max 10 recharges per minute per user
+
+function isRateLimited(userId: string): boolean {
+  const now = Date.now()
+  const entry = rateLimit.get(userId)
+
+  if (!entry || now > entry.resetAt) {
+    rateLimit.set(userId, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS })
+    return false
+  }
+
+  entry.count++
+  return entry.count > RATE_LIMIT_MAX
+}
+
+// ─── Helper Functions ────────────────────────────────────────────────────────
+function jsonResponse(body: Record<string, unknown>, status = 200) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  })
+}
+
+async function authenticateUser(req: Request) {
+  const authHeader = req.headers.get("Authorization")
+  if (!authHeader) return null
+
+  const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+    global: { headers: { Authorization: authHeader } },
+  })
+
+  const { data: { user }, error } = await supabase.auth.getUser()
+  if (error || !user) return null
+  return user
+}
+
+// ============================================================================
+// ACTION: INITIATE (Create Razorpay Order)
+// ============================================================================
+async function handleInitiate(req: Request, user: any, supabaseAdmin: any) {
+  console.log("🚀 [INITIATE] Creating wallet recharge order for user:", user.id)
+
+  // Rate limit check
+  if (isRateLimited(user.id)) {
+    console.log("⚠️ [INITIATE] Rate limit exceeded for user:", user.id)
+    return jsonResponse({ error: "Too many requests. Please wait a moment." }, 429)
+  }
+
+  // Parse request body
+  let body: any
+  try {
+    body = await req.json()
+  } catch {
+    return jsonResponse({ error: "Invalid JSON body" }, 400)
+  }
+
+  const { amount } = body
+
+  // Validate amount
+  if (!amount || typeof amount !== "number" || !Number.isFinite(amount)) {
+    return jsonResponse({ error: "amount must be a valid number (in rupees)" }, 400)
+  }
+
+  console.log(`💰 [INITIATE] Recharge amount: ₹${amount}`)
+
+  // Fetch min wallet recharge from app_settings
+  let minRechargeAmount = 350
+  try {
+    const { data: settingData } = await supabaseAdmin
+      .from("app_settings")
+      .select("setting_value")
+      .eq("setting_key", "min_wallet_recharge")
+      .single()
+
+    if (settingData && settingData.setting_value) {
+      const parsed = parseInt(settingData.setting_value, 10)
+      if (!isNaN(parsed) && parsed > 0) {
+        minRechargeAmount = parsed
+      }
+    }
+  } catch (e) {
+    console.log("⚠️ [INITIATE] Could not fetch min_wallet_recharge, using default 350")
+  }
+
+  // Validate amount range
+  if (amount < minRechargeAmount) {
+    return jsonResponse({ error: `Minimum recharge amount is ₹${minRechargeAmount}` }, 400)
+  }
+
+  if (amount > 50000) {
+    return jsonResponse({ error: "Maximum recharge amount is ₹50,000" }, 400)
+  }
+
+  console.log("✓ [INITIATE] Amount validation passed")
+
+  // Create Razorpay order
+  console.log("🏦 [INITIATE] Creating Razorpay order...")
+  try {
+    const amountInPaise = Math.round(amount * 100)
+    const timestamp = Date.now().toString().slice(-10)
+    const userIdPrefix = user.id.slice(0, 8)
+    const receipt = `wr_${userIdPrefix}_${timestamp}`
+
+    const order = await razorpay.orders.create({
+      amount: amountInPaise,
+      currency: "INR",
+      receipt,
+      notes: {
+        user_id: user.id,
+        purpose: "wallet_recharge",
+        user_email: user.email || "",
+      },
+    })
+
+    console.log(`✅ [INITIATE] Razorpay order created: ${order.id}`)
+
+    return jsonResponse({
+      order_id: order.id,
+      amount: order.amount,
+      currency: order.currency,
+      key_id: RAZORPAY_KEY_ID,
+    })
+  } catch (error: any) {
+    console.error("❌ [INITIATE] Razorpay order creation failed:", error)
+    return jsonResponse({ error: "Failed to create payment order" }, 500)
+  }
+}
+
+// ============================================================================
+// ACTION: VERIFY (Verify Payment and Credit Wallet)
+// ============================================================================
+async function handleVerify(req: Request, user: any, supabaseAdmin: any) {
+  console.log("🚀 [VERIFY] Verifying payment for user:", user.id)
+
+  // Parse request body
+  let body: any
+  try {
+    body = await req.json()
+  } catch {
+    return jsonResponse({ error: "Invalid JSON body" }, 400)
+  }
+
+  const { razorpay_payment_id, razorpay_order_id, razorpay_signature } = body
+
+  if (!razorpay_payment_id || !razorpay_order_id || !razorpay_signature) {
+    return jsonResponse({
+      error: "Missing required fields: razorpay_payment_id, razorpay_order_id, razorpay_signature",
+    }, 400)
+  }
+
+  // 1. Verify payment signature
+  console.log("🔐 [VERIFY] Verifying payment signature...")
+  let isValid = false
+  try {
+    isValid = validatePaymentVerification(
+      {
+        order_id: razorpay_order_id,
+        payment_id: razorpay_payment_id,
+      },
+      razorpay_signature,
+      RAZORPAY_KEY_SECRET
+    )
+  } catch (err) {
+    console.error("❌ [VERIFY] Signature verification threw:", err)
+    isValid = false
+  }
+
+  if (!isValid) {
+    console.error("❌ [VERIFY] Invalid signature")
+    return jsonResponse({
+      verified: false,
+      error: "Payment signature verification failed",
+    }, 400)
+  }
+
+  console.log("✓ [VERIFY] Signature verified")
+
+  // 2. Fetch payment details from Razorpay
+  console.log("📥 [VERIFY] Fetching payment details from Razorpay...")
+  let paymentDetails: any
+  try {
+    paymentDetails = await razorpay.payments.fetch(razorpay_payment_id)
+  } catch (error: any) {
+    console.error("❌ [VERIFY] Failed to fetch payment details:", error)
+    return jsonResponse({ verified: false, error: "Failed to verify payment" }, 500)
+  }
+
+  // 3. Validate payment status
+  if (paymentDetails.status !== "captured" && paymentDetails.status !== "authorized") {
+    console.error(`❌ [VERIFY] Payment status is ${paymentDetails.status}`)
+    return jsonResponse({
+      verified: false,
+      error: `Payment status is ${paymentDetails.status}`,
+    }, 400)
+  }
+
+  console.log("✓ [VERIFY] Payment status is valid")
+
+  // 4. Validate user_id matches
+  const orderUserId = paymentDetails.notes?.user_id
+  if (orderUserId && orderUserId !== user.id) {
+    console.error(`❌ [VERIFY] User mismatch: JWT user ${user.id} vs order user ${orderUserId}`)
+    return jsonResponse({ verified: false, error: "User mismatch" }, 403)
+  }
+
+  const amountInRupees = paymentDetails.amount / 100
+  console.log(`💰 [VERIFY] Payment amount: ₹${amountInRupees}`)
+
+  // 5. Check for duplicate transaction (idempotency)
+  console.log("🔍 [VERIFY] Checking for duplicate transaction...")
+  const { data: existingTxn } = await supabaseAdmin
+    .from("transactions")
+    .select("id")
+    .eq("payment_gateway_id", razorpay_payment_id)
+    .maybeSingle()
+
+  if (existingTxn) {
+    console.log("⚠️ [VERIFY] Duplicate verification detected (already processed)")
+    
+    // Retry-safe referral payout
+    const { data: referralData, error: referralError } = await supabaseAdmin.rpc(
+      "payout_referral_on_recharge",
+      {
+        p_referee_id: user.id,
+        p_recharge_payment_id: razorpay_payment_id,
+        p_recharge_amount: amountInRupees,
+      }
+    )
+
+    if (referralError) {
+      console.error("⚠️ [VERIFY] Referral payout retry failed:", referralError)
+    }
+
+    // Get current wallet balance
+    const { data: wallet } = await supabaseAdmin
+      .from("wallets")
+      .select("balance")
+      .eq("user_id", user.id)
+      .single()
+
+    return jsonResponse({
+      verified: true,
+      duplicate: true,
+      amount: amountInRupees,
+      new_balance: wallet?.balance || 0,
+      payment_id: razorpay_payment_id,
+      referral: referralData ?? null,
+    })
+  }
+
+  // 6. Get current wallet
+  console.log("💳 [VERIFY] Fetching wallet...")
+  const { data: wallet, error: walletError } = await supabaseAdmin
+    .from("wallets")
+    .select("*")
+    .eq("user_id", user.id)
+    .single()
+
+  if (walletError || !wallet) {
+    console.error("❌ [VERIFY] Wallet not found for user:", user.id)
+    return jsonResponse({ verified: false, error: "Wallet not found" }, 404)
+  }
+
+  const newBalance = Number(wallet.balance) + amountInRupees
+
+  // 7. Update wallet balance
+  console.log(`💰 [VERIFY] Updating wallet balance: ₹${wallet.balance} → ₹${newBalance}`)
+  const { error: updateError } = await supabaseAdmin
+    .from("wallets")
+    .update({ balance: newBalance })
+    .eq("id", wallet.id)
+
+  if (updateError) {
+    console.error("❌ [VERIFY] Wallet update failed:", updateError)
+    return jsonResponse({ verified: false, error: "Failed to update wallet" }, 500)
+  }
+
+  // 8. Create transaction record
+  console.log("📝 [VERIFY] Creating transaction record...")
+  const { error: txnError } = await supabaseAdmin
+    .from("transactions")
+    .insert({
+      transaction_id: `TXN_${razorpay_payment_id}`,
+      user_id: user.id,
+      wallet_id: wallet.id,
+      type: "credit",
+      amount: amountInRupees,
+      status: "completed",
+      description: `Wallet recharge via ${paymentDetails.method || "Razorpay"}`,
+      balance_before: wallet.balance,
+      balance_after: newBalance,
+      payment_method: paymentDetails.method || "razorpay",
+      payment_gateway_id: razorpay_payment_id,
+      payment_gateway_response: paymentDetails,
+    })
+
+  if (txnError) {
+    console.error("❌ [VERIFY] Transaction insert failed:", txnError)
+    return jsonResponse({ verified: false, error: "Failed to create transaction" }, 500)
+  }
+
+  // 9. Trigger referral reward payout
+  console.log("🎁 [VERIFY] Checking referral rewards...")
+  const { data: referralData, error: referralError } = await supabaseAdmin.rpc(
+    "payout_referral_on_recharge",
+    {
+      p_referee_id: user.id,
+      p_recharge_payment_id: razorpay_payment_id,
+      p_recharge_amount: amountInRupees,
+    }
+  )
+
+  if (referralError) {
+    console.error("⚠️ [VERIFY] Referral payout failed (non-critical):", referralError)
+  }
+
+  console.log("✅ [VERIFY] Wallet recharge completed successfully")
+
+  return jsonResponse({
+    verified: true,
+    amount: amountInRupees,
+    new_balance: newBalance,
+    payment_id: razorpay_payment_id,
+    referral: referralData ?? null,
+  })
+}
+
+// ============================================================================
+// MAIN HANDLER
+// ============================================================================
+Deno.serve(async (req) => {
+  console.log("🚀 [WALLET-RECHARGE] Request received")
+
+  // Handle CORS
+  if (req.method === "OPTIONS") {
+    return new Response("ok", { headers: corsHeaders })
+  }
+
+  if (req.method !== "POST") {
+    return jsonResponse({ error: "Method not allowed" }, 405)
+  }
+
+  try {
+    // Authenticate user
+    const user = await authenticateUser(req)
+    if (!user) {
+      console.error("❌ [WALLET-RECHARGE] Authentication failed")
+      return jsonResponse({ error: "Unauthorized" }, 401)
+    }
+
+    console.log("✓ [WALLET-RECHARGE] User authenticated:", user.id)
+
+    // Create admin client
+    const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
+
+    // Parse action
+    let body: any
+    try {
+      body = await req.json()
+    } catch {
+      return jsonResponse({ error: "Invalid JSON body" }, 400)
+    }
+
+    const { action } = body
+
+    // Route to appropriate handler
+    if (action === "initiate") {
+      return await handleInitiate(req, user, supabaseAdmin)
+    } else if (action === "verify") {
+      return await handleVerify(req, user, supabaseAdmin)
+    } else {
+      return jsonResponse({ error: "Invalid action. Use 'initiate' or 'verify'" }, 400)
+    }
+  } catch (error: any) {
+    console.error("❌ [WALLET-RECHARGE] Unexpected error:", error)
+    return jsonResponse({
+      error: error.message || "Internal server error",
+    }, 500)
+  }
+})

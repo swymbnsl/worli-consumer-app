@@ -15,10 +15,11 @@ import { useCart } from "@/hooks/useCart"
 import { useWallet } from "@/hooks/useWallet"
 import { cancelAbandonedCartReminder } from "@/lib/notification-service"
 import {
-  createSubscriptions,
   fetchProductById,
   fetchUserAddresses,
 } from "@/lib/supabase-service"
+import { initiateCheckout, completeCheckout } from "@/lib/checkout-service"
+import { openRazorpayCheckout } from "@/lib/razorpay-service"
 import { CartItem } from "@/stores/cart-store"
 import { Address, Product } from "@/types/database.types"
 import { formatCurrency } from "@/utils/formatters"
@@ -42,7 +43,7 @@ export default function CartScreen() {
   const { items, removeItem, updateItem, clearCart, totalAmount, itemCount } =
     useCart()
   const { user } = useAuth()
-  const { wallet, rechargeWithRazorpay } = useWallet()
+  const { wallet, refreshWallet } = useWallet()
 
   const subscriptionSheetRef = useRef<SubscriptionBottomSheetRef>(null)
 
@@ -56,11 +57,25 @@ export default function CartScreen() {
   const [showPlaceOrderModal, setShowPlaceOrderModal] = useState(false)
   const [useWalletBalance, setUseWalletBalance] = useState(true)
 
-  // ─── Computations ───────────────────────────────────────────────────
+  // ─── State for checkout session ─────────────────────────────────────
+  
+  const [checkoutSession, setCheckoutSession] = useState<{
+    session_id: string
+    total_amount: number
+    wallet_amount: number
+    razorpay_amount: number
+    razorpay_order_id: string | null
+  } | null>(null)
 
   const walletBalance = wallet?.balance ?? 0
-  const walletUtilized = useWalletBalance ? Math.min(totalAmount, walletBalance) : 0
-  const amountToPayViaGateway = totalAmount - walletUtilized
+
+  // ─── Client-side estimates (for display only, server calculates actual) ────
+  
+  const estimatedWalletUsage = useWalletBalance 
+    ? Math.min(walletBalance, totalAmount) 
+    : 0
+  
+  const estimatedRazorpayAmount = Math.max(0, totalAmount - estimatedWalletUsage)
 
   // ─── Fetch addresses ────────────────────────────────────────────────
 
@@ -173,47 +188,80 @@ export default function CartScreen() {
     setShowPlaceOrderModal(false)
     
     try {
-      // 1. Pay via Gateway if required
-      if (amountToPayViaGateway > 0) {
+      // Step 1: Initiate checkout (server calculates all amounts)
+      console.log("🚀 Initiating checkout...")
+      const session = await initiateCheckout(useWalletBalance, selectedAddress?.id)
+      
+      setCheckoutSession(session)
+      console.log("✓ Checkout session created:", session.session_id)
+      console.log(`  Total: ₹${session.total_amount}`)
+      console.log(`  Wallet: ₹${session.wallet_amount}`)
+      console.log(`  Razorpay: ₹${session.razorpay_amount}`)
+
+      // Step 2: Handle payment if needed
+      if (session.razorpay_amount > 0 && session.razorpay_order_id) {
+        console.log("💳 Opening Razorpay checkout...")
+        
         try {
-          await rechargeWithRazorpay(amountToPayViaGateway)
+          const paymentResult = await openRazorpayCheckout({
+            amount: session.razorpay_amount,
+            orderId: session.razorpay_order_id,
+            description: `Cart Checkout (${itemCount} items)`,
+            prefill: {
+              name: user.full_name || undefined,
+              email: user.email || undefined,
+              contact: user.phone_number || undefined,
+            },
+            notes: {
+              user_id: user.id,
+              purpose: "cart_checkout",
+              session_id: session.session_id,
+            },
+          })
+
+          console.log("✓ Payment successful:", paymentResult.razorpay_payment_id)
+
+          // Step 3: Complete checkout with payment details
+          console.log("⚡ Completing checkout...")
+          const result = await completeCheckout(session.session_id, {
+            razorpay_payment_id: paymentResult.razorpay_payment_id,
+            razorpay_signature: paymentResult.razorpay_signature,
+          })
+
+          console.log(`✅ Checkout completed: ${result.subscriptions.length} subscriptions created`)
+          
         } catch (error: any) {
-             if (error?.code !== 2) {
-                showErrorToast("Payment Failed", error?.description || "Gateway payment failed.")
-             }
-             setPlacing(false)
-             return // Stop flow if payment fails or user cancels
+          // User cancelled payment
+          if (error?.code === 2) {
+            console.log("ℹ️ Payment cancelled by user")
+            showErrorToast("Cancelled", "Payment was cancelled")
+            return
+          }
+          
+          // Payment failed
+          throw error
         }
+      } else {
+        // No payment needed - complete checkout directly
+        console.log("⚡ Completing checkout (no payment needed)...")
+        const result = await completeCheckout(session.session_id)
+        console.log(`✅ Checkout completed: ${result.subscriptions.length} subscriptions created`)
       }
 
-      // 2. Wallet is now funded, create subscriptions
-      const subscriptions = items.map((item) => ({
-        user_id: user.id,
-        product_id: item.productId,
-        address_id: item.addressId || selectedAddress?.id,
-        quantity: item.quantity,
-        frequency: item.frequency,
-        start_date: item.startDate,
-        interval_days: item.intervalDays || null,
-        custom_quantities: item.customQuantities || null,
-        delivery_time: item.preferredDeliveryTime || null,
-        status: "active" as const,
-      }))
-      await createSubscriptions(subscriptions)
-      cancelAbandonedCartReminder(user.id).catch(console.error);
+      // Success!
+      await refreshWallet()
+      cancelAbandonedCartReminder(user.id).catch(console.error)
       clearCart()
       showSuccessToast("Success", "Your subscriptions have been placed!")
       router.back()
+      
     } catch (err: any) {
+      console.error("❌ Checkout failed:", err)
       const msg = err.message || "Failed to place order."
-      if (amountToPayViaGateway > 0) {
-          // If Razorpay succeeded but DB creation failed, notify user
-          showErrorToast("Order Failed", `${msg}. Don't worry, your payment of ${formatCurrency(amountToPayViaGateway)} is safely in your wallet.`)
-      } else {
-          showErrorToast("Error", msg)
-      }
+      showErrorToast("Checkout Failed", msg)
     } finally {
       setPlacing(false)
+      setCheckoutSession(null)
     }
   }
 
@@ -361,10 +409,10 @@ export default function CartScreen() {
                  <Text className="font-comfortaa text-sm text-primary-navy">{formatCurrency(totalAmount)}</Text>
               </View>
 
-              {walletUtilized > 0 && (
+              {estimatedWalletUsage > 0 && (
                 <View className="flex-row items-center justify-between mb-2">
                    <Text className="font-comfortaa text-sm text-functional-success">Wallet balance applied</Text>
-                   <Text className="font-comfortaa text-sm text-functional-success">-{formatCurrency(walletUtilized)}</Text>
+                   <Text className="font-comfortaa text-sm text-functional-success">-{formatCurrency(estimatedWalletUsage)}</Text>
                 </View>
               )}
 
@@ -372,7 +420,7 @@ export default function CartScreen() {
               
               <View className="flex-row items-center justify-between">
                  <Text className="font-sofia-bold text-base text-primary-navy">To Pay</Text>
-                 <Text className="font-sofia-bold text-base text-primary-navy">{formatCurrency(amountToPayViaGateway)}</Text>
+                 <Text className="font-sofia-bold text-base text-primary-navy">{formatCurrency(estimatedRazorpayAmount)}</Text>
               </View>
             </View>
           </ScrollView>
@@ -391,18 +439,18 @@ export default function CartScreen() {
             <View className="flex-row items-center justify-between mb-4">
               <View>
                 <Text className="font-comfortaa text-sm text-neutral-darkGray">
-                  {amountToPayViaGateway > 0 ? "To Pay" : "Total Amount"}
+                  {estimatedRazorpayAmount > 0 ? "To Pay" : "Total Amount"}
                 </Text>
                 <Text className="font-comfortaa text-[10px] text-neutral-error mt-0.5">
                   {itemCount} {itemCount === 1 ? "item" : "items"}
                 </Text>
               </View>
               <Text className="font-sofia-bold text-xl text-primary-navy">
-                {formatCurrency(amountToPayViaGateway > 0 ? amountToPayViaGateway : totalAmount)}
+                {formatCurrency(estimatedRazorpayAmount > 0 ? estimatedRazorpayAmount : totalAmount)}
               </Text>
             </View>
             <Button
-              title={placing ? "Processing..." : (amountToPayViaGateway > 0 ? `Pay ${formatCurrency(amountToPayViaGateway)} & Place Order` : "Place Order")}
+              title={placing ? "Processing..." : (estimatedRazorpayAmount > 0 ? `Pay ${formatCurrency(estimatedRazorpayAmount)} & Place Order` : "Place Order")}
               onPress={handlePlaceOrderClick}
               variant="navy"
               size="large"
@@ -517,11 +565,11 @@ export default function CartScreen() {
       <ConfirmModal
         visible={showPlaceOrderModal}
         onClose={() => setShowPlaceOrderModal(false)}
-        title={amountToPayViaGateway > 0 ? "Confirm Payment & Order" : "Confirm Order"}
+        title={estimatedRazorpayAmount > 0 ? "Confirm Payment & Order" : "Confirm Order"}
         description={`Place order for ${itemCount} ${
           itemCount === 1 ? "item" : "items"
-        }${amountToPayViaGateway > 0 ? ` by paying joining fee of ${formatCurrency(amountToPayViaGateway)}` : ` totaling ${formatCurrency(totalAmount)}`}?`}
-        confirmText={amountToPayViaGateway > 0 ? `Pay ${formatCurrency(amountToPayViaGateway)}` : "Place Order"}
+        }${estimatedRazorpayAmount > 0 ? ` by paying joining fee of ${formatCurrency(estimatedRazorpayAmount)}` : ` totaling ${formatCurrency(totalAmount)}`}?`}
+        confirmText={estimatedRazorpayAmount > 0 ? `Pay ${formatCurrency(estimatedRazorpayAmount)}` : "Place Order"}
         onConfirm={handleConfirmOrder}
       />
     </View>

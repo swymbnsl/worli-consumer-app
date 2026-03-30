@@ -10,7 +10,7 @@
 -- Must be created before orders is altered.
 -- ============================================
 
-CREATE TABLE discounts (
+CREATE TABLE IF NOT EXISTS discounts (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
 
   -- Always stored UPPER CASE; unique index enforces case-insensitive uniqueness
@@ -115,7 +115,7 @@ COMMENT ON COLUMN subscriptions.discount_orders_remaining IS 'Countdown of disco
 -- Created after orders so order_id FK resolves.
 -- ============================================
 
-CREATE TABLE discount_usages (
+CREATE TABLE IF NOT EXISTS discount_usages (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
 
   discount_id UUID NOT NULL REFERENCES discounts(id) ON DELETE RESTRICT,
@@ -151,27 +151,27 @@ COMMENT ON COLUMN discount_usages.status IS 'Set to "reversed" on order cancella
 -- ============================================
 
 -- Fast case-insensitive lookup during checkout
-CREATE UNIQUE INDEX idx_discounts_code         ON discounts(UPPER(code));
-CREATE        INDEX idx_discounts_active_valid ON discounts(is_active, valid_from, valid_until)
+CREATE UNIQUE INDEX IF NOT EXISTS idx_discounts_code         ON discounts(UPPER(code));
+CREATE        INDEX IF NOT EXISTS idx_discounts_active_valid ON discounts(is_active, valid_from, valid_until)
   WHERE is_active = true;
 
 -- Usage queries
-CREATE INDEX idx_discount_usages_discount_id ON discount_usages(discount_id);
-CREATE INDEX idx_discount_usages_user_id     ON discount_usages(user_id);
-CREATE INDEX idx_discount_usages_order_id    ON discount_usages(order_id);
+CREATE INDEX IF NOT EXISTS idx_discount_usages_discount_id ON discount_usages(discount_id);
+CREATE INDEX IF NOT EXISTS idx_discount_usages_user_id     ON discount_usages(user_id);
+CREATE INDEX IF NOT EXISTS idx_discount_usages_order_id    ON discount_usages(order_id);
 
 -- Prevents double-redemption on the same order
-CREATE UNIQUE INDEX idx_discount_usage_per_order
+CREATE UNIQUE INDEX IF NOT EXISTS idx_discount_usage_per_order
   ON discount_usages(order_id)
   WHERE order_id IS NOT NULL AND status = 'applied';
 
 -- Per-user usage count (used inside validate_discount_code)
-CREATE INDEX idx_discount_usages_user_discount
+CREATE INDEX IF NOT EXISTS idx_discount_usages_user_discount
   ON discount_usages(discount_id, user_id)
   WHERE status = 'applied';
 
 -- Quick join from orders back to discounts
-CREATE INDEX idx_orders_discount_code ON orders(discount_code_id)
+CREATE INDEX IF NOT EXISTS idx_orders_discount_code ON orders(discount_code_id)
   WHERE discount_code_id IS NOT NULL;
 
 
