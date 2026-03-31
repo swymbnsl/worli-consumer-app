@@ -4,28 +4,31 @@ import { showErrorToast, showSuccessToast } from "@/components/ui/Toast"
 import { COLORS } from "@/constants/theme"
 import { useAuth } from "@/hooks/useAuth"
 import {
-    applyReferralCode,
-    getReferralStats,
-    ReferralStats,
+  applyReferralCode,
+  getReferralStats,
+  ReferralDetail,
+  ReferralStats,
 } from "@/lib/supabase-service"
 import * as Clipboard from "expo-clipboard"
 import { useFocusEffect } from "expo-router"
 import {
-    CheckCircle,
-    Copy,
-    Gift,
-    Share2,
-    Tag,
-    Users,
+  CheckCircle,
+  Clock,
+  Copy,
+  Gift,
+  Share2,
+  Tag,
+  User,
+  Users,
 } from "lucide-react-native"
 import React, { useCallback, useState } from "react"
 import {
-    ActivityIndicator,
-    ScrollView,
-    Share,
-    Text,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  ScrollView,
+  Share,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native"
 import Animated, { FadeInDown, FadeInUp } from "react-native-reanimated"
 
@@ -36,7 +39,13 @@ export default function ReferScreen() {
   const referralCode = user?.referral_code ?? "..."
 
   // ── Stats ────────────────────────────────────────────────────────────────
-  const [stats, setStats] = useState<ReferralStats>({ totalReferrals: 0, totalEarned: 0 })
+  const [stats, setStats] = useState<ReferralStats>({
+    totalReferrals: 0,
+    successfulReferrals: 0,
+    pendingReferrals: 0,
+    totalEarned: 0,
+    referrals: [],
+  })
   const [statsLoading, setStatsLoading] = useState(true)
 
   const loadStats = useCallback(async () => {
@@ -74,7 +83,7 @@ export default function ReferScreen() {
       if (result.success) {
         await updateUser({ referred_by: result.referrer_id } as any)
         showSuccessToast(
-          "Referral Applied! 🎉",
+          "Referral Applied!",
           `You'll both earn ₹${result.reward_amount} on your first wallet recharge.`,
         )
         setInputCode("")
@@ -99,10 +108,42 @@ export default function ReferScreen() {
   const handleShare = async () => {
     try {
       await Share.share({
-        message: `Join FreshMilk using my referral code ${referralCode} and we both get ₹50 wallet credit on your first delivery! Download the app now.`,
+        message: `Join FreshMilk using my referral code ${referralCode} and we both get ₹50 wallet credit on your first wallet recharge! Download the app now.`,
       })
     } catch (error) {
       console.error("Share error:", error)
+    }
+  }
+
+  // ── Format date helper ───────────────────────────────────────────────────
+  const formatDate = (dateStr: string) => {
+    const date = new Date(dateStr)
+    return date.toLocaleDateString("en-IN", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    })
+  }
+
+  // ── Mask phone number ────────────────────────────────────────────────────
+  const maskPhone = (phone: string | null) => {
+    if (!phone) return "Unknown"
+    if (phone.length < 4) return phone
+    return `****${phone.slice(-4)}`
+  }
+
+  // ── Get status badge color ───────────────────────────────────────────────
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "rewarded":
+        return { bg: "#E8F5E9", text: COLORS.functional.success }
+      case "pending":
+        return { bg: "#FFF3E0", text: COLORS.primary.orange }
+      case "expired":
+      case "cancelled":
+        return { bg: "#FFEBEE", text: COLORS.functional.error }
+      default:
+        return { bg: COLORS.neutral.lightGray, text: COLORS.neutral.darkGray }
     }
   }
 
@@ -181,21 +222,30 @@ export default function ReferScreen() {
               </View>
             ) : (
               <View className="flex-row">
-                <View className="flex-1 items-center py-6">
-                  <Text className="font-sofia-bold text-4xl text-primary-navy mb-1">
+                <View className="flex-1 items-center py-5">
+                  <Text className="font-sofia-bold text-3xl text-primary-navy mb-1">
                     {stats.totalReferrals}
                   </Text>
                   <Text className="font-comfortaa text-xs text-neutral-gray">
-                    Total Referred
+                    Total
                   </Text>
                 </View>
                 <View className="w-px bg-neutral-lightGray my-4" />
-                <View className="flex-1 items-center py-6">
-                  <Text className="font-sofia-bold text-4xl text-secondary-skyBlue mb-1">
+                <View className="flex-1 items-center py-5">
+                  <Text className="font-sofia-bold text-3xl text-functional-success mb-1">
+                    {stats.successfulReferrals}
+                  </Text>
+                  <Text className="font-comfortaa text-xs text-neutral-gray">
+                    Successful
+                  </Text>
+                </View>
+                <View className="w-px bg-neutral-lightGray my-4" />
+                <View className="flex-1 items-center py-5">
+                  <Text className="font-sofia-bold text-3xl text-secondary-skyBlue mb-1">
                     ₹{stats.totalEarned}
                   </Text>
                   <Text className="font-comfortaa text-xs text-neutral-gray">
-                    Total Earned
+                    Earned
                   </Text>
                 </View>
               </View>
@@ -203,9 +253,78 @@ export default function ReferScreen() {
           </View>
         </Animated.View>
 
+        {/* ── Referral List ── */}
+        {!statsLoading && stats.referrals.length > 0 && (
+          <Animated.View
+            entering={FadeInUp.duration(500).delay(150)}
+            className="mx-6 mt-4"
+          >
+            <View className="bg-white rounded-2xl shadow-md overflow-hidden">
+              <View className="px-6 py-4 flex-row items-center justify-between border-b border-neutral-lightGray">
+                <Text className="font-sofia-bold text-base text-primary-navy">
+                  Referred Friends
+                </Text>
+                <Text className="font-comfortaa text-xs text-neutral-gray">
+                  {stats.referrals.length} people
+                </Text>
+              </View>
+
+              {stats.referrals.map((referral: ReferralDetail, index: number) => {
+                const statusColors = getStatusColor(referral.status)
+                const isLast = index === stats.referrals.length - 1
+
+                return (
+                  <View
+                    key={referral.id}
+                    className={`px-6 py-4 flex-row items-center ${!isLast ? "border-b border-neutral-lightGray" : ""}`}
+                  >
+                    {/* Avatar */}
+                    <View className="w-10 h-10 rounded-full bg-primary-navy/10 items-center justify-center mr-3">
+                      <User size={18} color={COLORS.primary.navy} />
+                    </View>
+
+                    {/* Info */}
+                    <View className="flex-1">
+                      <Text className="font-sofia-bold text-sm text-primary-navy">
+                        {referral.referee_name || maskPhone(referral.referee_phone)}
+                      </Text>
+                      <View className="flex-row items-center mt-1">
+                        <Clock size={12} color={COLORS.neutral.gray} />
+                        <Text className="font-comfortaa text-xs text-neutral-gray ml-1">
+                          {formatDate(referral.created_at)}
+                        </Text>
+                      </View>
+                    </View>
+
+                    {/* Status & Amount */}
+                    <View className="items-end">
+                      <View
+                        style={{ backgroundColor: statusColors.bg }}
+                        className="px-2 py-1 rounded-full"
+                      >
+                        <Text
+                          style={{ color: statusColors.text }}
+                          className="font-sofia-bold text-xs capitalize"
+                        >
+                          {referral.status}
+                        </Text>
+                      </View>
+                      {referral.status === "rewarded" && (
+                        <Text className="font-sofia-bold text-sm text-functional-success mt-1">
+                          +₹{referral.reward_amount}
+                        </Text>
+                      )}
+                    </View>
+                  </View>
+                )
+              })}
+            </View>
+          </Animated.View>
+        )}
+
         {/* ── Enter a Friend's Code / Already referred notice ── */}
         <Animated.View
-          entering={FadeInUp.duration(500).delay(150)}
+          entering={FadeInUp.duration(500).delay(200)}
           className="mx-6 mt-4"
         >
           {alreadyReferred ? (
@@ -214,7 +333,8 @@ export default function ReferScreen() {
                 <CheckCircle size={20} color={COLORS.primary.navy} />
               </View>
               <Text className="flex-1 font-comfortaa text-sm text-primary-navy leading-5">
-                Referral code applied! Wallet credits will be added on your first recharge.
+                Referral code applied! Wallet credits will be added on your
+                first recharge.
               </Text>
             </View>
           ) : (
@@ -238,7 +358,7 @@ export default function ReferScreen() {
                   label="Friend's Referral Code"
                   value={inputCode}
                   onChangeText={(t) => setInputCode(t.toUpperCase())}
-                  placeholder="e.g. RAHUL423"
+                  placeholder="e.g. K7N3P2XQ"
                   autoCapitalize="characters"
                   autoCorrect={false}
                   containerClassName="mb-4"
@@ -258,7 +378,7 @@ export default function ReferScreen() {
 
         {/* ── How it Works ── */}
         <Animated.View
-          entering={FadeInUp.duration(500).delay(200)}
+          entering={FadeInUp.duration(500).delay(250)}
           className="mx-6 mt-4"
         >
           <View className="bg-white rounded-2xl shadow-md overflow-hidden">
@@ -283,7 +403,7 @@ export default function ReferScreen() {
                 {
                   step: "3",
                   title: "Both Earn Rewards",
-                  text: "You both get ₹50 wallet credit after their first delivery",
+                  text: "You both get ₹50 wallet credit after their first wallet recharge",
                 },
               ].map((item, index) => (
                 <View key={index} className="flex-row items-start">

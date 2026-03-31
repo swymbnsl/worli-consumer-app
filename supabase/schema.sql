@@ -138,6 +138,7 @@ CREATE TABLE subscriptions (
   delivery_time VARCHAR(50) DEFAULT 'morning',
   interval_days INTEGER,
   custom_quantities JSONB,
+  paused_dates TEXT[] DEFAULT '{}',
   discount_code_id UUID REFERENCES discounts(id) ON DELETE SET NULL,
   discount_amount DECIMAL(10, 2) DEFAULT 0.00,
   -- Countdown set to discounts.max_discount_orders at checkout.

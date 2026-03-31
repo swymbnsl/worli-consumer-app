@@ -931,10 +931,12 @@ export type Database = {
           delivery_time: string | null
           discount_amount: number | null
           discount_code_id: string | null
+          discount_orders_remaining: number | null
           end_date: string | null
           frequency: string | null
           id: string
           interval_days: number | null
+          paused_dates: string[] | null
           product_id: string | null
           quantity: number | null
           start_date: string
@@ -949,10 +951,12 @@ export type Database = {
           delivery_time?: string | null
           discount_amount?: number | null
           discount_code_id?: string | null
+          discount_orders_remaining?: number | null
           end_date?: string | null
           frequency?: string | null
           id?: string
           interval_days?: number | null
+          paused_dates?: string[] | null
           product_id?: string | null
           quantity?: number | null
           start_date: string
@@ -967,10 +971,12 @@ export type Database = {
           delivery_time?: string | null
           discount_amount?: number | null
           discount_code_id?: string | null
+          discount_orders_remaining?: number | null
           end_date?: string | null
           frequency?: string | null
           id?: string
           interval_days?: number | null
+          paused_dates?: string[] | null
           product_id?: string | null
           quantity?: number | null
           start_date?: string

@@ -920,29 +920,70 @@ export async function claimFreeSample(
   return data as FreeSampleClaimSuccess | FreeSampleClaimError
 }
 
+export interface ReferralDetail {
+  id: string
+  referee_name: string | null
+  referee_phone: string | null
+  status: string
+  created_at: string
+  rewarded_at: string | null
+  reward_amount: number
+}
+
 export interface ReferralStats {
   totalReferrals: number
+  successfulReferrals: number
+  pendingReferrals: number
   totalEarned: number
+  referrals: ReferralDetail[]
 }
 
 interface ReferralStatsRow {
+  id: string
   referrer_reward_amount: number | string | null
   status: string | null
+  created_at: string
+  referrer_rewarded_at: string | null
+  referee: {
+    full_name: string | null
+    phone: string | null
+  } | null
 }
 
 export async function getReferralStats(userId: string): Promise<ReferralStats> {
   const { data: statsData, error: statsError } = await supabase
     .from("referrals")
-    .select("referrer_reward_amount, status")
+    .select(
+      `
+      id,
+      referrer_reward_amount,
+      status,
+      created_at,
+      referrer_rewarded_at,
+      referee:referee_id (
+        full_name,
+        phone
+      )
+    `,
+    )
     .eq("referrer_id", userId)
+    .order("created_at", { ascending: false })
 
   if (statsError) {
     console.error("Failed to fetch referral stats:", statsError)
-    return { totalReferrals: 0, totalEarned: 0 }
+    return {
+      totalReferrals: 0,
+      successfulReferrals: 0,
+      pendingReferrals: 0,
+      totalEarned: 0,
+      referrals: [],
+    }
   }
 
-  const rows: ReferralStatsRow[] = statsData ?? []
+  const rows: ReferralStatsRow[] = (statsData as any) ?? []
   const totalReferrals = rows.length
+  const successfulReferrals = rows.filter((r) => r.status === "rewarded").length
+  const pendingReferrals = rows.filter((r) => r.status === "pending").length
 
   // Compute total earned by summing rewards where status is 'rewarded'
   const totalEarned = rows
@@ -953,7 +994,24 @@ export async function getReferralStats(userId: string): Promise<ReferralStats> {
       0,
     )
 
-  return { totalReferrals, totalEarned }
+  // Map to detailed referrals
+  const referrals: ReferralDetail[] = rows.map((r) => ({
+    id: r.id,
+    referee_name: r.referee?.full_name || null,
+    referee_phone: r.referee?.phone || null,
+    status: r.status || "pending",
+    created_at: r.created_at,
+    rewarded_at: r.referrer_rewarded_at || null,
+    reward_amount: Number(r.referrer_reward_amount) || 0,
+  }))
+
+  return {
+    totalReferrals,
+    successfulReferrals,
+    pendingReferrals,
+    totalEarned,
+    referrals,
+  }
 }
 
 // ─── Users & Auth ─────────────────────────────────────────────────────────
