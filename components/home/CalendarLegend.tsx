@@ -13,7 +13,7 @@ const legendItems: LegendItem[] = [
   { status: "delivered", label: "Delivered", color: "bg-functional-success" },
   { status: "upcoming", label: "Upcoming", color: "bg-secondary-skyBlue" },
   { status: "vacation", label: "Vacation", color: "bg-secondary-gold" },
-  { status: "on_hold", label: "On Hold", color: "bg-functional-error" },
+  { status: "on_hold", label: "Paused", color: "bg-functional-error" },
 ]
 
 export default function CalendarLegend() {

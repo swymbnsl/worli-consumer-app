@@ -1284,3 +1284,71 @@ export async function updateCartItemDb(
 
   if (error) throw error
 }
+
+// ─── Bottle Returns ─────────────────────────────────────────────────────────
+
+/**
+ * Create a new bottle return request
+ */
+export async function createBottleReturn(data: {
+  user_id: string
+  address_id: string
+  quantity: number
+  return_date: string
+  notes?: string
+}) {
+  const { data: returnData, error } = await supabase
+    .from("bottle_returns")
+    .insert({
+      user_id: data.user_id,
+      quantity: data.quantity,
+      return_date: data.return_date,
+      notes: data.notes || null,
+      status: "requested",
+    })
+    .select()
+    .single()
+
+  if (error) throw error
+  return returnData
+}
+
+/**
+ * Fetch all bottle returns for a user
+ */
+export async function fetchUserBottleReturns(userId: string) {
+  const { data, error } = await supabase
+    .from("bottle_returns")
+    .select("*")
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false })
+
+  if (error) throw error
+  return data || []
+}
+
+/**
+ * Cancel a bottle return request
+ */
+export async function cancelBottleReturn(returnId: string) {
+  const { error } = await supabase
+    .from("bottle_returns")
+    .update({ status: "cancelled" })
+    .eq("id", returnId)
+
+  if (error) throw error
+}
+
+/**
+ * Count pending bottle returns for a user
+ */
+export async function countPendingBottleReturns(userId: string): Promise<number> {
+  const { data, error, count } = await supabase
+    .from("bottle_returns")
+    .select("*", { count: "exact", head: true })
+    .eq("user_id", userId)
+    .in("status", ["pending", "requested"])
+
+  if (error) throw error
+  return count || 0
+}

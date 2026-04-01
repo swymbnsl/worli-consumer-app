@@ -131,7 +131,6 @@ CREATE TABLE subscriptions (
   product_id UUID REFERENCES products(id),
   address_id UUID REFERENCES addresses(id) ON DELETE SET NULL,
   start_date DATE NOT NULL,
-  end_date DATE,
   frequency VARCHAR(50) DEFAULT 'daily',
   status VARCHAR(50) DEFAULT 'active',
   quantity INTEGER DEFAULT 1,
@@ -145,6 +144,15 @@ CREATE TABLE subscriptions (
   -- The order-generation backend job decrements this on each discounted delivery.
   -- When it reaches 0 (or is NULL with no limit), orders revert to full price.
   discount_orders_remaining INTEGER,
+  -- Prepaid subscription fields (from migration 20260402000000_subscription_prepaid.sql)
+  duration_months INTEGER DEFAULT NULL,
+  total_bottles INTEGER DEFAULT NULL,
+  remaining_bottles INTEGER DEFAULT NULL,
+  amount_paid DECIMAL(10, 2) DEFAULT 0.00,
+  wallet_amount_used DECIMAL(10, 2) DEFAULT 0.00,
+  razorpay_amount_paid DECIMAL(10, 2) DEFAULT 0.00,
+  payment_id VARCHAR(255) DEFAULT NULL,
+  transaction_id UUID REFERENCES transactions(id) ON DELETE SET NULL,
   CONSTRAINT non_negative_discount_orders CHECK (discount_orders_remaining IS NULL OR discount_orders_remaining >= 0),
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
@@ -152,13 +160,20 @@ CREATE TABLE subscriptions (
   CONSTRAINT valid_status CHECK (status IN ('active', 'paused', 'cancelled', 'completed'))
 );
 
+COMMENT ON TABLE subscriptions IS 'Subscriptions use start_date + duration_months for prepaid model';
 COMMENT ON COLUMN subscriptions.discount_code_id IS 'Discount code applied at the time of subscription creation.';
 COMMENT ON COLUMN subscriptions.discount_amount IS 'Rupee value discounted at checkout for this subscription.';
 COMMENT ON COLUMN subscriptions.discount_orders_remaining IS 'Countdown of discounted deliveries remaining. NULL means no order-count limit was set on the code. Decremented by the order generation job.';
-
--- Add comments for documentation
 COMMENT ON COLUMN subscriptions.interval_days IS 'For on_interval frequency mode: number of days between deliveries (2-30)';
 COMMENT ON COLUMN subscriptions.custom_quantities IS 'For custom frequency mode: JSON object with per-day quantities, e.g. {"0": 2, "1": 1, "2": 0, ...} where keys are weekday indexes (0=Sunday, 6=Saturday)';
+COMMENT ON COLUMN subscriptions.duration_months IS 'Subscription duration in months (1, 3, or 6). NULL for legacy/old subscriptions.';
+COMMENT ON COLUMN subscriptions.total_bottles IS 'Total number of bottles prepaid for this subscription.';
+COMMENT ON COLUMN subscriptions.remaining_bottles IS 'Remaining bottles to be delivered. Decremented on each delivery.';
+COMMENT ON COLUMN subscriptions.amount_paid IS 'Total amount paid upfront for this subscription.';
+COMMENT ON COLUMN subscriptions.wallet_amount_used IS 'Amount deducted from wallet for this subscription.';
+COMMENT ON COLUMN subscriptions.razorpay_amount_paid IS 'Amount paid via Razorpay for this subscription.';
+COMMENT ON COLUMN subscriptions.payment_id IS 'Razorpay payment ID if payment was made via gateway.';
+COMMENT ON COLUMN subscriptions.transaction_id IS 'Reference to the wallet debit transaction for this subscription.';
 
 -- Orders Table
 CREATE TABLE orders (

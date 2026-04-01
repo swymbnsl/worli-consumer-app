@@ -66,6 +66,7 @@ export default function AccountScreen() {
     { id: "language", label: "App Language", icon: Globe, iconBg: "#F5F3FF", onPress: () => router.push("/account/language") },
     { id: "delivery", label: "Delivery Preferences", icon: Settings, iconBg: "#F0F9FF", onPress: () => router.push("/account/delivery") },
     { id: "address", label: "Manage Addresses", icon: MapPin, iconBg: "#FFF7ED", route: "/account/addresses", onPress: () => router.push("/account/addresses") },
+    { id: "bottles", label: "Bottle Returns", icon: Package, iconBg: "#ECFDF5", onPress: () => router.push("/account/bottle-returns") },
   ]
 
   const legalItems = [

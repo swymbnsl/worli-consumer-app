@@ -1,6 +1,6 @@
-import AccountSubHeader from "@/components/account/AccountSubHeader";
-import { Stack } from "expo-router";
-import React from "react";
+import AccountSubHeader from "@/components/account/AccountSubHeader"
+import { Stack } from "expo-router"
+import React from "react"
 
 export default function AccountLayout() {
   return (
@@ -15,8 +15,14 @@ export default function AccountLayout() {
     >
       <Stack.Screen name="profile" options={{ title: "Edit Profile" }} />
       <Stack.Screen name="addresses" options={{ title: "Manage Addresses" }} />
-      <Stack.Screen name="delivery" options={{ title: "Delivery Preferences" }} />
-      <Stack.Screen name="transactions" options={{ title: "Transaction History" }} />
+      <Stack.Screen
+        name="delivery"
+        options={{ title: "Delivery Preferences" }}
+      />
+      <Stack.Screen
+        name="transactions"
+        options={{ title: "Transaction History" }}
+      />
       <Stack.Screen name="language" options={{ title: "Language" }} />
       <Stack.Screen name="refer" options={{ title: "Refer & Earn" }} />
       <Stack.Screen name="faq" options={{ title: "FAQ" }} />
@@ -24,6 +30,14 @@ export default function AccountLayout() {
       <Stack.Screen name="privacy" options={{ title: "Privacy Policy" }} />
       <Stack.Screen name="terms" options={{ title: "Terms & Conditions" }} />
       <Stack.Screen name="delete" options={{ title: "Delete Account" }} />
+      <Stack.Screen
+        name="bottle-returns"
+        options={{ title: "Bottle Returns" }}
+      />
+      <Stack.Screen
+        name="request-return"
+        options={{ title: "Request Bottle Return" }}
+      />
     </Stack>
-  );
+  )
 }
