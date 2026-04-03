@@ -11,7 +11,7 @@ import {
 import { useAuth } from "@/hooks/useAuth"
 import { useCart } from "@/hooks/useCart"
 import { checkDuplicateSubscription, fetchUserAddresses, fetchDurationDiscounts } from "@/lib/supabase-service"
-import { Address, Product } from "@/types/database.types"
+import { Address, Product, Subscription } from "@/types/database.types"
 import { formatCurrency } from "@/utils/formatters"
 import {
   getDayAfterTomorrowDateNtp,
@@ -41,7 +41,7 @@ import { Text, TouchableOpacity, View } from "react-native"
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
 export interface SubscriptionBottomSheetRef {
-  open: (product: Product, editItem?: CartItem) => void
+  open: (product: Product, editItem?: CartItem, existingSubscription?: Subscription) => void
   close: () => void
 }
 
@@ -124,7 +124,7 @@ const formatDateDisplay = (dateStr: string) => {
 // ─── Component ─────────────────────────────────────────────────────────────────
 
 interface SubscriptionBottomSheetProps {
-  onEditSubscription?: (item: Omit<CartItem, "id">) => Promise<void>
+  onEditSubscription?: (item: Omit<CartItem, "id">, product: Product) => Promise<void>
 }
 
 const SubscriptionBottomSheet = forwardRef<
@@ -138,6 +138,7 @@ const SubscriptionBottomSheet = forwardRef<
   // State
   const [product, setProduct] = useState<Product | null>(null)
   const [editingItem, setEditingItem] = useState<CartItem | null>(null)
+  const [existingSubscription, setExistingSubscription] = useState<Subscription | null>(null)
   const [frequency, setFrequency] = useState<SubscriptionFrequency>("daily")
   const [quantity, setQuantity] = useState(1)
   const [startDate, setStartDate] = useState(getDefaultStartDate())
@@ -173,6 +174,27 @@ const SubscriptionBottomSheet = forwardRef<
     return calculateSubscriptionTotal(product.price, totalBottles, durationMonths, durationOptions)
   }, [product, totalBottles, durationMonths, durationOptions])
 
+  // Calculate payment difference when editing subscription
+  const paymentDifference = useMemo(() => {
+    if (!existingSubscription || !product) return null
+    
+    // Calculate remaining value based on remaining_bottles field
+    const remainingBottles = (existingSubscription as any).remaining_bottles || 0
+    const currentRemainingAmount = remainingBottles * product.price
+    
+    // Calculate new total for the same remaining period
+    const newRemainingAmount = totalBottles * product.price
+    
+    const difference = newRemainingAmount - currentRemainingAmount
+    
+    return {
+      currentAmount: Math.round(currentRemainingAmount),
+      newAmount: Math.round(newRemainingAmount),
+      difference: Math.round(difference),
+      needsPayment: difference > 0
+    }
+  }, [existingSubscription, product, totalBottles])
+
   // Address state
   const [addresses, setAddresses] = useState<Address[]>([])
   const [selectedAddress, setSelectedAddress] = useState<Address | null>(null)
@@ -206,8 +228,9 @@ const SubscriptionBottomSheet = forwardRef<
   // ─── Imperative Handle ───────────────────────────────────────────────
 
   useImperativeHandle(ref, () => ({
-    open: async (p: Product, editItem?: CartItem) => {
+    open: async (p: Product, editItem?: CartItem, existingSub?: Subscription) => {
       setProduct(p)
+      setExistingSubscription(existingSub || null)
 
       // Fetch addresses
       if (user?.id) {
@@ -310,8 +333,8 @@ const SubscriptionBottomSheet = forwardRef<
 
   const finalizeAddToCart = async (payload: Omit<CartItem, "id">) => {
     // If editing an existing subscription via callback (not cart)
-    if (props.onEditSubscription && editingItem) {
-      await props.onEditSubscription(payload)
+    if (props.onEditSubscription && editingItem && product) {
+      await props.onEditSubscription(payload, product)
       bottomSheetRef.current?.dismiss()
       return
     }
@@ -787,45 +810,102 @@ const SubscriptionBottomSheet = forwardRef<
 
           {/* ─── Pricing Summary ───────────────────────────────────── */}
           <View className="bg-neutral-lightCream rounded-xl p-4 mb-6">
-            <View className="flex-row justify-between mb-2">
-              <Text className="font-comfortaa text-sm text-neutral-darkGray">
-                Total Bottles
-              </Text>
-              <Text className="font-sofia-bold text-sm text-neutral-black">
-                {totalBottles} {totalBottles === 1 ? "bottle" : "bottles"}
-              </Text>
-            </View>
-            
-            <View className="flex-row justify-between mb-2">
-              <Text className="font-comfortaa text-sm text-neutral-darkGray">
-                Subtotal ({formatCurrency(product?.price || 0)}/bottle)
-              </Text>
-              <Text className="font-sofia-bold text-sm text-neutral-black">
-                {formatCurrency(pricing.subtotal)}
-              </Text>
-            </View>
-            
-            {pricing.discount > 0 && (
-              <View className="flex-row justify-between mb-2">
-                <Text className="font-comfortaa text-sm text-functional-success">
-                  Duration Discount
-                </Text>
-                <Text className="font-sofia-bold text-sm text-functional-success">
-                  -{formatCurrency(pricing.discount)}
-                </Text>
-              </View>
+            {existingSubscription && paymentDifference ? (
+              // Editing existing subscription - show comparison
+              <>
+                <View className="flex-row justify-between mb-2">
+                  <Text className="font-comfortaa text-sm text-neutral-darkGray">
+                    Current Remaining Value
+                  </Text>
+                  <Text className="font-sofia-bold text-sm text-neutral-black">
+                    {formatCurrency(paymentDifference.currentAmount)}
+                  </Text>
+                </View>
+                
+                <View className="flex-row justify-between mb-2">
+                  <Text className="font-comfortaa text-sm text-neutral-darkGray">
+                    New Remaining Value
+                  </Text>
+                  <Text className="font-sofia-bold text-sm text-neutral-black">
+                    {formatCurrency(paymentDifference.newAmount)}
+                  </Text>
+                </View>
+                
+                <View className="h-px bg-neutral-lightGray my-2" />
+                
+                {paymentDifference.needsPayment ? (
+                  <View className="flex-row justify-between">
+                    <Text className="font-sofia-bold text-base text-functional-error">
+                      Additional Payment Required
+                    </Text>
+                    <Text className="font-sofia-bold text-base text-functional-error">
+                      +{formatCurrency(paymentDifference.difference)}
+                    </Text>
+                  </View>
+                ) : paymentDifference.difference < 0 ? (
+                  <View className="flex-row justify-between">
+                    <Text className="font-sofia-bold text-base text-functional-success">
+                      Credit (will remain in account)
+                    </Text>
+                    <Text className="font-sofia-bold text-base text-functional-success">
+                      {formatCurrency(Math.abs(paymentDifference.difference))}
+                    </Text>
+                  </View>
+                ) : (
+                  <View className="flex-row justify-between">
+                    <Text className="font-sofia-bold text-base text-primary-navy">
+                      No Additional Payment
+                    </Text>
+                    <Text className="font-sofia-bold text-base text-primary-navy">
+                      ₹0
+                    </Text>
+                  </View>
+                )}
+              </>
+            ) : (
+              // New subscription - show regular pricing
+              <>
+                <View className="flex-row justify-between mb-2">
+                  <Text className="font-comfortaa text-sm text-neutral-darkGray">
+                    Total Bottles
+                  </Text>
+                  <Text className="font-sofia-bold text-sm text-neutral-black">
+                    {totalBottles} {totalBottles === 1 ? "bottle" : "bottles"}
+                  </Text>
+                </View>
+                
+                <View className="flex-row justify-between mb-2">
+                  <Text className="font-comfortaa text-sm text-neutral-darkGray">
+                    Subtotal ({formatCurrency(product?.price || 0)}/bottle)
+                  </Text>
+                  <Text className="font-sofia-bold text-sm text-neutral-black">
+                    {formatCurrency(pricing.subtotal)}
+                  </Text>
+                </View>
+                
+                {pricing.discount > 0 && (
+                  <View className="flex-row justify-between mb-2">
+                    <Text className="font-comfortaa text-sm text-functional-success">
+                      Duration Discount
+                    </Text>
+                    <Text className="font-sofia-bold text-sm text-functional-success">
+                      -{formatCurrency(pricing.discount)}
+                    </Text>
+                  </View>
+                )}
+                
+                <View className="h-px bg-neutral-lightGray my-2" />
+                
+                <View className="flex-row justify-between">
+                  <Text className="font-sofia-bold text-base text-primary-navy">
+                    Total Amount
+                  </Text>
+                  <Text className="font-sofia-bold text-base text-primary-navy">
+                    {formatCurrency(pricing.total)}
+                  </Text>
+                </View>
+              </>
             )}
-            
-            <View className="h-px bg-neutral-lightGray my-2" />
-            
-            <View className="flex-row justify-between">
-              <Text className="font-sofia-bold text-base text-primary-navy">
-                Total Amount
-              </Text>
-              <Text className="font-sofia-bold text-base text-primary-navy">
-                {formatCurrency(pricing.total)}
-              </Text>
-            </View>
           </View>
 
           {/* ─── Add To Cart Button ───────────────────────────────── */}

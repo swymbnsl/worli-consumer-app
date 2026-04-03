@@ -209,9 +209,9 @@ export default function SubscriptionScreen() {
           setCancellingSubscription(null)
         }}
         title="Cancel Subscription"
-        description="Are you sure you want to cancel this subscription? This action cannot be undone."
-        confirmText="Cancel"
-        cancelText="Keep"
+        description="Are you sure you want to cancel this subscription? This action cannot be undone and is non-refundable. Any prepaid amount will not be refunded."
+        confirmText="Cancel Subscription"
+        cancelText="Keep Subscription"
         onConfirm={handleConfirmCancel}
         destructive
       />

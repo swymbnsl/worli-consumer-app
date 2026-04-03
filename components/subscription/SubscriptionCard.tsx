@@ -153,7 +153,7 @@ export default function SubscriptionCard({
             </View>
 
             {/* Tags Row */}
-            <View className="flex-row items-center mt-2.5 gap-2">
+            <View className="flex-row items-center mt-2.5 gap-2 flex-wrap">
               <View className="flex-row items-center bg-functional-success/10 px-2 py-1 rounded-md">
                 <View className="w-1.5 h-1.5 rounded-full bg-functional-success mr-1.5" />
                 <Text className="font-sofia-bold text-[10px] text-functional-success uppercase tracking-wider">
@@ -182,6 +182,20 @@ export default function SubscriptionCard({
                   {formatDate(subscription.start_date)}
                 </Text>
               </View>
+
+              {/* Paused Dates Badge */}
+              {subscription.paused_dates && subscription.paused_dates.length > 0 && (
+                <View className="flex-row items-center bg-functional-error/10 px-2 py-1 rounded-md">
+                  <PauseCircle
+                    size={10}
+                    color={COLORS.functional.error}
+                    strokeWidth={2.5}
+                  />
+                  <Text className="font-comfortaa text-[10px] text-functional-error ml-1">
+                    {subscription.paused_dates.length} {subscription.paused_dates.length === 1 ? 'day' : 'days'} paused
+                  </Text>
+                </View>
+              )}
             </View>
           </View>
         </View>
