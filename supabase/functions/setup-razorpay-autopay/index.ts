@@ -184,11 +184,14 @@ Deno.serve(async (req: Request) => {
             "Customer",
           email: user.email || "",
           contact: user.phone || user.phone_number || user.user_metadata?.phone || "",
-          fail_existing: 0, // IMPORTANT: Returns existing customer instead of erroring if they exist
+          fail_existing: "0", // IMPORTANT: Must be string "0" - Returns existing customer instead of erroring
           notes: { supabase_user_id: userId },
         }
         
-        console.log("Creating/Fetching Customer with:", customerPayload)
+        console.log("Creating/Fetching Customer with:", {
+          ...customerPayload,
+          contact: customerPayload.contact ? "***" + customerPayload.contact.slice(-4) : "N/A"
+        })
         
         const customer = await razorpay.customers.create(customerPayload)
         customerId = customer.id
@@ -200,12 +203,49 @@ Deno.serve(async (req: Request) => {
           .update({ razorpay_customer_id: customerId })
           .eq("user_id", userId)
           
-      } catch (custErr) {
+      } catch (custErr: any) {
         console.error("Customer creation error:", custErr)
-        return jsonResponse(
-          { error: "Failed to create Razorpay customer" },
-          500,
-        )
+        
+        // If customer already exists error, try to fetch existing customer by email
+        if (custErr?.error?.code === "BAD_REQUEST_ERROR" && 
+            custErr?.error?.description?.includes("already exists")) {
+          console.log("Customer exists, attempting to fetch by email...")
+          
+          try {
+            // Search for existing customer by email
+            const customers = await razorpay.customers.all({ 
+              email: user.email,
+              count: 1 
+            })
+            
+            if (customers.items && customers.items.length > 0) {
+              customerId = customers.items[0].id
+              console.log("Found existing customer:", customerId)
+              
+              // Update wallet with the customer ID
+              await supabaseAdmin
+                .from("wallets")
+                .update({ razorpay_customer_id: customerId })
+                .eq("user_id", userId)
+            } else {
+              return jsonResponse(
+                { error: "Customer exists but could not be fetched. Please contact support." },
+                500,
+              )
+            }
+          } catch (fetchErr) {
+            console.error("Failed to fetch existing customer:", fetchErr)
+            return jsonResponse(
+              { error: "Failed to fetch existing customer. Please contact support." },
+              500,
+            )
+          }
+        } else {
+          return jsonResponse(
+            { error: "Failed to create Razorpay customer", details: custErr?.error?.description },
+            500,
+          )
+        }
       }
     }
 

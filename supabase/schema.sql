@@ -227,10 +227,30 @@ CREATE TABLE wallets (
   auto_recharge_trigger_amount DECIMAL(10, 2),
   razorpay_customer_id VARCHAR(255),
   razorpay_subscription_id VARCHAR(255),
+  last_autopay_charge_at TIMESTAMP WITH TIME ZONE DEFAULT NULL,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   CONSTRAINT positive_balance CHECK (balance >= 0)
 );
+
+-- AutoPay Queue Table
+CREATE TABLE autopay_queue (
+  user_id UUID PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+  wallet_id UUID REFERENCES wallets(id) ON DELETE CASCADE,
+  balance_at_trigger DECIMAL(10, 2) NOT NULL,
+  processed BOOLEAN DEFAULT false,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  processed_at TIMESTAMP WITH TIME ZONE DEFAULT NULL,
+  error_message TEXT DEFAULT NULL
+);
+
+CREATE INDEX idx_autopay_queue_unprocessed 
+ON autopay_queue(created_at) 
+WHERE processed = false;
+
+COMMENT ON TABLE autopay_queue IS 'Queue of pending autopay charges triggered by balance drops';
+COMMENT ON COLUMN wallets.last_autopay_charge_at IS 'Timestamp of last successful autopay charge (for cooldown)';
+
 
 -- Transactions Table
 CREATE TABLE transactions (
