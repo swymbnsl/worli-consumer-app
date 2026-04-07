@@ -561,14 +561,17 @@ export async function checkDuplicateSubscription(
 /**
  * Fetch the wallet for a user.
  */
-export async function fetchWallet(userId: string): Promise<Wallet> {
+export async function fetchWallet(userId: string): Promise<Wallet | null> {
   const { data, error } = await supabase
     .from("wallets")
     .select("*")
     .eq("user_id", userId)
-    .single()
+    .maybeSingle()
 
-  if (error) throw error
+  if (error) {
+    console.error("fetchWallet error:", error);
+    return null;
+  }
   return data
 }
 
@@ -946,8 +949,11 @@ interface ReferralStatsRow {
   referrer_rewarded_at: string | null
   referee: {
     full_name: string | null
-    phone: string | null
-  } | null
+    phone_number: string | null
+  } | {
+    full_name: string | null
+    phone_number: string | null
+  }[] | null
 }
 
 export async function getReferralStats(userId: string): Promise<ReferralStats> {
@@ -962,7 +968,7 @@ export async function getReferralStats(userId: string): Promise<ReferralStats> {
       referrer_rewarded_at,
       referee:referee_id (
         full_name,
-        phone
+        phone_number
       )
     `,
     )
@@ -995,15 +1001,20 @@ export async function getReferralStats(userId: string): Promise<ReferralStats> {
     )
 
   // Map to detailed referrals
-  const referrals: ReferralDetail[] = rows.map((r) => ({
-    id: r.id,
-    referee_name: r.referee?.full_name || null,
-    referee_phone: r.referee?.phone || null,
-    status: r.status || "pending",
-    created_at: r.created_at,
-    rewarded_at: r.referrer_rewarded_at || null,
-    reward_amount: Number(r.referrer_reward_amount) || 0,
-  }))
+  const referrals: ReferralDetail[] = rows.map((r) => {
+    // If Supabase returns the foreign key relation as an array of length 1, extract it.
+    const refereeObj = Array.isArray(r.referee) ? r.referee[0] : r.referee
+    
+    return {
+      id: r.id,
+      referee_name: refereeObj?.full_name || null,
+      referee_phone: refereeObj?.phone_number || null,
+      status: r.status || "pending",
+      created_at: r.created_at,
+      rewarded_at: r.referrer_rewarded_at || null,
+      reward_amount: Number(r.referrer_reward_amount) || 0,
+    }
+  })
 
   return {
     totalReferrals,

@@ -69,7 +69,7 @@ async function authenticateUser(req: Request) {
 // ============================================================================
 // ACTION: INITIATE (Create Razorpay Order)
 // ============================================================================
-async function handleInitiate(req: Request, user: any, supabaseAdmin: any) {
+async function handleInitiate(body: any, user: any, supabaseAdmin: any) {
   console.log("🚀 [INITIATE] Creating wallet recharge order for user:", user.id)
 
   // Rate limit check
@@ -78,19 +78,13 @@ async function handleInitiate(req: Request, user: any, supabaseAdmin: any) {
     return jsonResponse({ error: "Too many requests. Please wait a moment." }, 429)
   }
 
-  // Parse request body
-  let body: any
-  try {
-    body = await req.json()
-  } catch {
-    return jsonResponse({ error: "Invalid JSON body" }, 400)
-  }
+  let { amount } = body
 
-  const { amount } = body
-
-  // Validate amount
-  if (!amount || typeof amount !== "number" || !Number.isFinite(amount)) {
-    return jsonResponse({ error: "amount must be a valid number (in rupees)" }, 400)
+  // Parse and validate amount robustly
+  amount = Number(amount)
+  if (!amount || typeof amount !== "number" || !Number.isFinite(amount) || amount <= 0) {
+    console.error(`❌ [INITIATE] Invalid amount passed to edge function: ${body.amount} (Type: ${typeof body.amount})`)
+    return jsonResponse({ error: "amount must be a valid positive number (in rupees)" }, 400)
   }
 
   console.log(`💰 [INITIATE] Recharge amount: ₹${amount}`)
@@ -161,20 +155,13 @@ async function handleInitiate(req: Request, user: any, supabaseAdmin: any) {
 // ============================================================================
 // ACTION: VERIFY (Verify Payment and Credit Wallet)
 // ============================================================================
-async function handleVerify(req: Request, user: any, supabaseAdmin: any) {
+async function handleVerify(body: any, user: any, supabaseAdmin: any) {
   console.log("🚀 [VERIFY] Verifying payment for user:", user.id)
-
-  // Parse request body
-  let body: any
-  try {
-    body = await req.json()
-  } catch {
-    return jsonResponse({ error: "Invalid JSON body" }, 400)
-  }
 
   const { razorpay_payment_id, razorpay_order_id, razorpay_signature } = body
 
   if (!razorpay_payment_id || !razorpay_order_id || !razorpay_signature) {
+    console.error(`❌ [VERIFY] Missing fields. Keys present:`, Object.keys(body || {}))
     return jsonResponse({
       error: "Missing required fields: razorpay_payment_id, razorpay_order_id, razorpay_signature",
     }, 400)
@@ -282,15 +269,36 @@ async function handleVerify(req: Request, user: any, supabaseAdmin: any) {
 
   // 6. Get current wallet
   console.log("💳 [VERIFY] Fetching wallet...")
-  const { data: wallet, error: walletError } = await supabaseAdmin
+  let { data: wallet, error: walletError } = await supabaseAdmin
     .from("wallets")
     .select("*")
     .eq("user_id", user.id)
-    .single()
+    .maybeSingle()
 
-  if (walletError || !wallet) {
-    console.error("❌ [VERIFY] Wallet not found for user:", user.id)
-    return jsonResponse({ verified: false, error: "Wallet not found" }, 404)
+  if (walletError) {
+    console.error("❌ [VERIFY] Wallet fetch error:", walletError)
+    return jsonResponse({ verified: false, error: "Failed to fetch wallet" }, 500)
+  }
+
+  // Auto-create wallet if missing
+  if (!wallet) {
+    console.log("⚠️ [VERIFY] Wallet not found. Creating one...")
+    const { data: newWallet, error: createError } = await supabaseAdmin
+      .from("wallets")
+      .insert({
+        user_id: user.id,
+        balance: 0,
+        low_balance_threshold: 100,
+        auto_recharge_enabled: false,
+      })
+      .select()
+      .single()
+      
+    if (createError || !newWallet) {
+      console.error("❌ [VERIFY] Failed to create wallet:", createError)
+      return jsonResponse({ verified: false, error: "Failed to create wallet" }, 500)
+    }
+    wallet = newWallet
   }
 
   const newBalance = Number(wallet.balance) + amountInRupees
@@ -397,9 +405,9 @@ Deno.serve(async (req) => {
 
     // Route to appropriate handler
     if (action === "initiate") {
-      return await handleInitiate(req, user, supabaseAdmin)
+      return await handleInitiate(body, user, supabaseAdmin)
     } else if (action === "verify") {
-      return await handleVerify(req, user, supabaseAdmin)
+      return await handleVerify(body, user, supabaseAdmin)
     } else {
       return jsonResponse({ error: "Invalid action. Use 'initiate' or 'verify'" }, 400)
     }

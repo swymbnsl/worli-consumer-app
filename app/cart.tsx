@@ -1,38 +1,38 @@
 import CartItemCard from "@/components/cart/CartItemCard"
 import SubscriptionBottomSheet, {
-  SubscriptionBottomSheetRef,
+    SubscriptionBottomSheetRef,
 } from "@/components/cart/SubscriptionBottomSheet"
 import Button from "@/components/ui/Button"
 import Modal, { ConfirmModal } from "@/components/ui/Modal"
 import PageHeader from "@/components/ui/PageHeader"
 import {
-  showErrorToast,
-  showSuccessToast,
+    showErrorToast,
+    showSuccessToast,
 } from "@/components/ui/Toast"
 import { COLORS } from "@/constants/theme"
 import { useAuth } from "@/hooks/useAuth"
 import { useCart } from "@/hooks/useCart"
 import { useWallet } from "@/hooks/useWallet"
+import { completeCheckout, initiateCheckout } from "@/lib/checkout-service"
 import { cancelAbandonedCartReminder } from "@/lib/notification-service"
-import {
-  fetchProductById,
-  fetchUserAddresses,
-} from "@/lib/supabase-service"
-import { initiateCheckout, completeCheckout } from "@/lib/checkout-service"
 import { openRazorpayCheckout } from "@/lib/razorpay-service"
+import {
+    fetchProductById,
+    fetchUserAddresses,
+} from "@/lib/supabase-service"
 import { CartItem } from "@/stores/cart-store"
 import { Address, Product } from "@/types/database.types"
 import { formatCurrency } from "@/utils/formatters"
-import { useRouter } from "expo-router"
+import { useFocusEffect, useRouter } from "expo-router"
 import { Check, MapPin, Wallet as WalletIcon } from "lucide-react-native"
-import React, { useCallback, useEffect, useRef, useState } from "react"
+import React, { useCallback, useRef, useState } from "react"
 import {
-  ActivityIndicator,
-  ScrollView,
-  Switch,
-  Text,
-  TouchableOpacity,
-  View,
+    ActivityIndicator,
+    ScrollView,
+    Switch,
+    Text,
+    TouchableOpacity,
+    View,
 } from "react-native"
 import Animated, { FadeInUp } from "react-native-reanimated"
 
@@ -79,18 +79,31 @@ export default function CartScreen() {
 
   // ─── Fetch addresses ────────────────────────────────────────────────
 
-  useEffect(() => {
-    if (!user?.id) return
-    setLoading(true)
-    fetchUserAddresses(user.id)
-      .then((addrs) => {
-        setAddresses(addrs)
-        const defaultAddr = addrs.find((a) => a.is_default) || addrs[0] || null
-        setSelectedAddress(defaultAddr)
-      })
-      .catch(() => {})
-      .finally(() => setLoading(false))
-  }, [user?.id])
+  const isFirstLoad = useRef(true)
+
+  useFocusEffect(
+    useCallback(() => {
+      if (!user?.id) return
+
+      if (isFirstLoad.current) {
+        setLoading(true)
+        isFirstLoad.current = false
+      }
+
+      fetchUserAddresses(user.id)
+        .then((addrs) => {
+          setAddresses(addrs)
+          setSelectedAddress((prev) => {
+            // Keep the previous selection if it still exists
+            if (prev && addrs.some((a) => a.id === prev.id)) return prev
+            // Auto default if no previous selection or old selection deleted
+            return addrs.find((a) => a.is_default) || addrs[0] || null
+          })
+        })
+        .catch(() => {})
+        .finally(() => setLoading(false))
+    }, [user?.id])
+  )
 
   // ─── Cache products for editing ─────────────────────────────────────
 

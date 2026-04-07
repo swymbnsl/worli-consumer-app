@@ -6,6 +6,24 @@
 
 import { supabase } from "@/lib/supabase"
 
+async function extractFunctionErrorMessage(error: any): Promise<string | null> {
+  const response = error?.context
+  if (!response || typeof response?.json !== "function") {
+    return null
+  }
+
+  try {
+    const body = await response.json()
+    if (body && typeof body.error === "string" && body.error.length > 0) {
+      return body.error
+    }
+  } catch {
+    // Ignore JSON parse issues and fall back to default error message.
+  }
+
+  return null
+}
+
 // ─── Types ───────────────────────────────────────────────────────────────────
 
 export interface InitiateCheckoutRequest {
@@ -164,7 +182,8 @@ export async function initiateWalletRecharge(
 
   if (error) {
     console.error("Wallet recharge initiation failed:", error)
-    throw new Error(error.message || "Failed to initiate wallet recharge")
+    const functionError = await extractFunctionErrorMessage(error)
+    throw new Error(functionError || error.message || "Failed to initiate wallet recharge")
   }
 
   if (data?.error) {
@@ -196,7 +215,8 @@ export async function verifyWalletRecharge(paymentDetails: {
 
   if (error) {
     console.error("Wallet recharge verification failed:", error)
-    throw new Error(error.message || "Failed to verify wallet recharge")
+    const functionError = await extractFunctionErrorMessage(error)
+    throw new Error(functionError || error.message || "Failed to verify wallet recharge")
   }
 
   if (data?.error) {

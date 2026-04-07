@@ -135,6 +135,14 @@ export default function RechargeModal() {
       return
     }
 
+    if (finalPayableAmount < minRecharge) {
+      showErrorToast(
+        "Minimum Payable Amount",
+        `Final payable amount after discount must be at least ₹${minRecharge}`,
+      )
+      return
+    }
+
     setPaymentStatus("processing")
     try {
       const result = await rechargeWithRazorpay(finalPayableAmount)
@@ -355,7 +363,7 @@ export default function RechargeModal() {
             : `Pay ${amount ? formatCurrency(finalPayableAmount) : ""}`
         }
         onPress={handleRecharge}
-        disabled={isLoading || !amount || amountNum < minRecharge}
+        disabled={isLoading || !amount || amountNum < minRecharge || finalPayableAmount < minRecharge}
         isLoading={isLoading}
         variant="navy"
         className="mb-4"
