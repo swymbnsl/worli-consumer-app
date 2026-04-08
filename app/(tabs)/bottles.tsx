@@ -1,9 +1,9 @@
-import PageHeader from "@/components/ui/PageHeader"
+import BottleBalanceCard from "@/components/bottles/BottleBalanceCard"
+import BottleTransactionList from "@/components/bottles/BottleTransactionList"
+import PurchaseBottlesCard from "@/components/bottles/PurchaseBottlesCard"
 import AutoPayCard from "@/components/wallet/AutoPayCard"
 import LowBalanceNotification from "@/components/wallet/LowBalanceNotification"
-import RechargeModal from "@/components/wallet/RechargeModal"
-import TransactionList from "@/components/wallet/TransactionList"
-import WalletBalanceCard from "@/components/wallet/WalletBalanceCard"
+import PageHeader from "@/components/ui/PageHeader"
 import { COLORS } from "@/constants/theme"
 import { useWallet } from "@/hooks/useWallet"
 import { useFocusEffect } from "expo-router"
@@ -11,14 +11,21 @@ import React, { useCallback, useState } from "react"
 import { RefreshControl, ScrollView, View } from "react-native"
 import Animated, { FadeInUp } from "react-native-reanimated"
 
-export default function WalletScreen() {
-  const { wallet, transactions, loading, refreshWallet } = useWallet()
+export default function BottlesScreen() {
+  const {
+    transactions,
+    loading,
+    refreshWallet,
+    bottleBalance,
+    bottlePrice,
+    estimatedDaysLeft,
+  } = useWallet()
   const [refreshing, setRefreshing] = useState(false)
 
   useFocusEffect(
     useCallback(() => {
       refreshWallet()
-    }, []),
+    }, [])
   )
 
   const onRefresh = async () => {
@@ -29,7 +36,7 @@ export default function WalletScreen() {
 
   return (
     <View className="flex-1 bg-neutral-lightCream">
-      <PageHeader title="My Wallet" showBackButton={false} />
+      <PageHeader title="My Bottles" showBackButton={false} />
 
       <ScrollView
         className="flex-1"
@@ -43,12 +50,15 @@ export default function WalletScreen() {
           />
         }
       >
-        {/* Wallet Balance Card */}
-        <WalletBalanceCard balance={wallet?.balance || 0} />
+        {/* Bottle Balance Card */}
+        <BottleBalanceCard
+          bottleBalance={bottleBalance}
+          estimatedDaysLeft={estimatedDaysLeft}
+        />
 
-        {/* Recharge Section - Razorpay Integrated */}
+        {/* Purchase Bottles Section */}
         <Animated.View entering={FadeInUp.duration(500).delay(80)}>
-          <RechargeModal />
+          <PurchaseBottlesCard />
         </Animated.View>
 
         {/* AutoPay Settings */}
@@ -63,7 +73,10 @@ export default function WalletScreen() {
 
         {/* Transaction List */}
         <Animated.View entering={FadeInUp.duration(500).delay(320)}>
-          <TransactionList transactions={transactions} />
+          <BottleTransactionList
+            transactions={transactions}
+            bottlePrice={bottlePrice}
+          />
         </Animated.View>
       </ScrollView>
     </View>

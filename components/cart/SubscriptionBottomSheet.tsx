@@ -174,26 +174,37 @@ const SubscriptionBottomSheet = forwardRef<
     return calculateSubscriptionTotal(product.price, totalBottles, durationMonths, durationOptions)
   }, [product, totalBottles, durationMonths, durationOptions])
 
-  // Calculate payment difference when editing subscription
-  const paymentDifference = useMemo(() => {
+  // Calculate bottle difference when editing subscription
+  const bottleDifference = useMemo(() => {
     if (!existingSubscription || !product) return null
     
-    // Calculate remaining value based on remaining_bottles field
-    const remainingBottles = (existingSubscription as any).remaining_bottles || 0
-    const currentRemainingAmount = remainingBottles * product.price
+    // In bottle-based system, we don't need to worry about payment
+    // Just show the user how the bottle consumption will change
+    const currentBottles = calculateTotalBottles(
+      (existingSubscription.frequency || "daily") as any,
+      existingSubscription.quantity || 1,
+      1, // Calculate for 1 month to show monthly change
+      existingSubscription.interval_days || undefined,
+      existingSubscription.custom_quantities as any || undefined
+    )
     
-    // Calculate new total for the same remaining period
-    const newRemainingAmount = totalBottles * product.price
+    const newBottles = calculateTotalBottles(
+      frequency,
+      quantity,
+      1, // Calculate for 1 month to show monthly change
+      frequency === "on_interval" ? intervalDays : undefined,
+      frequency === "custom" ? customQuantities : undefined
+    )
     
-    const difference = newRemainingAmount - currentRemainingAmount
+    const difference = newBottles - currentBottles
     
     return {
-      currentAmount: Math.round(currentRemainingAmount),
-      newAmount: Math.round(newRemainingAmount),
+      currentBottles: Math.round(currentBottles),
+      newBottles: Math.round(newBottles),
       difference: Math.round(difference),
-      needsPayment: difference > 0
+      isIncrease: difference > 0
     }
-  }, [existingSubscription, product, totalBottles])
+  }, [existingSubscription, product, frequency, quantity, intervalDays, customQuantities])
 
   // Address state
   const [addresses, setAddresses] = useState<Address[]>([])
@@ -810,57 +821,64 @@ const SubscriptionBottomSheet = forwardRef<
 
           {/* ─── Pricing Summary ───────────────────────────────────── */}
           <View className="bg-neutral-lightCream rounded-xl p-4 mb-6">
-            {existingSubscription && paymentDifference ? (
-              // Editing existing subscription - show comparison
+            {existingSubscription && bottleDifference ? (
+              // Editing existing subscription - show bottle comparison
               <>
                 <View className="flex-row justify-between mb-2">
                   <Text className="font-comfortaa text-sm text-neutral-darkGray">
-                    Current Remaining Value
+                    Current Usage (monthly)
                   </Text>
                   <Text className="font-sofia-bold text-sm text-neutral-black">
-                    {formatCurrency(paymentDifference.currentAmount)}
+                    {bottleDifference.currentBottles} {bottleDifference.currentBottles === 1 ? "bottle" : "bottles"}
                   </Text>
                 </View>
                 
                 <View className="flex-row justify-between mb-2">
                   <Text className="font-comfortaa text-sm text-neutral-darkGray">
-                    New Remaining Value
+                    New Usage (monthly)
                   </Text>
                   <Text className="font-sofia-bold text-sm text-neutral-black">
-                    {formatCurrency(paymentDifference.newAmount)}
+                    {bottleDifference.newBottles} {bottleDifference.newBottles === 1 ? "bottle" : "bottles"}
                   </Text>
                 </View>
                 
                 <View className="h-px bg-neutral-lightGray my-2" />
                 
-                {paymentDifference.needsPayment ? (
+                {bottleDifference.isIncrease ? (
                   <View className="flex-row justify-between">
-                    <Text className="font-sofia-bold text-base text-functional-error">
-                      Additional Payment Required
+                    <Text className="font-sofia-bold text-base text-secondary-skyBlue">
+                      Increase in Usage
                     </Text>
-                    <Text className="font-sofia-bold text-base text-functional-error">
-                      +{formatCurrency(paymentDifference.difference)}
+                    <Text className="font-sofia-bold text-base text-secondary-skyBlue">
+                      +{Math.abs(bottleDifference.difference)} {Math.abs(bottleDifference.difference) === 1 ? "bottle" : "bottles"}/month
                     </Text>
                   </View>
-                ) : paymentDifference.difference < 0 ? (
+                ) : bottleDifference.difference < 0 ? (
                   <View className="flex-row justify-between">
                     <Text className="font-sofia-bold text-base text-functional-success">
-                      Credit (will remain in account)
+                      Decrease in Usage
                     </Text>
                     <Text className="font-sofia-bold text-base text-functional-success">
-                      {formatCurrency(Math.abs(paymentDifference.difference))}
+                      {Math.abs(bottleDifference.difference)} {Math.abs(bottleDifference.difference) === 1 ? "bottle" : "bottles"}/month less
                     </Text>
                   </View>
                 ) : (
                   <View className="flex-row justify-between">
                     <Text className="font-sofia-bold text-base text-primary-navy">
-                      No Additional Payment
+                      No Change in Usage
                     </Text>
                     <Text className="font-sofia-bold text-base text-primary-navy">
-                      ₹0
+                      Same
                     </Text>
                   </View>
                 )}
+                
+                {/* Info note about bottles */}
+                <View className="mt-3 bg-secondary-skyBlue/10 rounded-lg p-3">
+                  <Text className="font-comfortaa text-xs text-secondary-skyBlue">
+                    No payment required. Bottles are deducted from your balance daily when orders are created.
+                  </Text>
+                </View>
               </>
             ) : (
               // New subscription - show regular pricing

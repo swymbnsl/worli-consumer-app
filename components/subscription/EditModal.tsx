@@ -77,30 +77,6 @@ export default function EditModal({
         ref={bottomSheetRef}
         onEditSubscription={async (updatedItem: Omit<CartItem, "id">, product: Product) => {
           try {
-            // Get remaining bottles from subscription
-            const remainingBottles = (subscription as any).remaining_bottles || 0
-            
-            if (remainingBottles <= 0) {
-              showErrorToast("Error", "Cannot edit subscription with no remaining bottles")
-              return
-            }
-            
-            // Calculate current remaining value
-            const currentRemainingAmount = remainingBottles * product.price
-            
-            // Calculate new remaining value with updated settings
-            // We need to calculate how many bottles the new settings would need
-            // for the same remaining period
-            const durationMonths = (subscription as any).duration_months || 1
-            const newTotalBottles = calculateTotalBottles(
-              updatedItem.frequency,
-              updatedItem.quantity,
-              durationMonths,
-              updatedItem.intervalDays,
-              updatedItem.customQuantities
-            )
-            const newRemainingAmount = newTotalBottles * product.price
-            
             // Check if settings actually changed
             const settingsChanged = 
               subscription.quantity !== updatedItem.quantity ||
@@ -115,20 +91,10 @@ export default function EditModal({
               return
             }
             
-            // Calculate payment difference
-            const difference = Math.round(newRemainingAmount - currentRemainingAmount)
+            // In bottle-based system, users can freely edit subscriptions
+            // No payment required - bottles are deducted daily during order generation
+            // Just ensure they have enough bottles in their balance for future orders
             
-            // If new amount is MORE, user needs to pay the difference
-            if (difference > 0) {
-              showErrorToast(
-                "Payment Required",
-                `Upgrading your subscription requires an additional payment of ₹${difference}. Please contact support to upgrade.`
-              )
-              onClose()
-              return
-            }
-            
-            // If new amount is same or less, update directly
             await updateSubscription(subscription.id, {
               quantity: updatedItem.quantity,
               frequency: updatedItem.frequency,
@@ -137,7 +103,11 @@ export default function EditModal({
               custom_quantities: updatedItem.customQuantities || null,
               delivery_time: updatedItem.preferredDeliveryTime || null,
             })
-            showSuccessToast("Success", "Subscription updated successfully")
+            
+            showSuccessToast(
+              "Subscription Updated", 
+              "Changes will take effect from the next order"
+            )
             onUpdate()
             onClose()
             

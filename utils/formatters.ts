@@ -17,3 +17,14 @@ export const truncateText = (text: string, maxLength: number): string => {
   if (text.length <= maxLength) return text
   return text.slice(0, maxLength) + "..."
 }
+
+// ─── Bottle Formatting ───────────────────────────────────────────────────────
+
+export const formatBottleCount = (count: number): string => {
+  if (count === 1) return "1 bottle"
+  return `${count} bottles`
+}
+
+export const formatBottleBalance = (bottles: number, price: number): string => {
+  return `${bottles} bottles (${formatCurrency(bottles * price)})`
+}

@@ -13,9 +13,13 @@ import { COLORS } from "@/constants/theme"
 import { useAuth } from "@/hooks/useAuth"
 import { useCart } from "@/hooks/useCart"
 import { useWallet } from "@/hooks/useWallet"
-import { completeCheckout, initiateCheckout } from "@/lib/checkout-service"
+import {
+    checkBottleBalance,
+    completeCheckout,
+    InsufficientBottlesResponse,
+} from "@/lib/checkout-service"
+import { formatBottles } from "@/lib/bottle-utils"
 import { cancelAbandonedCartReminder } from "@/lib/notification-service"
-import { openRazorpayCheckout } from "@/lib/razorpay-service"
 import {
     fetchProductById,
     fetchUserAddresses,
@@ -24,12 +28,11 @@ import { CartItem } from "@/stores/cart-store"
 import { Address, Product } from "@/types/database.types"
 import { formatCurrency } from "@/utils/formatters"
 import { useFocusEffect, useRouter } from "expo-router"
-import { Check, MapPin, Wallet as WalletIcon } from "lucide-react-native"
+import { Check, MapPin, Milk } from "lucide-react-native"
 import React, { useCallback, useRef, useState } from "react"
 import {
     ActivityIndicator,
     ScrollView,
-    Switch,
     Text,
     TouchableOpacity,
     View,
@@ -40,10 +43,9 @@ import Animated, { FadeInUp } from "react-native-reanimated"
 
 export default function CartScreen() {
   const router = useRouter()
-  const { items, removeItem, updateItem, clearCart, totalAmount, itemCount } =
-    useCart()
+  const { items, removeItem, updateItem, clearCart, itemCount } = useCart()
   const { user } = useAuth()
-  const { wallet, refreshWallet } = useWallet()
+  const { bottleBalance, bottlePrice, refreshWallet, purchaseBottlesForCheckout } = useWallet()
 
   const subscriptionSheetRef = useRef<SubscriptionBottomSheetRef>(null)
 
@@ -55,27 +57,32 @@ export default function CartScreen() {
   const [showClearCartModal, setShowClearCartModal] = useState(false)
   const [showAddressModal, setShowAddressModal] = useState(false)
   const [showPlaceOrderModal, setShowPlaceOrderModal] = useState(false)
-  const [useWalletBalance, setUseWalletBalance] = useState(true)
-
-  // ─── State for checkout session ─────────────────────────────────────
   
-  const [checkoutSession, setCheckoutSession] = useState<{
-    session_id: string
-    total_amount: number
-    wallet_amount: number
-    razorpay_amount: number
-    razorpay_order_id: string | null
-  } | null>(null)
+  // Bottle purchase modal state
+  const [showPurchaseModal, setShowPurchaseModal] = useState(false)
+  const [bottleShortage, setBottleShortage] = useState<InsufficientBottlesResponse | null>(null)
+  const [purchasing, setPurchasing] = useState(false)
 
-  const walletBalance = wallet?.balance ?? 0
+  // ─── Calculate total bottles for cart (client estimate) ─────────────
+  
+  const estimatedTotalBottles = items.reduce((total, item) => {
+    const qty = item.quantity || 1
+    const duration = item.durationMonths || 1
+    
+    if (item.frequency === "daily") {
+      return total + qty * 30 * duration
+    } else if (item.frequency === "custom" && item.customQuantities) {
+      const weeklyTotal = Object.values(item.customQuantities).reduce((sum, q) => sum + q, 0)
+      return total + weeklyTotal * 4 * duration
+    } else if (item.frequency === "on_interval" && item.intervalDays) {
+      return total + qty * Math.floor(30 / item.intervalDays) * duration
+    } else if (item.frequency === "buy_once") {
+      return total + qty
+    }
+    return total + qty * 30 * duration
+  }, 0)
 
-  // ─── Client-side estimates (for display only, server calculates actual) ────
-  
-  const estimatedWalletUsage = useWalletBalance 
-    ? Math.min(walletBalance, totalAmount) 
-    : 0
-  
-  const estimatedRazorpayAmount = Math.max(0, totalAmount - estimatedWalletUsage)
+  const hasEnoughBottles = bottleBalance >= estimatedTotalBottles
 
   // ─── Fetch addresses ────────────────────────────────────────────────
 
@@ -102,6 +109,9 @@ export default function CartScreen() {
         })
         .catch(() => {})
         .finally(() => setLoading(false))
+      
+      // Also refresh wallet to get latest bottle balance
+      refreshWallet()
     }, [user?.id])
   )
 
@@ -140,7 +150,7 @@ export default function CartScreen() {
     updateItem(item.id, { quantity: newQty })
   }
 
-  // ─── Place Order ────────────────────────────────────────────────────
+  // ─── Validate Order ─────────────────────────────────────────────────
 
   const validateOrder = () => {
     if (!user?.id) {
@@ -164,13 +174,11 @@ export default function CartScreen() {
       return false
     }
 
-    // We no longer block checkout for insufficient balance, 
-    // as we dynamically charge via Gateway using Razorpay.
     return true
   }
 
   const checkCutoffErrors = () => {
-    // Basic client-side cutoff check to prevent invalid payments
+    // Basic client-side cutoff check to prevent invalid requests
     const IST_OFFSET_MS = 5.5 * 60 * 60 * 1000
     const nowIst = new Date(Date.now() + IST_OFFSET_MS)
     const isPastCutoff = nowIst.getUTCHours() >= 19
@@ -194,6 +202,8 @@ export default function CartScreen() {
     }
   }
 
+  // ─── Confirm and Place Order ────────────────────────────────────────
+
   const handleConfirmOrder = async () => {
     if (!user?.id) return
 
@@ -201,65 +211,29 @@ export default function CartScreen() {
     setShowPlaceOrderModal(false)
     
     try {
-      // Step 1: Initiate checkout (server calculates all amounts)
-      console.log("🚀 Initiating checkout...")
-      const session = await initiateCheckout(useWalletBalance, selectedAddress?.id)
-      
-      setCheckoutSession(session)
-      console.log("✓ Checkout session created:", session.session_id)
-      console.log(`  Total: ₹${session.total_amount}`)
-      console.log(`  Wallet: ₹${session.wallet_amount}`)
-      console.log(`  Razorpay: ₹${session.razorpay_amount}`)
+      // Step 1: Check bottle balance with server
+      console.log("🥛 Checking bottle balance...")
+      const checkResult = await checkBottleBalance(selectedAddress?.id)
 
-      // Step 2: Handle payment if needed
-      if (session.razorpay_amount > 0 && session.razorpay_order_id) {
-        console.log("💳 Opening Razorpay checkout...")
-        
-        try {
-          const paymentResult = await openRazorpayCheckout({
-            amount: session.razorpay_amount,
-            orderId: session.razorpay_order_id,
-            description: `Cart Checkout (${itemCount} items)`,
-            prefill: {
-              name: user.full_name || undefined,
-              email: user.email || undefined,
-              contact: user.phone_number || undefined,
-            },
-            notes: {
-              user_id: user.id,
-              purpose: "cart_checkout",
-              session_id: session.session_id,
-            },
-          })
-
-          console.log("✓ Payment successful:", paymentResult.razorpay_payment_id)
-
-          // Step 3: Complete checkout with payment details
-          console.log("⚡ Completing checkout...")
-          const result = await completeCheckout(session.session_id, {
-            razorpay_payment_id: paymentResult.razorpay_payment_id,
-            razorpay_signature: paymentResult.razorpay_signature,
-          })
-
-          console.log(`✅ Checkout completed: ${result.subscriptions.length} subscriptions created`)
-          
-        } catch (error: any) {
-          // User cancelled payment
-          if (error?.code === 2) {
-            console.log("ℹ️ Payment cancelled by user")
-            showErrorToast("Cancelled", "Payment was cancelled")
-            return
-          }
-          
-          // Payment failed
-          throw error
-        }
-      } else {
-        // No payment needed - complete checkout directly
-        console.log("⚡ Completing checkout (no payment needed)...")
-        const result = await completeCheckout(session.session_id)
-        console.log(`✅ Checkout completed: ${result.subscriptions.length} subscriptions created`)
+      if (!checkResult.success) {
+        // Insufficient bottles - show purchase modal
+        const shortage = checkResult as InsufficientBottlesResponse
+        console.log(`❌ Insufficient bottles: need ${shortage.bottles_required}, have ${shortage.bottles_available}`)
+        setBottleShortage(shortage)
+        setShowPurchaseModal(true)
+        setPlacing(false)
+        return
       }
+
+      console.log(`✓ Bottle balance OK: ${checkResult.bottles_available} available, ${checkResult.bottles_required} required`)
+
+      // Step 2: Complete checkout (no payment)
+      console.log("⚡ Creating subscriptions...")
+      const result = await completeCheckout(selectedAddress?.id)
+
+      console.log(`✅ Checkout completed: ${result.subscriptions.length} subscriptions created`)
+      console.log(`   Total bottles: ${result.total_bottles}`)
+      console.log(`   Remaining balance: ${result.bottle_balance} bottles`)
 
       // Success!
       await refreshWallet()
@@ -274,7 +248,43 @@ export default function CartScreen() {
       showErrorToast("Checkout Failed", msg)
     } finally {
       setPlacing(false)
-      setCheckoutSession(null)
+    }
+  }
+
+  // ─── Handle Bottle Purchase ─────────────────────────────────────────
+
+  const handlePurchaseBottles = async () => {
+    if (!bottleShortage) return
+
+    setPurchasing(true)
+    try {
+      console.log(`💳 Purchasing ${bottleShortage.bottles_short} bottles...`)
+      await purchaseBottlesForCheckout(bottleShortage.bottles_short)
+      
+      console.log("✓ Bottles purchased successfully")
+      setShowPurchaseModal(false)
+      setBottleShortage(null)
+      
+      // Refresh and retry checkout
+      await refreshWallet()
+      showSuccessToast("Bottles Added", "Now completing your order...")
+      
+      // Auto-retry checkout after purchase
+      setTimeout(() => {
+        handleConfirmOrder()
+      }, 500)
+      
+    } catch (error: any) {
+      // User cancelled payment
+      if (error?.code === 2) {
+        console.log("ℹ️ Payment cancelled by user")
+        return
+      }
+      
+      console.error("❌ Bottle purchase failed:", error)
+      showErrorToast("Purchase Failed", error.message || "Could not purchase bottles")
+    } finally {
+      setPurchasing(false)
     }
   }
 
@@ -384,57 +394,90 @@ export default function CartScreen() {
               </View>
             </View>
 
-            {/* Wallet Selection */}
+            {/* Bottle Balance Card */}
             <View className="bg-white rounded-2xl p-4 mb-4 border border-neutral-lightGray">
-              <View className="flex-row items-center justify-between">
+              <View className="flex-row items-center justify-between mb-3">
                 <View className="flex-row items-center">
-                  <WalletIcon size={20} color={COLORS.primary.navy} />
+                  <Milk size={20} color={COLORS.primary.navy} />
                   <Text className="font-sofia-bold text-sm text-primary-navy ml-3">
-                    Use Worli Wallet
+                    Your Bottle Balance
                   </Text>
                 </View>
-                <Switch
-                  value={useWalletBalance}
-                  onValueChange={setUseWalletBalance}
-                  trackColor={{ false: COLORS.neutral.lightGray, true: COLORS.primary.navy }}
-                  thumbColor={COLORS.neutral.white}
-                  disabled={walletBalance === 0}
-                />
+                <Text className={`font-sofia-bold text-lg ${hasEnoughBottles ? "text-functional-success" : "text-functional-error"}`}>
+                  {bottleBalance} bottles
+                </Text>
               </View>
-              {useWalletBalance && walletBalance > 0 && (
-                 <Text className="font-comfortaa text-xs text-neutral-darkGray mt-2 ml-8">
-                   Current Balance: {formatCurrency(walletBalance)}
-                 </Text>
+              
+              {!hasEnoughBottles && (
+                <View className="bg-functional-error/10 rounded-xl p-3">
+                  <Text className="font-comfortaa text-xs text-functional-error">
+                    You need {estimatedTotalBottles - bottleBalance} more bottles for this subscription.
+                    You can purchase them during checkout.
+                  </Text>
+                </View>
               )}
-              {walletBalance === 0 && (
-                 <Text className="font-comfortaa text-xs text-functional-error mt-2 ml-8">
-                   No balance available
-                 </Text>
+              
+              {hasEnoughBottles && (
+                <View className="bg-functional-success/10 rounded-xl p-3">
+                  <Text className="font-comfortaa text-xs text-functional-success">
+                    You have enough bottles for this subscription.
+                  </Text>
+                </View>
               )}
             </View>
 
-            {/* Bill Details */}
+            {/* Subscription Details */}
             <View className="bg-white rounded-2xl p-4 mb-4 border border-neutral-lightGray">
-              <Text className="font-sofia-bold text-sm text-primary-navy mb-3">Bill details</Text>
+              <Text className="font-sofia-bold text-sm text-primary-navy mb-3">Subscription Details</Text>
               
               <View className="flex-row items-center justify-between mb-2">
-                 <Text className="font-comfortaa text-sm text-neutral-darkGray">Item total</Text>
-                 <Text className="font-comfortaa text-sm text-primary-navy">{formatCurrency(totalAmount)}</Text>
+                 <Text className="font-comfortaa text-sm text-neutral-darkGray">Total bottles required</Text>
+                 <Text className="font-sofia-bold text-sm text-primary-navy">{formatBottles(estimatedTotalBottles)}</Text>
               </View>
 
-              {estimatedWalletUsage > 0 && (
+              <View className="flex-row items-center justify-between mb-2">
+                 <Text className="font-comfortaa text-sm text-neutral-darkGray">Your current balance</Text>
+                 <Text className={`font-sofia-bold text-sm ${hasEnoughBottles ? "text-functional-success" : "text-neutral-darkGray"}`}>
+                   {formatBottles(bottleBalance)}
+                 </Text>
+              </View>
+
+              {!hasEnoughBottles && (
                 <View className="flex-row items-center justify-between mb-2">
-                   <Text className="font-comfortaa text-sm text-functional-success">Wallet balance applied</Text>
-                   <Text className="font-comfortaa text-sm text-functional-success">-{formatCurrency(estimatedWalletUsage)}</Text>
+                   <Text className="font-comfortaa text-sm text-functional-error">Bottles to purchase</Text>
+                   <Text className="font-sofia-bold text-sm text-functional-error">
+                     {formatBottles(estimatedTotalBottles - bottleBalance)}
+                   </Text>
                 </View>
               )}
 
               <View className="h-px bg-neutral-lightGray/60 my-2" />
               
               <View className="flex-row items-center justify-between">
-                 <Text className="font-sofia-bold text-base text-primary-navy">To Pay</Text>
-                 <Text className="font-sofia-bold text-base text-primary-navy">{formatCurrency(estimatedRazorpayAmount)}</Text>
+                 <Text className="font-sofia-bold text-base text-primary-navy">
+                   {hasEnoughBottles ? "No payment required" : "Amount to pay"}
+                 </Text>
+                 <Text className="font-sofia-bold text-base text-primary-navy">
+                   {hasEnoughBottles 
+                     ? "FREE" 
+                     : formatCurrency((estimatedTotalBottles - bottleBalance) * bottlePrice)
+                   }
+                 </Text>
               </View>
+              
+              {!hasEnoughBottles && (
+                <Text className="font-comfortaa text-xs text-neutral-gray mt-1 text-right">
+                  @ {formatCurrency(bottlePrice)}/bottle
+                </Text>
+              )}
+            </View>
+
+            {/* Info Note */}
+            <View className="bg-secondary-skyBlue/10 rounded-xl p-3 mb-4 border border-secondary-skyBlue/30">
+              <Text className="font-comfortaa text-xs text-secondary-skyBlue">
+                Bottles are deducted from your balance each day when your order is generated.
+                No upfront payment is required - just make sure you have enough bottles!
+              </Text>
             </View>
           </ScrollView>
 
@@ -452,18 +495,34 @@ export default function CartScreen() {
             <View className="flex-row items-center justify-between mb-4">
               <View>
                 <Text className="font-comfortaa text-sm text-neutral-darkGray">
-                  {estimatedRazorpayAmount > 0 ? "To Pay" : "Total Amount"}
+                  {hasEnoughBottles ? "Total Bottles" : "Bottles to Buy"}
                 </Text>
                 <Text className="font-comfortaa text-[10px] text-neutral-error mt-0.5">
-                  {itemCount} {itemCount === 1 ? "item" : "items"}
+                  {itemCount} {itemCount === 1 ? "subscription" : "subscriptions"}
                 </Text>
               </View>
-              <Text className="font-sofia-bold text-xl text-primary-navy">
-                {formatCurrency(estimatedRazorpayAmount > 0 ? estimatedRazorpayAmount : totalAmount)}
-              </Text>
+              <View className="items-end">
+                <Text className="font-sofia-bold text-xl text-primary-navy">
+                  {hasEnoughBottles 
+                    ? formatBottles(estimatedTotalBottles)
+                    : formatCurrency((estimatedTotalBottles - bottleBalance) * bottlePrice)
+                  }
+                </Text>
+                {!hasEnoughBottles && (
+                  <Text className="font-comfortaa text-xs text-neutral-gray">
+                    {formatBottles(estimatedTotalBottles - bottleBalance)}
+                  </Text>
+                )}
+              </View>
             </View>
             <Button
-              title={placing ? "Processing..." : (estimatedRazorpayAmount > 0 ? `Pay ${formatCurrency(estimatedRazorpayAmount)} & Place Order` : "Place Order")}
+              title={
+                placing 
+                  ? "Processing..." 
+                  : hasEnoughBottles 
+                    ? "Subscribe Now" 
+                    : `Buy Bottles & Subscribe`
+              }
               onPress={handlePlaceOrderClick}
               variant="navy"
               size="large"
@@ -578,13 +637,85 @@ export default function CartScreen() {
       <ConfirmModal
         visible={showPlaceOrderModal}
         onClose={() => setShowPlaceOrderModal(false)}
-        title={estimatedRazorpayAmount > 0 ? "Confirm Payment & Order" : "Confirm Order"}
-        description={`Place order for ${itemCount} ${
-          itemCount === 1 ? "item" : "items"
-        }${estimatedRazorpayAmount > 0 ? ` by paying joining fee of ${formatCurrency(estimatedRazorpayAmount)}` : ` totaling ${formatCurrency(totalAmount)}`}?`}
-        confirmText={estimatedRazorpayAmount > 0 ? `Pay ${formatCurrency(estimatedRazorpayAmount)}` : "Place Order"}
+        title={hasEnoughBottles ? "Confirm Subscription" : "Buy Bottles & Subscribe"}
+        description={
+          hasEnoughBottles
+            ? `Start ${itemCount} ${itemCount === 1 ? "subscription" : "subscriptions"} using ${formatBottles(estimatedTotalBottles)} from your balance?`
+            : `Purchase ${formatBottles(estimatedTotalBottles - bottleBalance)} for ${formatCurrency((estimatedTotalBottles - bottleBalance) * bottlePrice)} and start your subscriptions?`
+        }
+        confirmText={hasEnoughBottles ? "Subscribe" : "Buy & Subscribe"}
         onConfirm={handleConfirmOrder}
       />
+
+      {/* Bottle Purchase Modal */}
+      <Modal
+        visible={showPurchaseModal}
+        onClose={() => {
+          setShowPurchaseModal(false)
+          setBottleShortage(null)
+        }}
+        title="Purchase Bottles"
+        description="You need more bottles to start this subscription"
+      >
+        {bottleShortage && (
+          <View className="w-full">
+            <View className="bg-primary-cream/20 rounded-xl p-4 mb-4">
+              <View className="flex-row items-center justify-between mb-2">
+                <Text className="font-comfortaa text-sm text-neutral-darkGray">Bottles needed</Text>
+                <Text className="font-sofia-bold text-sm text-primary-navy">
+                  {formatBottles(bottleShortage.bottles_required)}
+                </Text>
+              </View>
+              <View className="flex-row items-center justify-between mb-2">
+                <Text className="font-comfortaa text-sm text-neutral-darkGray">Your balance</Text>
+                <Text className="font-sofia-bold text-sm text-neutral-darkGray">
+                  {formatBottles(bottleShortage.bottles_available)}
+                </Text>
+              </View>
+              <View className="h-px bg-neutral-lightGray/60 my-2" />
+              <View className="flex-row items-center justify-between">
+                <Text className="font-sofia-bold text-sm text-functional-error">Bottles short</Text>
+                <Text className="font-sofia-bold text-sm text-functional-error">
+                  {formatBottles(bottleShortage.bottles_short)}
+                </Text>
+              </View>
+            </View>
+
+            <View className="bg-primary-navy/5 rounded-xl p-4 mb-6">
+              <View className="flex-row items-center justify-between">
+                <Text className="font-sofia-bold text-base text-primary-navy">Amount to pay</Text>
+                <Text className="font-sofia-bold text-xl text-primary-navy">
+                  {formatCurrency(bottleShortage.amount_to_recharge)}
+                </Text>
+              </View>
+              <Text className="font-comfortaa text-xs text-neutral-gray mt-1">
+                {formatBottles(bottleShortage.bottles_short)} @ {formatCurrency(bottleShortage.bottle_price)}/bottle
+              </Text>
+            </View>
+
+            <Button
+              title={purchasing ? "Processing..." : `Pay ${formatCurrency(bottleShortage.amount_to_recharge)}`}
+              onPress={handlePurchaseBottles}
+              variant="navy"
+              size="large"
+              disabled={purchasing}
+              isLoading={purchasing}
+              className="mb-3"
+            />
+            
+            <Button
+              title="Cancel"
+              onPress={() => {
+                setShowPurchaseModal(false)
+                setBottleShortage(null)
+              }}
+              variant="outline"
+              size="medium"
+              disabled={purchasing}
+            />
+          </View>
+        )}
+      </Modal>
     </View>
   )
 }

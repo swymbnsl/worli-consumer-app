@@ -1,10 +1,12 @@
 import { COLORS } from "@/constants/theme"
 import { fetchProductById } from "@/lib/supabase-service"
+import { formatSubscriptionDaysLeft } from "@/lib/bottle-utils"
 import { Product, Subscription } from "@/types/database.types"
 import { formatDate } from "@/utils/dateUtils"
 import { formatCurrency } from "@/utils/formatters"
 import {
   Calendar,
+  Clock,
   Edit3,
   PauseCircle,
   Repeat,
@@ -62,6 +64,9 @@ export default function SubscriptionCard({
   }, [subscription.product_id])
 
   const dailyCost = (product?.price || 0) * (subscription.quantity || 1)
+  
+  // Days left calculation
+  const daysLeftText = formatSubscriptionDaysLeft(subscription)
 
   // ─── Discount helpers ──────────────────────────────────────────────
   const hasActiveDiscount = !!subscription.discount_code_id
@@ -182,6 +187,20 @@ export default function SubscriptionCard({
                   {formatDate(subscription.start_date)}
                 </Text>
               </View>
+
+              {/* Days Left Badge */}
+              {daysLeftText && daysLeftText !== "Ended" && (
+                <View className="flex-row items-center bg-secondary-skyBlue/10 px-2 py-1 rounded-md">
+                  <Clock
+                    size={10}
+                    color={COLORS.secondary.skyBlue}
+                    strokeWidth={2.5}
+                  />
+                  <Text className="font-comfortaa text-[10px] text-secondary-skyBlue ml-1">
+                    {daysLeftText}
+                  </Text>
+                </View>
+              )}
 
               {/* Paused Dates Badge */}
               {subscription.paused_dates && subscription.paused_dates.length > 0 && (

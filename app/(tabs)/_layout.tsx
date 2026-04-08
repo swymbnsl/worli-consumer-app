@@ -1,7 +1,7 @@
 import { COLORS } from "@/constants/theme"
 import { useAuth } from "@/hooks/useAuth"
 import { Redirect, Tabs } from "expo-router"
-import { Home, Package, ShoppingCart, User, Wallet } from "lucide-react-native"
+import { Home, Milk, Package, ShoppingCart, User } from "lucide-react-native"
 import { useEffect } from "react"
 import { ActivityIndicator, Platform, Text, View } from "react-native"
 import Animated, {
@@ -157,13 +157,13 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
-        name="wallet"
+        name="bottles"
         options={{
-          title: "Wallet",
+          title: "Bottles",
           tabBarIcon: ({ color, focused }) => (
             <TabIcon
-              icon={Wallet}
-              label="Wallet"
+              icon={Milk}
+              label="Bottles"
               focused={focused}
               color={color}
             />

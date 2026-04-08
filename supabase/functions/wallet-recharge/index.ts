@@ -1,7 +1,7 @@
 // ============================================================================
-// Supabase Edge Function: wallet-recharge
-// Handles direct wallet recharges (separate from cart checkout)
-// Consolidates: create-razorpay-order + verify-razorpay-payment
+// Supabase Edge Function: wallet-recharge (Bottle Purchase)
+// Handles purchasing bottles (wallet recharge in bottle multiples)
+// Users buy bottles, amount must be integral multiple of bottle price
 // ============================================================================
 // Deploy: supabase functions deploy wallet-recharge --no-verify-jwt --project-ref mrbjduttwiciolhhabpa
 
@@ -67,10 +67,11 @@ async function authenticateUser(req: Request) {
 }
 
 // ============================================================================
-// ACTION: INITIATE (Create Razorpay Order)
+// ACTION: INITIATE (Create Razorpay Order for Bottle Purchase)
+// Amount must be integral multiple of bottle price
 // ============================================================================
 async function handleInitiate(body: any, user: any, supabaseAdmin: any) {
-  console.log("🚀 [INITIATE] Creating wallet recharge order for user:", user.id)
+  console.log("🚀 [INITIATE] Creating bottle purchase order for user:", user.id)
 
   // Rate limit check
   if (isRateLimited(user.id)) {
@@ -78,54 +79,131 @@ async function handleInitiate(body: any, user: any, supabaseAdmin: any) {
     return jsonResponse({ error: "Too many requests. Please wait a moment." }, 429)
   }
 
-  let { amount } = body
+  // Support both 'bottles' and 'amount' parameters
+  // If 'bottles' is provided, calculate amount from bottles * bottle_price
+  // If 'amount' is provided, validate it's a multiple of bottle_price
+  let { bottles, amount, min_bottles_required } = body
 
-  // Parse and validate amount robustly
-  amount = Number(amount)
-  if (!amount || typeof amount !== "number" || !Number.isFinite(amount) || amount <= 0) {
-    console.error(`❌ [INITIATE] Invalid amount passed to edge function: ${body.amount} (Type: ${typeof body.amount})`)
-    return jsonResponse({ error: "amount must be a valid positive number (in rupees)" }, 400)
+  // 1. Fetch bottle price from products table
+  console.log("🍼 [INITIATE] Fetching bottle price...")
+  let bottlePrice = 30 // Default fallback
+  try {
+    const { data: product } = await supabaseAdmin
+      .from("products")
+      .select("price")
+      .eq("is_active", true)
+      .limit(1)
+      .single()
+
+    if (product && product.price) {
+      bottlePrice = Number(product.price)
+    }
+  } catch (e) {
+    console.log("⚠️ [INITIATE] Could not fetch bottle price, using default ₹30")
   }
 
-  console.log(`💰 [INITIATE] Recharge amount: ₹${amount}`)
+  console.log(`✓ [INITIATE] Bottle price: ₹${bottlePrice}`)
 
-  // Fetch min wallet recharge from app_settings
-  let minRechargeAmount = 350
+  // 2. Calculate amount based on bottles or validate amount is multiple
+  if (bottles !== undefined) {
+    // User specified bottles to purchase
+    bottles = Number(bottles)
+    if (!bottles || !Number.isInteger(bottles) || bottles <= 0) {
+      console.error(`❌ [INITIATE] Invalid bottles count: ${body.bottles}`)
+      return jsonResponse({ error: "bottles must be a positive integer" }, 400)
+    }
+    amount = bottles * bottlePrice
+    console.log(`🍼 [INITIATE] Purchasing ${bottles} bottles = ₹${amount}`)
+  } else if (amount !== undefined) {
+    // User specified amount - validate it's a multiple of bottle price
+    amount = Number(amount)
+    if (!amount || typeof amount !== "number" || !Number.isFinite(amount) || amount <= 0) {
+      console.error(`❌ [INITIATE] Invalid amount: ${body.amount}`)
+      return jsonResponse({ error: "amount must be a valid positive number" }, 400)
+    }
+
+    // Check if amount is integral multiple of bottle price
+    if (amount % bottlePrice !== 0) {
+      const suggestedBottles = Math.ceil(amount / bottlePrice)
+      const suggestedAmount = suggestedBottles * bottlePrice
+      return jsonResponse({
+        error: `Amount must be a multiple of ₹${bottlePrice} (bottle price)`,
+        bottle_price: bottlePrice,
+        suggested_bottles: suggestedBottles,
+        suggested_amount: suggestedAmount,
+      }, 400)
+    }
+
+    bottles = amount / bottlePrice
+    console.log(`💰 [INITIATE] Amount ₹${amount} = ${bottles} bottles`)
+  } else {
+    return jsonResponse({ error: "Either 'bottles' or 'amount' is required" }, 400)
+  }
+
+  // 3. Fetch minimum bottles for recharge from app_settings
+  let minBottles = 10 // Default minimum bottles
   try {
     const { data: settingData } = await supabaseAdmin
       .from("app_settings")
       .select("setting_value")
-      .eq("setting_key", "min_wallet_recharge")
+      .eq("setting_key", "min_bottles_recharge")
       .single()
 
     if (settingData && settingData.setting_value) {
       const parsed = parseInt(settingData.setting_value, 10)
       if (!isNaN(parsed) && parsed > 0) {
-        minRechargeAmount = parsed
+        minBottles = parsed
       }
     }
   } catch (e) {
-    console.log("⚠️ [INITIATE] Could not fetch min_wallet_recharge, using default 350")
+    console.log("⚠️ [INITIATE] Could not fetch min_bottles_recharge, using default 10")
   }
 
-  // Validate amount range
-  if (amount < minRechargeAmount) {
-    return jsonResponse({ error: `Minimum recharge amount is ₹${minRechargeAmount}` }, 400)
+  // If min_bottles_required is passed (during checkout shortfall), use that as minimum
+  if (min_bottles_required && Number(min_bottles_required) > 0) {
+    const requiredMin = Number(min_bottles_required)
+    // Ensure user buys at least the required minimum
+    if (bottles < requiredMin) {
+      return jsonResponse({
+        error: `You need at least ${requiredMin} bottles to proceed`,
+        min_bottles_required: requiredMin,
+        min_amount_required: requiredMin * bottlePrice,
+      }, 400)
+    }
+    // For checkout shortfall, we allow buying exactly what's needed
+    console.log(`✓ [INITIATE] Checkout shortfall mode: minimum ${requiredMin} bottles`)
+  } else {
+    // Regular recharge - enforce minimum bottles
+    if (bottles < minBottles) {
+      return jsonResponse({
+        error: `Minimum purchase is ${minBottles} bottles (₹${minBottles * bottlePrice})`,
+        min_bottles: minBottles,
+        min_amount: minBottles * bottlePrice,
+        bottle_price: bottlePrice,
+      }, 400)
+    }
   }
 
-  if (amount > 50000) {
-    return jsonResponse({ error: "Maximum recharge amount is ₹50,000" }, 400)
+  // 4. Validate maximum amount
+  const maxAmount = 50000
+  const maxBottles = Math.floor(maxAmount / bottlePrice)
+  if (amount > maxAmount) {
+    return jsonResponse({
+      error: `Maximum purchase is ${maxBottles} bottles (₹${maxAmount})`,
+      max_bottles: maxBottles,
+      max_amount: maxAmount,
+    }, 400)
   }
 
-  console.log("✓ [INITIATE] Amount validation passed")
+  console.log("✓ [INITIATE] Validation passed")
 
-  // Create Razorpay order
+  // 5. Create Razorpay order
   console.log("🏦 [INITIATE] Creating Razorpay order...")
   try {
     const amountInPaise = Math.round(amount * 100)
     const timestamp = Date.now().toString().slice(-10)
     const userIdPrefix = user.id.slice(0, 8)
-    const receipt = `wr_${userIdPrefix}_${timestamp}`
+    const receipt = `bp_${userIdPrefix}_${timestamp}` // bp = bottle purchase
 
     const order = await razorpay.orders.create({
       amount: amountInPaise,
@@ -133,18 +211,23 @@ async function handleInitiate(body: any, user: any, supabaseAdmin: any) {
       receipt,
       notes: {
         user_id: user.id,
-        purpose: "wallet_recharge",
+        purpose: "bottle_purchase",
+        bottles: bottles.toString(),
+        bottle_price: bottlePrice.toString(),
         user_email: user.email || "",
       },
     })
 
-    console.log(`✅ [INITIATE] Razorpay order created: ${order.id}`)
+    console.log(`✅ [INITIATE] Razorpay order created: ${order.id} for ${bottles} bottles`)
 
     return jsonResponse({
       order_id: order.id,
       amount: order.amount,
       currency: order.currency,
       key_id: RAZORPAY_KEY_ID,
+      bottles: bottles,
+      bottle_price: bottlePrice,
+      amount_rupees: amount,
     })
   } catch (error: any) {
     console.error("❌ [INITIATE] Razorpay order creation failed:", error)
@@ -153,10 +236,10 @@ async function handleInitiate(body: any, user: any, supabaseAdmin: any) {
 }
 
 // ============================================================================
-// ACTION: VERIFY (Verify Payment and Credit Wallet)
+// ACTION: VERIFY (Verify Payment and Credit Wallet with Bottles)
 // ============================================================================
 async function handleVerify(body: any, user: any, supabaseAdmin: any) {
-  console.log("🚀 [VERIFY] Verifying payment for user:", user.id)
+  console.log("🚀 [VERIFY] Verifying bottle purchase for user:", user.id)
 
   const { razorpay_payment_id, razorpay_order_id, razorpay_signature } = body
 
@@ -223,7 +306,37 @@ async function handleVerify(body: any, user: any, supabaseAdmin: any) {
   }
 
   const amountInRupees = paymentDetails.amount / 100
-  console.log(`💰 [VERIFY] Payment amount: ₹${amountInRupees}`)
+  
+  // Calculate bottles from payment notes or from amount
+  let bottlePrice = 30
+  let bottlesPurchased = 0
+  
+  if (paymentDetails.notes?.bottle_price) {
+    bottlePrice = Number(paymentDetails.notes.bottle_price)
+  } else {
+    // Fetch from products table as fallback
+    try {
+      const { data: product } = await supabaseAdmin
+        .from("products")
+        .select("price")
+        .eq("is_active", true)
+        .limit(1)
+        .single()
+      if (product && product.price) {
+        bottlePrice = Number(product.price)
+      }
+    } catch (e) {
+      console.log("⚠️ [VERIFY] Using default bottle price ₹30")
+    }
+  }
+  
+  if (paymentDetails.notes?.bottles) {
+    bottlesPurchased = Number(paymentDetails.notes.bottles)
+  } else {
+    bottlesPurchased = Math.floor(amountInRupees / bottlePrice)
+  }
+  
+  console.log(`💰 [VERIFY] Payment: ₹${amountInRupees} = ${bottlesPurchased} bottles`)
 
   // 5. Check for duplicate transaction (idempotency)
   console.log("🔍 [VERIFY] Checking for duplicate transaction...")
@@ -257,11 +370,17 @@ async function handleVerify(body: any, user: any, supabaseAdmin: any) {
       .eq("user_id", user.id)
       .single()
 
+    const currentBalance = wallet?.balance || 0
+    const currentBottles = Math.floor(currentBalance / bottlePrice)
+
     return jsonResponse({
       verified: true,
       duplicate: true,
       amount: amountInRupees,
-      new_balance: wallet?.balance || 0,
+      bottles_purchased: bottlesPurchased,
+      bottle_price: bottlePrice,
+      new_balance: currentBalance,
+      new_bottle_balance: currentBottles,
       payment_id: razorpay_payment_id,
       referral: referralData ?? null,
     })
@@ -302,9 +421,10 @@ async function handleVerify(body: any, user: any, supabaseAdmin: any) {
   }
 
   const newBalance = Number(wallet.balance) + amountInRupees
+  const newBottleBalance = Math.floor(newBalance / bottlePrice)
 
   // 7. Update wallet balance
-  console.log(`💰 [VERIFY] Updating wallet balance: ₹${wallet.balance} → ₹${newBalance}`)
+  console.log(`💰 [VERIFY] Updating wallet: ₹${wallet.balance} → ₹${newBalance} (+${bottlesPurchased} bottles)`)
   const { error: updateError } = await supabaseAdmin
     .from("wallets")
     .update({ balance: newBalance })
@@ -326,7 +446,7 @@ async function handleVerify(body: any, user: any, supabaseAdmin: any) {
       type: "credit",
       amount: amountInRupees,
       status: "completed",
-      description: `Wallet recharge via ${paymentDetails.method || "Razorpay"}`,
+      description: `Purchased ${bottlesPurchased} bottles`,
       balance_before: wallet.balance,
       balance_after: newBalance,
       payment_method: paymentDetails.method || "razorpay",
@@ -354,12 +474,15 @@ async function handleVerify(body: any, user: any, supabaseAdmin: any) {
     console.error("⚠️ [VERIFY] Referral payout failed (non-critical):", referralError)
   }
 
-  console.log("✅ [VERIFY] Wallet recharge completed successfully")
+  console.log(`✅ [VERIFY] Bottle purchase completed: ${bottlesPurchased} bottles added`)
 
   return jsonResponse({
     verified: true,
     amount: amountInRupees,
+    bottles_purchased: bottlesPurchased,
+    bottle_price: bottlePrice,
     new_balance: newBalance,
+    new_bottle_balance: newBottleBalance,
     payment_id: razorpay_payment_id,
     referral: referralData ?? null,
   })

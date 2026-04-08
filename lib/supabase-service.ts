@@ -105,6 +105,22 @@ export async function fetchActiveProducts(): Promise<Product[]> {
 }
 
 /**
+ * Fetch the first active product (for bottle price).
+ * Since we have a single SKU, this returns the milk bottle product.
+ */
+export async function fetchActiveProduct(): Promise<Product | null> {
+  const { data, error } = await supabase
+    .from("products")
+    .select("*")
+    .eq("is_active", true)
+    .limit(1)
+    .single()
+
+  if (error && error.code !== 'PGRST116') throw error // PGRST116 = no rows
+  return data
+}
+
+/**
  * Fetch a single product by ID.
  */
 export async function fetchProductById(
