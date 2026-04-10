@@ -1,5 +1,6 @@
 import { COLORS } from "@/constants/theme"
 import { User as UserType } from "@/types/database.types"
+import { formatPhone } from "@/utils/formatters"
 import { useRouter } from "expo-router"
 import { Pencil } from "lucide-react-native"
 import React from "react"
@@ -56,7 +57,7 @@ export default function ProfileHeader({ user }: ProfileHeaderProps) {
             className="font-comfortaa text-sm text-neutral-gray mt-0.5"
             numberOfLines={1}
           >
-            {user.phone_number}
+            {formatPhone(user.phone_number)}
           </Text>
         </View>
 

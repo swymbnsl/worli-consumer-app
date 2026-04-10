@@ -1,3 +1,4 @@
+import CutoffTimer from "@/components/subscription/CutoffTimer"
 import EditModal from "@/components/subscription/EditModal"
 import PauseModal from "@/components/subscription/PauseModal"
 import SubscriptionCard from "@/components/subscription/SubscriptionCard"
@@ -162,6 +163,9 @@ export default function SubscriptionScreen() {
           />
         }
       >
+        {/* Cutoff Timer */}
+        <CutoffTimer />
+
         {/* Active Subscriptions */}
         {subscriptions.map((subscription, idx) => (
           <SubscriptionCard

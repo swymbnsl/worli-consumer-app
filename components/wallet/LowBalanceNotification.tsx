@@ -4,7 +4,6 @@ import {
   showSuccessToast,
 } from '@/components/ui/Toast';
 import { useWallet } from '@/hooks/useWallet';
-import { formatCurrency } from '@/utils/formatters';
 import { Bell } from 'lucide-react-native';
 import React, { useState } from 'react';
 import {
@@ -20,7 +19,7 @@ export default function LowBalanceNotification() {
   );
   const [loading, setLoading] = useState(false);
 
-  const maxLimit = 3000;
+  const maxLimit = 30;
   const minLimit = 0;
 
   const handleSetNotification = async () => {
@@ -38,7 +37,7 @@ export default function LowBalanceNotification() {
       if (success) {
         showSuccessToast(
           'Success',
-          `Low balance notification set to ${formatCurrency(notificationLimit)}`,
+          `Low balance notification set to ${notificationLimit} bottles`,
         );
       } else {
         showErrorToast('Error', 'Failed to update notification settings');
@@ -52,13 +51,13 @@ export default function LowBalanceNotification() {
 
   const handleIncrement = () => {
     if (notificationLimit < maxLimit) {
-      setNotificationLimit(Math.min(notificationLimit + 100, maxLimit));
+      setNotificationLimit(Math.min(notificationLimit + 1, maxLimit));
     }
   };
 
   const handleDecrement = () => {
     if (notificationLimit > minLimit) {
-      setNotificationLimit(Math.max(notificationLimit - 100, minLimit));
+      setNotificationLimit(Math.max(notificationLimit - 1, minLimit));
     }
   };
 
@@ -69,7 +68,7 @@ export default function LowBalanceNotification() {
       <View className="flex-row items-center mb-6">
         <Bell size={20} color="#101B53" strokeWidth={2} />
         <Text className="font-sofia-bold text-lg text-primary-navy ml-2 flex-1">
-          Set Low Balance Notification Limit ( {notificationLimit} )
+          Set Low Balance Notification Limit ( {notificationLimit} Bottles )
         </Text>
       </View>
 
@@ -94,7 +93,7 @@ export default function LowBalanceNotification() {
 
           <View className="flex-1 mx-4 bg-primary-cream rounded-xl py-3">
             <Text className="font-sofia-bold text-2xl text-primary-navy text-center">
-              {formatCurrency(notificationLimit)}
+              {notificationLimit} Bottles
             </Text>
           </View>
 
@@ -109,10 +108,10 @@ export default function LowBalanceNotification() {
 
         <View className="flex-row justify-between">
           <Text className="font-comfortaa text-xs text-neutral-gray">
-            {formatCurrency(minLimit)}
+            {minLimit} Bottles
           </Text>
           <Text className="font-comfortaa text-xs text-neutral-gray">
-            {formatCurrency(maxLimit)}
+            {maxLimit} Bottles
           </Text>
         </View>
       </View>

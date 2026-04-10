@@ -2,10 +2,10 @@ import Button from "@/components/ui/Button"
 import TextInput from "@/components/ui/TextInput"
 import { showErrorToast, showInfoToast } from "@/components/ui/Toast"
 import { useAuth } from "@/hooks/useAuth"
+import { formatPhone } from "@/utils/formatters"
 import { router } from "expo-router"
 import React, { useEffect, useRef, useState } from "react"
 import {
-  Image,
   KeyboardAvoidingView,
   Platform,
   TextInput as RNTextInput,
@@ -20,6 +20,7 @@ export default function LoginScreen() {
   const [otp, setOtp] = useState("")
   const [otpSent, setOtpSent] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [resendTimer, setResendTimer] = useState(0)
 
   const { login, sendOTP, isLoggedIn } = useAuth()
 
@@ -40,9 +41,25 @@ export default function LoginScreen() {
     }
   }, [otpSent])
 
+  // Timer countdown logic
+  useEffect(() => {
+    let interval: ReturnType<typeof setInterval>
+    if (resendTimer > 0) {
+      interval = setInterval(() => {
+        setResendTimer((prev) => prev - 1)
+      }, 1000)
+    }
+    return () => {
+      if (interval) clearInterval(interval)
+    }
+  }, [resendTimer])
+
   const handleSendOTP = async () => {
     if (phoneNumber.length !== 10) {
-      showErrorToast("Invalid Phone", "Please enter a valid 10-digit phone number")
+      showErrorToast(
+        "Invalid Phone",
+        "Please enter a valid 10-digit phone number",
+      )
       return
     }
 
@@ -54,6 +71,7 @@ export default function LoginScreen() {
       if (success) {
         setOtpSent(true)
         setOtp("") // Clear OTP when sending new one
+        setResendTimer(30) // Start 30 second countdown
         showInfoToast(
           "OTP Sent",
           "Please check your phone for the verification code",
@@ -99,6 +117,7 @@ export default function LoginScreen() {
   }
 
   const handleResendOTP = async () => {
+    if (resendTimer > 0) return
     setOtp("")
     await handleSendOTP()
   }
@@ -128,29 +147,22 @@ export default function LoginScreen() {
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : "height"}
-      className="flex-1 bg-neutral-lightCream"
-      keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 80}
+      // className="justify-center"
+      style={{ flex: 1 }}
     >
       <ScrollView
-        contentContainerStyle={{ flexGrow: 1, paddingBottom: 20 }}
+        contentContainerStyle={{ flexGrow: 1, paddingBottom: 40 }}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        <View className="flex-1 justify-start px-6 pt-12 pb-8">
+        <View className="flex-1 justify-center px-6 pt-12 pb-8">
           {/* Logo Section */}
           <View className="items-center mb-12">
-            <View className="items-center justify-center mb-6">
-              <Image
-                source={require("../../assets/images/splash-icon.jpg")}
-                style={{ width: 80, height: 80, alignSelf: "center" }}
-                resizeMode="contain"
-              />
-            </View>
             <Text className="font-sofia-bold text-4xl text-primary-navy mb-2 tracking-wider">
               Worli Dairy
             </Text>
             <Text className="font-comfortaa text-sm text-neutral-gray tracking-widest uppercase">
-              Premium Fresh Milk
+              Farm Fresh Desi Milk
             </Text>
           </View>
 
@@ -159,15 +171,18 @@ export default function LoginScreen() {
             <Text className="font-sofia-bold text-2xl text-primary-navy mb-2">
               {otpSent ? "Verify OTP" : "Welcome Back"}
             </Text>
-            <Text className="font-comfortaa text-sm text-neutral-gray mb-8">
-              {otpSent
-                ? `Enter the code sent to +91${phoneNumber}`
-                : "Sign in to continue your subscription"}
-            </Text>
+            {otpSent && (
+              <Text className="font-comfortaa text-sm text-neutral-gray mb-8">
+                Enter the code sent to {formatPhone(phoneNumber)}
+              </Text>
+            )}
 
             {otpSent && (
               <TouchableOpacity
-                onPress={() => setOtpSent(false)}
+                onPress={() => {
+                  setOtpSent(false)
+                  setResendTimer(0)
+                }}
                 className="self-start mb-6 active:opacity-70"
               >
                 <Text className="font-comfortaa text-sm text-primary-navy font-semibold">
@@ -220,7 +235,7 @@ export default function LoginScreen() {
                       value={otp[index] || ""}
                       onChangeText={(value) => handleOTPChange(value, index)}
                       onKeyPress={({ nativeEvent }) =>
-                        handleOTPKeyPress(nativeEvent.key, index)
+                         handleOTPKeyPress(nativeEvent.key, index)
                       }
                       editable={!loading}
                     />
@@ -240,14 +255,22 @@ export default function LoginScreen() {
                 {/* Resend OTP */}
                 <TouchableOpacity
                   onPress={handleResendOTP}
-                  disabled={loading}
-                  className="py-2 active:opacity-70"
+                  disabled={loading || resendTimer > 0}
+                  className={`py-2 active:opacity-70 ${
+                    resendTimer > 0 ? "opacity-50" : ""
+                  }`}
                 >
                   <Text className="font-comfortaa text-sm text-primary-navy text-center font-medium">
                     Didn't receive code?{" "}
-                    <Text className="text-primary-navy font-semibold underline">
-                      Resend
-                    </Text>
+                    {resendTimer > 0 ? (
+                      <Text className="text-primary-navy font-semibold">
+                        Resend in {resendTimer}s
+                      </Text>
+                    ) : (
+                      <Text className="text-primary-navy font-semibold underline">
+                        Resend
+                      </Text>
+                    )}
                   </Text>
                 </TouchableOpacity>
               </>

@@ -1,7 +1,6 @@
 import Button from "@/components/ui/Button"
 import { useWallet } from "@/hooks/useWallet"
-import { formatCurrency } from "@/utils/formatters"
-import { RefreshCw, Zap, ZapOff } from "lucide-react-native"
+import { Zap, ZapOff, RefreshCw } from "lucide-react-native"
 import React, { useEffect, useState } from "react"
 import { Switch, Text, TouchableOpacity, View } from "react-native"
 import {
@@ -13,14 +12,14 @@ import { ConfirmModal } from "@/components/ui/Modal"
 export default function AutoPayCard() {
   const { wallet, setupAutoPay, cancelAutoPay } = useWallet()
   const [isEnabled, setIsEnabled] = useState(false)
-  const [rechargeAmount, setRechargeAmount] = useState(2000)
-  const [triggerAmount, setTriggerAmount] = useState(500)
+  const [rechargeAmount, setRechargeAmount] = useState(30)
+  const [triggerAmount, setTriggerAmount] = useState(5)
   const [loading, setLoading] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
   const [showDisableModal, setShowDisableModal] = useState(false)
 
-  const rechargeOptions = [1000, 2000, 3000, 5000]
-  const triggerOptions = [200, 500, 1000, 1500]
+  const rechargeOptions = [15, 30, 45, 60]
+  const triggerOptions = [3, 5, 10, 15]
 
   useEffect(() => {
     if (wallet) {
@@ -34,14 +33,19 @@ export default function AutoPayCard() {
     }
   }, [wallet])
 
-  const handleToggle = async (value: boolean) => {
+  const handleToggle = (value: boolean) => {
     if (value) {
-      // Enable autopay
+      // Intending to enable autopay, but don't save until explicit confirmation
       setIsEditing(true)
       setIsEnabled(true)
     } else {
       // Disable autopay
-      setShowDisableModal(true)
+      if (wallet?.auto_recharge_enabled) {
+        setShowDisableModal(true)
+      } else {
+        setIsEnabled(false)
+        setIsEditing(false)
+      }
     }
   }
 
@@ -54,6 +58,7 @@ export default function AutoPayCard() {
       setIsEditing(false)
     } else {
       showErrorToast("Error", "Failed to disable AutoPay")
+      setIsEnabled(true) // Revert on failure
     }
     setLoading(false)
   }
@@ -74,7 +79,7 @@ export default function AutoPayCard() {
         setIsEditing(false)
         showSuccessToast(
           "AutoPay Enabled",
-          `Your wallet will be automatically recharged with ${formatCurrency(rechargeAmount)} when balance falls below ${formatCurrency(triggerAmount)}.`,
+          `Your balance will be automatically recharged with ${rechargeAmount} bottles when balance falls below ${triggerAmount} bottles.`,
         )
       } else {
         showErrorToast("Error", "Failed to setup AutoPay. Please try again.")
@@ -105,7 +110,7 @@ export default function AutoPayCard() {
               AutoPay
             </Text>
             <Text className="font-comfortaa text-xs text-neutral-gray">
-              Never run out of balance
+              Never run out of bottles
             </Text>
           </View>
         </View>
@@ -118,8 +123,8 @@ export default function AutoPayCard() {
         />
       </View>
 
-      {/* Active AutoPay Info (when enabled and not editing) */}
-      {isEnabled && !isEditing && (
+      {/* Active AutoPay Info (when enabled and not editing and saved to DB) */}
+      {isEnabled && !isEditing && wallet?.auto_recharge_enabled && (
         <View className="mt-4">
           <View className="bg-primary-cream/30 rounded-xl p-4 mb-3">
             <View className="flex-row items-center justify-between mb-2">
@@ -127,7 +132,7 @@ export default function AutoPayCard() {
                 Recharge Amount
               </Text>
               <Text className="font-sofia-bold text-base text-primary-navy">
-                {formatCurrency(rechargeAmount)}
+                {rechargeAmount} Bottles
               </Text>
             </View>
             <View className="flex-row items-center justify-between">
@@ -135,7 +140,7 @@ export default function AutoPayCard() {
                 When Balance Below
               </Text>
               <Text className="font-sofia-bold text-base text-primary-navy">
-                {formatCurrency(triggerAmount)}
+                {triggerAmount} Bottles
               </Text>
             </View>
           </View>
@@ -178,7 +183,7 @@ export default function AutoPayCard() {
                       : "text-neutral-darkGray"
                   }`}
                 >
-                  {formatCurrency(amt)}
+                  {amt} Bottles
                 </Text>
               </TouchableOpacity>
             ))}
@@ -207,7 +212,7 @@ export default function AutoPayCard() {
                       : "text-neutral-darkGray"
                   }`}
                 >
-                  {formatCurrency(amt)}
+                  {amt} Bottles
                 </Text>
               </TouchableOpacity>
             ))}
@@ -216,20 +221,20 @@ export default function AutoPayCard() {
           {/* Summary */}
           <View className="bg-secondary-skyBlue/10 rounded-xl p-4 mb-5">
             <Text className="font-comfortaa text-sm text-primary-navy text-center">
-              Your wallet will be recharged with{" "}
+              Your balance will be recharged with{" "}
               <Text className="font-sofia-bold">
-                {formatCurrency(rechargeAmount)}
+                {rechargeAmount} bottles
               </Text>{" "}
               when balance drops below{" "}
               <Text className="font-sofia-bold">
-                {formatCurrency(triggerAmount)}
+                {triggerAmount} bottles
               </Text>
             </Text>
           </View>
 
           {/* Save Button */}
           <Button
-            title={loading ? "Saving..." : "Enable AutoPay"}
+            title={loading ? "Saving..." : wallet?.auto_recharge_enabled ? "Save Settings" : "Enable AutoPay"}
             onPress={handleSave}
             disabled={loading}
             isLoading={loading}
@@ -241,7 +246,7 @@ export default function AutoPayCard() {
       {/* Info text when disabled */}
       {!isEnabled && (
         <Text className="font-comfortaa text-xs text-neutral-gray mt-3 leading-4">
-          Enable AutoPay to automatically recharge your wallet when the balance
+          Enable AutoPay to automatically recharge your bottles when the balance
           runs low. Never miss a delivery!
         </Text>
       )}
@@ -251,7 +256,7 @@ export default function AutoPayCard() {
         visible={showDisableModal}
         onClose={() => setShowDisableModal(false)}
         title="Disable AutoPay"
-        description="Are you sure you want to disable automatic wallet recharge?"
+        description="Are you sure you want to disable automatic bottle recharge?"
         confirmText="Disable"
         onConfirm={handleConfirmDisable}
         destructive
